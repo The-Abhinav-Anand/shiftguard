@@ -1,0 +1,7 @@
+cff-version: 1.2.0
+message: "If you use SHIFTGUARD, please cite the repository and this file."
+title: "SHIFTGUARD"
+version: "0.1.0"
+date-released: 2026-09-10
+license: Apache-2.0
+abstract: "Gate0 bootstrap for a calibration-shift research engine."

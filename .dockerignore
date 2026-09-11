@@ -1,0 +1,17 @@
+.git
+.env
+.venv
+.python-version
+__pycache__
+.pytest_cache
+.ruff_cache
+.cache
+var
+data/raw
+data/cache
+frontend/node_modules
+frontend/dist
+frontend/*.tsbuildinfo
+dist
+build
+*.egg-info
