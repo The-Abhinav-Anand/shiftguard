@@ -1,6 +1,6 @@
 # SHIFTGUARD
 
-SHIFTGUARD is a calibration-shift research engine. Gate1 provides a deterministic no-outage UCI Bank Marketing logistic-regression baseline through the CLI. Browser experiments, calibration analysis, jobs, and agent tools are not yet implemented.
+SHIFTGUARD is a calibration-shift research engine. The CLI provides the Gate1 deterministic UCI Bank Marketing baseline and the Gate2 development outage/temperature-calibration slice. Browser experiments, jobs, and agent tools remain pending.
 
 ## Local setup
 
@@ -19,6 +19,20 @@ $uv = "..\\.tools\\uv-package\\bin\\uv.exe"
 & $uv run shiftguard run --config configs/bank-baseline.yaml
 & $uv run uvicorn shiftguard.api.main:app --reload
 ```
+
+## Gate2 development slice
+
+The development-only history outage and 50-label target-temperature slice runs with:
+
+```powershell
+& $uv run shiftguard run --config configs/bank-outage-50.yaml
+```
+
+It persists no-outage raw/source, outage raw/source/target conditions and paired deltas. It is not a confirmatory result.
+
+The history mask is fixed on the entire unlabeled target pool in canonical row order before revealing the nested 50-label prefix. Test masking uses an independent stream. Overall new missingness uses observed cells across all ten features as its denominator; history-group and acquired-subset rates are reported separately with counts. Prediction failures resolve source to raw and target to frozen source to raw before evaluator access. An exhausted chain produces a failed condition with null metrics and unavailable comparisons.
+
+Artifact status exclusions and replacement IDs are in [the Gate2 status ledger](docs/submission-evidence/gate2-artifact-status.json). Previous artifact bytes remain intact. Counts distinguish unique calibrator fit failures from unique prediction failures per feature regime, avoiding double-counted source reuse. Final outcomes never select a fallback.
 
 Set `SHIFTGUARD_DB_URL` in `.env` (copy `.env.example`). Local development accepts only a local SQLite file and enables WAL. A hosted deployment requires `SHIFTGUARD_ENVIRONMENT=hosted` and a PostgreSQL connection URL.
 
@@ -45,7 +59,7 @@ The image compiles SQLite 3.53.1 from the verified official source archive befor
 
 ## Tests
 
-`uv run pytest -q` runs local bootstrap tests. Tests needing a real PostgreSQL 16 service must be marked `postgres` and `live`; none run by default in Gate0.
+`uv run pytest -q` runs the local suite. Tests needing a real PostgreSQL 16 service are opt-in via the `postgres` and `live` markers. The Gate2 author check is `uv run --no-sync pytest tests/unit/test_history_block.py tests/unit/test_acquisition_prefix.py tests/integration/test_outage_recovery.py -q`; parent verification precedes the consolidated gate-exit review.
 
 ## License and notices
 

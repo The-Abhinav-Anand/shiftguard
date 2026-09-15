@@ -1,0 +1,278 @@
+{
+  "gate": 2,
+  "subtask": "six-fix review batch",
+  "base_commit": "6c4d682884aac8ddf0a7c1fdff94572ae322ac27",
+  "source_state": "uncommitted working candidate",
+  "checks": [
+    {
+      "name": "Old artifact preservation and CLI help",
+      "status": "PASS",
+      "details": "All fourteen original files match the disposition ledger hashes. CLI help describes Gate1 and Gate2."
+    },
+    {
+      "command": "uv run --no-sync pytest tests/unit/test_history_block.py tests/unit/test_acquisition_prefix.py tests/integration/test_outage_recovery.py -q",
+      "status": "PASS",
+      "passed": 20,
+      "seconds": 5.14
+    },
+    {
+      "command": "uv run --no-sync shiftguard run --config configs/bank-outage-50.yaml",
+      "status": "PASS",
+      "experiment_id": "c6678b6b4ddbc482c5bc4e81",
+      "execution_id": "49457a35-2aee-4de7-a0ce-62f659acdbfa"
+    },
+    {
+      "name": "artifact SHA-256 readback",
+      "status": "PASS",
+      "files": 7,
+      "checks": {
+        "seeds": true,
+        "config": true,
+        "comparisons": true,
+        "masks": true,
+        "acquisition": true,
+        "metadata": true,
+        "conditions": true
+      }
+    },
+    {
+      "command": "git -c safe.directory=<original-app> diff --check",
+      "status": "PASS",
+      "note": "Git reported configured LF/CRLF conversion warnings; no whitespace errors."
+    },
+    {
+      "name": "current full suite / live PostgreSQL / clean-clone verifier",
+      "status": "NOT_RUN",
+      "owner": "parent",
+      "reason": "Latest workflow requests targeted author verification and no redundant frozen-gate checks."
+    }
+  ],
+  "metrics": {
+    "no_outage_raw": {
+      "condition_id": "0e2fd493e513383ba23af5a5",
+      "status": "scored",
+      "resolved_method": "raw",
+      "brier_score": 0.08820837511458743,
+      "log_loss": 0.3131764240810899
+    },
+    "no_outage_source_temperature": {
+      "condition_id": "f9e63dcc4f56e791f8325109",
+      "status": "scored",
+      "resolved_method": "source_temperature",
+      "brier_score": 0.08821056684165197,
+      "log_loss": 0.313181210371017
+    },
+    "outage_raw": {
+      "condition_id": "eb56d89482b4432e0c0f3c3d",
+      "status": "scored",
+      "resolved_method": "raw",
+      "brier_score": 0.09311145822463628,
+      "log_loss": 0.3282679429367695
+    },
+    "outage_source_temperature": {
+      "condition_id": "b5d5c62d5846cea453f20fcd",
+      "status": "scored",
+      "resolved_method": "source_temperature",
+      "brier_score": 0.09309628301193772,
+      "log_loss": 0.3282011093182061
+    },
+    "outage_target_temperature": {
+      "condition_id": "75a44774d2370c4cdefc921f",
+      "status": "scored",
+      "resolved_method": "target_temperature",
+      "brier_score": 0.09723315692518403,
+      "log_loss": 0.3731652381999871
+    }
+  },
+  "comparisons": {
+    "outage_damage_raw": {
+      "available": true,
+      "comparison_id": "da7409d2388fd67fbc2e728a",
+      "deltas": {
+        "brier_score": 0.0049030831100488476,
+        "log_loss": 0.015091518855679553
+      },
+      "earlier": "0e2fd493e513383ba23af5a5",
+      "later": "eb56d89482b4432e0c0f3c3d",
+      "lower_is_better": true,
+      "name": "outage_damage_raw",
+      "reason": null
+    },
+    "outage_damage_source": {
+      "available": true,
+      "comparison_id": "acf04700a9516aca9acebd70",
+      "deltas": {
+        "brier_score": 0.004885716170285742,
+        "log_loss": 0.015019898947189136
+      },
+      "earlier": "f9e63dcc4f56e791f8325109",
+      "later": "b5d5c62d5846cea453f20fcd",
+      "lower_is_better": true,
+      "name": "outage_damage_source",
+      "reason": null
+    },
+    "restoration_vs_no_outage_source": {
+      "available": true,
+      "comparison_id": "69cf085f1234fbf3446650fc",
+      "deltas": {
+        "brier_score": 0.009022590083532053,
+        "log_loss": 0.05998402782897011
+      },
+      "earlier": "f9e63dcc4f56e791f8325109",
+      "later": "75a44774d2370c4cdefc921f",
+      "lower_is_better": true,
+      "name": "restoration_vs_no_outage_source",
+      "reason": null
+    },
+    "source_calibration_under_outage": {
+      "available": true,
+      "comparison_id": "f80c3a31055863cf92a35170",
+      "deltas": {
+        "brier_score": -0.00001517521269855937,
+        "log_loss": -0.00006683361856335557
+      },
+      "earlier": "eb56d89482b4432e0c0f3c3d",
+      "later": "b5d5c62d5846cea453f20fcd",
+      "lower_is_better": true,
+      "name": "source_calibration_under_outage",
+      "reason": null
+    },
+    "target_adaptation_vs_raw": {
+      "available": true,
+      "comparison_id": "dfa1500dfa8e4cb1b6cd72b7",
+      "deltas": {
+        "brier_score": 0.004121698700547752,
+        "log_loss": 0.04489729526321762
+      },
+      "earlier": "eb56d89482b4432e0c0f3c3d",
+      "later": "75a44774d2370c4cdefc921f",
+      "lower_is_better": true,
+      "name": "target_adaptation_vs_raw",
+      "reason": null
+    },
+    "target_adaptation_vs_source": {
+      "available": true,
+      "comparison_id": "7b4f7e4c383398f3ca64d8a7",
+      "deltas": {
+        "brier_score": 0.004136873913246311,
+        "log_loss": 0.044964128881780974
+      },
+      "earlier": "b5d5c62d5846cea453f20fcd",
+      "later": "75a44774d2370c4cdefc921f",
+      "lower_is_better": true,
+      "name": "target_adaptation_vs_source",
+      "reason": null
+    }
+  },
+  "content_hashes": {
+    "acquisition": "fcd2c75e271f3ccdea59e19f5cdb372d4f9f7b9090a735b22f4af1cbfa953b90",
+    "comparisons": "fb579886ef92d0ce175d24ee8b1ea0a5d52a71b42962a293bd85d7e9b0772eca",
+    "conditions": "d2af801501ebff7f5b55be911b5a1546f89e80bc9ef9acdae9dfc6cf128ec613",
+    "config": "80a52739818f38ebc4bcfa82c55dd5c283157cb7ec4cca8a5f8ff0265a2cb98b",
+    "logical_content": "c6678b6b4ddbc482c5bc4e811b6132dd5d1aa3a01c66e719f2f3e183fb97cd2d",
+    "masks": "072d04fb7ca41e59d70f78aca14b9982a9bbba3e05aa29062b1bada52adedf15",
+    "metadata": "be5079018b3cd16794d5f270f45ef6d42d2ce7697e939ce6c80496899b299d87",
+    "seeds": "238ad97d7728ad789ddc60e6a7181a7b175c4258d0047fe18d659528df24f27e"
+  },
+  "mask_rates": {
+    "full_pool": {
+      "all_feature_cells": 41190,
+      "natural_missing_cells": 0,
+      "natural_missing_inside_history_cells": 0,
+      "natural_missing_outside_history_cells": 0,
+      "newly_missing_cells": 6312,
+      "observed_all_feature_cells": 41190,
+      "observed_all_feature_cells_new_missing_rate": 0.15324107793153677,
+      "observed_history_eligible_cells": 12357,
+      "observed_history_group_new_missing_rate": 0.5108035931051226,
+      "realized_selected_row_fraction": 0.5108035931051226,
+      "requested_row_probability": 0.5,
+      "row_count": 4119,
+      "rows_with_new_missingness": 2104,
+      "rows_with_new_missingness_fraction": 0.5108035931051226,
+      "selected_rows": 2104,
+      "total_missing_cells": 6312,
+      "total_missing_rate_over_all_feature_cells": 0.15324107793153677
+    },
+    "test": {
+      "all_feature_cells": 82380,
+      "natural_missing_cells": 0,
+      "natural_missing_inside_history_cells": 0,
+      "natural_missing_outside_history_cells": 0,
+      "newly_missing_cells": 12381,
+      "observed_all_feature_cells": 82380,
+      "observed_all_feature_cells_new_missing_rate": 0.1502913328477786,
+      "observed_history_eligible_cells": 24714,
+      "observed_history_group_new_missing_rate": 0.5009711094925953,
+      "realized_selected_row_fraction": 0.5009711094925953,
+      "requested_row_probability": 0.5,
+      "row_count": 8238,
+      "rows_with_new_missingness": 4127,
+      "rows_with_new_missingness_fraction": 0.5009711094925953,
+      "selected_rows": 4127,
+      "total_missing_cells": 12381,
+      "total_missing_rate_over_all_feature_cells": 0.1502913328477786
+    },
+    "acquired_subset": {
+      "all_feature_cells": 500,
+      "natural_missing_cells": 0,
+      "natural_missing_inside_history_cells": 0,
+      "natural_missing_outside_history_cells": 0,
+      "newly_missing_cells": 57,
+      "observed_all_feature_cells": 500,
+      "observed_all_feature_cells_new_missing_rate": 0.114,
+      "observed_history_eligible_cells": 150,
+      "observed_history_group_new_missing_rate": 0.38,
+      "realized_selected_row_fraction": 0.38,
+      "requested_row_probability": 0.5,
+      "row_count": 50,
+      "rows_with_new_missingness": 19,
+      "rows_with_new_missingness_fraction": 0.38,
+      "selected_rows": 19,
+      "total_missing_cells": 57,
+      "total_missing_rate_over_all_feature_cells": 0.114
+    }
+  },
+  "source_map": {
+    "fallback_reason": null,
+    "fit_status": "fitted",
+    "fitted_temperature": 1.9955383604242363,
+    "labels_consumed": 6178,
+    "map_id": "bae63120da5e9bf4b4c8d85b2364fc4e10be1c5f805b67a3ad212be72a5978fb",
+    "requested_method": "source_temperature",
+    "resolved_method": "source_temperature"
+  },
+  "target_map": {
+    "fallback_reason": null,
+    "fit_status": "fitted",
+    "fitted_temperature": 1.1749746012897315,
+    "labels_consumed": 50,
+    "map_id": "0ceb75d3671c38fe00f3082a2fdd5518680e0c6fbe458b4841fea3af5a6e32e2",
+    "requested_method": "target_temperature",
+    "resolved_method": "target_temperature"
+  },
+  "fallback_counts": {
+    "source_temperature": {
+      "fit_count": 1,
+      "fit_failure_count": 0,
+      "fit_failure_rate": 0,
+      "prediction_attempt_count": 2,
+      "prediction_failure_count": 0,
+      "prediction_failure_rate": 0
+    },
+    "target_temperature": {
+      "fit_count": 1,
+      "fit_failure_count": 0,
+      "fit_failure_rate": 0,
+      "prediction_attempt_count": 1,
+      "prediction_failure_count": 0,
+      "prediction_failure_rate": 0
+    }
+  },
+  "limitations": [
+    "One development seed (31001), row probability 0.5, target budget 50.",
+    "Target temperature worsens Brier and log loss versus frozen source under outage.",
+    "No confirmatory, broader sweep, Gate3, new migration, or acceptance claim."
+  ],
+  "next": "parent verification then consolidated Astra gate-exit review"
+}

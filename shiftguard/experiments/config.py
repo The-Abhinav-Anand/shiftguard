@@ -56,3 +56,47 @@ def load_baseline_config(path: Path) -> BaselineConfig:
     if "features" in payload:
         payload["features"] = tuple(payload["features"])
     return BaselineConfig(**payload)
+
+
+@dataclass(frozen=True)
+class OutageConfig(BaselineConfig):
+    run_type: str = "outage_recovery"
+    history_row_probability: float = 0.5
+    target_label_budget: int = 50
+    source_calibrator: str = "source_temperature"
+    target_calibrator: str = "target_temperature"
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        if self.run_type != "outage_recovery":
+            raise ValueError("Gate2 run_type must be outage_recovery")
+        if self.history_row_probability != 0.5:
+            raise ValueError("Gate2 history row probability is frozen at 0.5")
+        if self.target_label_budget != 50:
+            raise ValueError("Gate2 target label budget is frozen at 50")
+        if (self.source_calibrator, self.target_calibrator) != ("source_temperature", "target_temperature"):
+            raise ValueError("Gate2 calibrators are frozen to source and target temperature")
+
+    def to_dict(self) -> dict[str, object]:
+        return {**super().to_dict(), "run_type": self.run_type, "history_row_probability": self.history_row_probability, "target_label_budget": self.target_label_budget, "source_calibrator": self.source_calibrator, "target_calibrator": self.target_calibrator}
+
+
+def load_run_config(path: Path) -> BaselineConfig | OutageConfig:
+    if path.suffix in {".yaml", ".yml"}:
+        payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+    else:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError("Gate configuration must be a mapping")
+    if payload.get("run_type") != "outage_recovery":
+        return load_baseline_config(path)
+    allowed = {"master_seed", "features", "role_fractions", "artifact_root", "dataset_csv", "dataset_manifest", "protocol_id", "evaluation_tier", "run_type", "history_row_probability", "target_label_budget", "source_calibrator", "target_calibrator"}
+    unknown = set(payload) - allowed
+    if unknown:
+        raise ValueError(f"unknown Gate2 configuration keys: {sorted(unknown)}")
+    for key in ("artifact_root", "dataset_csv", "dataset_manifest"):
+        if key in payload:
+            payload[key] = Path(payload[key])
+    if "features" in payload:
+        payload["features"] = tuple(payload["features"])
+    return OutageConfig(**payload)

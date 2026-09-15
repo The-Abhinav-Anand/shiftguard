@@ -1,0 +1,62 @@
+{
+  "scope": "Local Gate2 development artifact dispositions; original experiment directories and database content are immutable.",
+  "current_candidate": "c6678b6b4ddbc482c5bc4e81",
+  "entries": [
+    {
+      "experiment_id": "9f03fb4fb650104b54105f56",
+      "original_file_sha256": {
+        "config.json": "80a52739818f38ebc4bcfa82c55dd5c283157cb7ec4cca8a5f8ff0265a2cb98b",
+        "masks.json": "9f76b37475ccd17d84d6987640970f1658e209f6499c0ccfc6037688270e1287",
+        "acquisition.json": "cfb3c7f8c1b547e980c11784c5cf0903cd92759aa7d277ced9578db0e62f0c24",
+        "comparisons.json": "4d364e0ebacc5ff1afaa4d94862c6c0d2a0f929647874fc217e0631a804c9642",
+        "metadata.json": "40f225b530e737e170a51663a6541e6bbf5360d28ea093173f92a20a7146377c",
+        "conditions.json": "af817079996ea619fe72312618cc8a08768cc27e8d4a2d03855f9701ad20c42e",
+        "seeds.json": "238ad97d7728ad789ddc60e6a7181a7b175c4258d0047fe18d659528df24f27e"
+      },
+      "status": "INVALID",
+      "exclude_from": [
+        "analysis",
+        "fallback_rates"
+      ],
+      "reason": "Inverse-temperature extraction defect falsely classified calibration fits as failures. This is implementation-error evidence, not a scientific fallback observation.",
+      "intermediate_replacement": "8d89c7f4a2a7a31fe2ea9392",
+      "replacement_experiment_id": "c6678b6b4ddbc482c5bc4e81"
+    },
+    {
+      "experiment_id": "8d89c7f4a2a7a31fe2ea9392",
+      "original_file_sha256": {
+        "config.json": "80a52739818f38ebc4bcfa82c55dd5c283157cb7ec4cca8a5f8ff0265a2cb98b",
+        "masks.json": "9f76b37475ccd17d84d6987640970f1658e209f6499c0ccfc6037688270e1287",
+        "acquisition.json": "cfb3c7f8c1b547e980c11784c5cf0903cd92759aa7d277ced9578db0e62f0c24",
+        "comparisons.json": "03bbc9789333795565f761342fac04d0ac7b5501bca6eb1fd3821e37280cec98",
+        "metadata.json": "c7bd4107eeacffc4fd9d8d0b315985f6c941f37adb105066112815987125363f",
+        "conditions.json": "31ed8598860ea90bab6d2acc9157f5db7f2813f366571a031d306e3558cb58fb",
+        "seeds.json": "238ad97d7728ad789ddc60e6a7181a7b175c4258d0047fe18d659528df24f27e"
+      },
+      "status": "SUPERSEDED_INITIAL_REVIEW_CANDIDATE",
+      "accepted": false,
+      "exclude_from": [
+        "accepted_results",
+        "current_gate2_analysis"
+      ],
+      "reason": "Initial unaccepted candidate masked only the acquired subset. Superseded by the canonical full-pool mask and six review corrections.",
+      "replacement_experiment_id": "c6678b6b4ddbc482c5bc4e81"
+    },
+    {
+      "experiment_id": "c6678b6b4ddbc482c5bc4e81",
+      "status": "CANDIDATE",
+      "accepted": false,
+      "review": "Parent verification and consolidated Astra gate-exit review pending.",
+      "content_hashes": {
+        "acquisition": "fcd2c75e271f3ccdea59e19f5cdb372d4f9f7b9090a735b22f4af1cbfa953b90",
+        "comparisons": "fb579886ef92d0ce175d24ee8b1ea0a5d52a71b42962a293bd85d7e9b0772eca",
+        "conditions": "d2af801501ebff7f5b55be911b5a1546f89e80bc9ef9acdae9dfc6cf128ec613",
+        "config": "80a52739818f38ebc4bcfa82c55dd5c283157cb7ec4cca8a5f8ff0265a2cb98b",
+        "logical_content": "c6678b6b4ddbc482c5bc4e811b6132dd5d1aa3a01c66e719f2f3e183fb97cd2d",
+        "masks": "072d04fb7ca41e59d70f78aca14b9982a9bbba3e05aa29062b1bada52adedf15",
+        "metadata": "be5079018b3cd16794d5f270f45ef6d42d2ce7697e939ce6c80496899b299d87",
+        "seeds": "238ad97d7728ad789ddc60e6a7181a7b175c4258d0047fe18d659528df24f27e"
+      }
+    }
+  ]
+}

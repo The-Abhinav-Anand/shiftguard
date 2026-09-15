@@ -9,8 +9,9 @@ from pathlib import Path
 from shiftguard.migrations import upgrade_database
 from shiftguard.settings import Settings
 from shiftguard.datasets.bank import BankDataset
-from shiftguard.experiments.config import load_baseline_config
+from shiftguard.experiments.config import OutageConfig, load_run_config
 from shiftguard.experiments.runner import prepare_baseline_handoff, run_baseline
+from shiftguard.experiments.outage_runner import prepare_outage_handoff, run_outage_recovery
 
 
 app = typer.Typer(no_args_is_help=True)
@@ -38,12 +39,16 @@ def run(
     context: typer.Context,
     config: Path = typer.Option(..., "--config", exists=True, readable=True),
 ) -> None:
-    """Run the frozen Gate1 no-outage Bank development baseline."""
-    baseline_config = load_baseline_config(config)
-    manifest = json.loads(baseline_config.dataset_manifest.read_text(encoding="utf-8"))
-    dataset = BankDataset.from_clean_csv(baseline_config.dataset_csv, manifest)
+    """Run the Gate1 baseline or Gate2 development outage-recovery configuration."""
+    run_config = load_run_config(config)
+    manifest = json.loads(run_config.dataset_manifest.read_text(encoding="utf-8"))
+    dataset = BankDataset.from_clean_csv(run_config.dataset_csv, manifest)
     database_url = context.obj["db_url"] or Settings().db_url
-    result = run_baseline(prepare_baseline_handoff(dataset, baseline_config), baseline_config, database_url)
+    if isinstance(run_config, OutageConfig):
+        result = run_outage_recovery(prepare_outage_handoff(dataset, run_config), run_config, database_url)
+        typer.echo(json.dumps({"experiment_id": result.experiment_id, "execution_id": result.execution_id, "conditions": result.conditions, "comparisons": result.comparisons, "content_hashes": result.content_hashes}, sort_keys=True))
+        return
+    result = run_baseline(prepare_baseline_handoff(dataset, run_config), run_config, database_url)
     typer.echo(json.dumps({"experiment_id": result.experiment_id, "execution_id": result.execution_id, "metrics": result.metrics, "content_hashes": result.content_hashes}, sort_keys=True))
 
 
