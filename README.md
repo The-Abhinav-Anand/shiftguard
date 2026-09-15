@@ -1,6 +1,6 @@
 # SHIFTGUARD
 
-SHIFTGUARD is a calibration-shift research engine. Gate0 provides the local package, database bootstrap, health API, CLI, and frontend shell. Dataset ingestion, experiments, calibration analysis, jobs, and agent tools are not yet implemented.
+SHIFTGUARD is a calibration-shift research engine. Gate1 provides a deterministic no-outage UCI Bank Marketing logistic-regression baseline through the CLI. Browser experiments, calibration analysis, jobs, and agent tools are not yet implemented.
 
 ## Local setup
 
@@ -15,6 +15,8 @@ $uv = "..\\.tools\\uv-package\\bin\\uv.exe"
 & $uv run pytest -q
 & $uv run alembic upgrade head
 & $uv run shiftguard status
+& $uv run python scripts/download_datasets.py --dataset bank --manifest data/manifests/bank.json
+& $uv run shiftguard run --config configs/bank-baseline.yaml
 & $uv run uvicorn shiftguard.api.main:app --reload
 ```
 

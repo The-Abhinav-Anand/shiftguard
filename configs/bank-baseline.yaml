@@ -1,0 +1,6 @@
+artifact_root: var/artifacts
+dataset_csv: var/datasets/bank.csv
+dataset_manifest: var/datasets/bank.manifest.json
+evaluation_tier: development
+master_seed: 31001
+protocol_id: sg-protocol-1.0-draft

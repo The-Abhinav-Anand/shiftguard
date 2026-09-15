@@ -1,3 +1,3 @@
 # Data
 
-Gate0 stores no datasets. Dataset manifests will be versioned under `data/manifests/`; raw data and caches are ignored.
+Gate1 uses UCI Bank Marketing, licensed CC BY 4.0: Moro, Rita, Cortez (2014), DOI:10.24432/C5K306. The frozen source contract is [manifests/bank.json](manifests/bank.json). Acquisition reuses the outer cache when present, otherwise downloads that official source, verifies both frozen SHA-256 values, retains archive bytes under `data/raw/`, and records its retrieval timestamp in the local run manifest. The CLI rejects a clean CSV unless its byte hash, exact schema, binary labels, unique identifiers, row count, and frozen source identity match that manifest before any partition is constructed. Cleaning retains only `age, job, marital, education, default, housing, loan, pdays, previous, poutcome`; `duration` and every other source feature are excluded. The categorical literal `unknown`, `pdays=999`, and `poutcome=nonexistent` are preserved.
