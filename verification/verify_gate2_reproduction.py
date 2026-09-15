@@ -50,10 +50,14 @@ def validate_execution_provenance(
             raise AssertionError(f"Audit missing for execution {execution_id}")
         audit = audits[execution_id]
         git_info = audit.get("provenance", {}).get("git", {})
-        if not git_info.get("available"):
-            raise AssertionError(f"Git provenance not available for execution {execution_id}")
-        if git_info.get("dirty"):
-            raise AssertionError(f"Working tree was dirty during execution {execution_id}")
+        if git_info.get("available") is not True:
+            raise AssertionError(
+                f"Git provenance available must be True for execution {execution_id}, got {git_info.get('available')!r}"
+            )
+        if git_info.get("dirty") is not False:
+            raise AssertionError(
+                f"Git provenance dirty must be False for execution {execution_id}, got {git_info.get('dirty')!r}"
+            )
         if git_info.get("head") != expected_commit:
             raise AssertionError(
                 f"Execution {execution_id} HEAD {git_info.get('head')} != expected commit {expected_commit}"
@@ -136,7 +140,7 @@ def main() -> None:
                 assert rates["total_missing_cells"] == rates["natural_missing_cells"] + rates["newly_missing_cells"]
             assert "y" not in acquisition and "labels" not in acquisition
             temp_file = temp_dir / f"{name}.json"
-            temp_file.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+            temp_file.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
             temp_outputs[name] = temp_file
             runs.append(data)
         first = runs[0]
@@ -175,7 +179,7 @@ def main() -> None:
             temp_file.replace(target)
 
         temp_verif = temp_dir / "verification.json"
-        temp_verif.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+        temp_verif.write_text(json.dumps(summary, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
         temp_verif.replace(canonical_verification)
         print(json.dumps({"status": "passed", "experiment_id": first["experiment_id"], "executions": execution_ids, "verified_commit": expected_commit}))
 

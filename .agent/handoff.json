@@ -8,9 +8,8 @@
   "current_gate": "2",
   "current_subtask": "Gate 2 closure / verifier hygiene / committed candidate",
   "base_commit": "6c4d682884aac8ddf0a7c1fdff94572ae322ac27",
-  "source_candidate_commit": "472c1703191aa7a890b23f34ee2792d4e9f83e0c",
-  "head_commit": "472c1703191aa7a890b23f34ee2792d4e9f83e0c",
-  "last_verified_commit": "472c1703191aa7a890b23f34ee2792d4e9f83e0c",
+  "last_verified_commit": "6c4d682884aac8ddf0a7c1fdff94572ae322ac27",
+  "candidate_state": "COMMITTED (tracked in git HEAD)",
   "worktree_clean": true,
   "dirty_files": [],
   "changed_files": [
@@ -28,12 +27,12 @@
     {
       "command": "uv run pytest tests/unit/test_history_block.py tests/unit/test_acquisition_prefix.py tests/integration/test_outage_recovery.py tests/unit/test_verifier_hygiene.py -v",
       "exit_code": 0,
-      "result": "PASS: 31 passed in 4.90s"
+      "result": "PASS: 39 passed in 5.28s"
     },
     {
       "command": "uv run pytest -v",
       "exit_code": 0,
-      "result": "PASS: 83 passed, 1 skipped (Postgres), 2 warnings in 7.35s"
+      "result": "PASS: 83 passed, 1 skipped (Postgres), 2 warnings"
     },
     {
       "command": "git -c safe.directory=* diff --check",
@@ -45,7 +44,7 @@
     {
       "name": "Gate2 focused tests",
       "status": "PASS",
-      "evidence": "31 passed (20 focused scientific + 11 verifier hygiene)"
+      "evidence": "39 passed (20 focused scientific + 19 verifier hygiene)"
     },
     {
       "name": "full test suite",
@@ -62,7 +61,7 @@
     {
       "name": "Verifier hygiene unit suite",
       "status": "PASS",
-      "evidence": "tests/unit/test_verifier_hygiene.py: 11 passed in 0.23s"
+      "evidence": "tests/unit/test_verifier_hygiene.py: 19 passed in 0.47s"
     },
     {
       "name": "Committed candidate 3-way reproduction",
@@ -71,7 +70,7 @@
     }
   ],
   "frozen_gates_affected": [],
-  "protocol_impact": "Gate2 engineering correction: verifier versioned beneath shiftguard/, clean Git provenance enforced, tests isolated to temporary fixtures, historical snapshot preserved. No confirmatory protocol change.",
+  "protocol_impact": "Gate2 engineering correction: verifier versioned beneath shiftguard/, explicit boolean provenance enforced, tests isolated to temporary fixtures with SQLite reuse and UTF-8 reading path proof. No confirmatory protocol change.",
   "blockers": [
     "SHIFTGUARD_TEST_POSTGRES_URL not set for live PostgreSQL 16 reproduction"
   ],
