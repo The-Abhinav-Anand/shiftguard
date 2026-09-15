@@ -17,3 +17,4 @@ frontend/*.tsbuildinfo
 dist/
 build/
 *.egg-info/
+verification/gate2/

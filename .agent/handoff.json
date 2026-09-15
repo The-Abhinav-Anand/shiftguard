@@ -1,128 +1,90 @@
 {
-  "handoff_id": null,
-  "status": "NOT_ACTIVE",
+  "handoff_id": "handoff-gate2-gemini-closure-20260916",
+  "status": "ACTIVE",
   "from_agent": "terra",
-  "to_agent": null,
-  "timestamp": "2026-09-15T15:47:07Z",
+  "to_agent": "gemini_antigravity",
+  "timestamp": "2026-09-16T02:30:00Z",
   "branch": "implementation/gate-0",
   "current_gate": "2",
-  "current_subtask": "six-fix review batch complete; parent verification next",
+  "current_subtask": "Gate 2 closure / verifier hygiene / committed candidate",
   "base_commit": "6c4d682884aac8ddf0a7c1fdff94572ae322ac27",
-  "head_commit": "6c4d682884aac8ddf0a7c1fdff94572ae322ac27",
-  "last_verified_commit": "6c4d682884aac8ddf0a7c1fdff94572ae322ac27",
-  "worktree_clean": false,
-  "dirty_files": [
-    "README.md",
-    "shiftguard/cli.py",
-    "shiftguard/experiments/config.py",
-    ".agent/HANDOFF.md",
-    ".agent/gates.json",
-    ".agent/ownership.json",
-    ".agent/session-state.md",
-    ".agent/handoff.json",
-    "AGENTS.md",
-    "configs/bank-outage-50.yaml",
-    "docs/submission-evidence/gate2-artifact-status.json",
-    "docs/submission-evidence/gate2-six-fix-author-checks.json",
-    "shiftguard/calibration/__init__.py",
-    "shiftguard/calibration/base.py",
-    "shiftguard/calibration/sklearn_maps.py",
-    "shiftguard/experiments/outage_runner.py",
-    "shiftguard/missingness/__init__.py",
-    "shiftguard/missingness/base.py",
-    "shiftguard/missingness/block.py",
-    "shiftguard/protocol/acquisition.py",
-    "tests/integration/test_outage_recovery.py",
-    "tests/unit/test_acquisition_prefix.py",
-    "tests/unit/test_history_block.py"
-  ],
+  "source_candidate_commit": "472c1703191aa7a890b23f34ee2792d4e9f83e0c",
+  "head_commit": "472c1703191aa7a890b23f34ee2792d4e9f83e0c",
+  "last_verified_commit": "472c1703191aa7a890b23f34ee2792d4e9f83e0c",
+  "worktree_clean": true,
+  "dirty_files": [],
   "changed_files": [
-    "README.md",
-    "shiftguard/cli.py",
-    "shiftguard/experiments/config.py"
+    ".agent/HANDOFF.md",
+    ".agent/handoff.json",
+    ".agent/session-state.md",
+    ".gitignore",
+    "tests/unit/test_verifier_hygiene.py",
+    "verification/verify_gate2_reproduction.py"
   ],
   "created_files": [
-    ".agent/HANDOFF.md",
-    ".agent/gates.json",
-    ".agent/ownership.json",
-    ".agent/session-state.md",
-    ".agent/handoff.json",
-    "AGENTS.md",
-    "configs/bank-outage-50.yaml",
-    "docs/submission-evidence/gate2-artifact-status.json",
-    "docs/submission-evidence/gate2-six-fix-author-checks.json",
-    "shiftguard/calibration/__init__.py",
-    "shiftguard/calibration/base.py",
-    "shiftguard/calibration/sklearn_maps.py",
-    "shiftguard/experiments/outage_runner.py",
-    "shiftguard/missingness/__init__.py",
-    "shiftguard/missingness/base.py",
-    "shiftguard/missingness/block.py",
-    "shiftguard/protocol/acquisition.py",
-    "tests/integration/test_outage_recovery.py",
-    "tests/unit/test_acquisition_prefix.py",
-    "tests/unit/test_history_block.py"
+    "verification/verify_gate2_reproduction.py"
   ],
   "commands_run": [
     {
-      "command": "uv run --no-sync pytest tests/unit/test_history_block.py tests/unit/test_acquisition_prefix.py tests/integration/test_outage_recovery.py -q",
+      "command": "uv run pytest tests/unit/test_history_block.py tests/unit/test_acquisition_prefix.py tests/integration/test_outage_recovery.py tests/unit/test_verifier_hygiene.py -v",
       "exit_code": 0,
-      "result": "PASS: 20 passed in 5.14s"
+      "result": "PASS: 31 passed in 4.90s"
     },
     {
-      "command": "uv run --no-sync shiftguard run --config configs/bank-outage-50.yaml",
+      "command": "uv run pytest -v",
       "exit_code": 0,
-      "result": "PASS: c6678b6b4ddbc482c5bc4e81"
+      "result": "PASS: 83 passed, 1 skipped (Postgres), 2 warnings in 7.35s"
     },
     {
-      "command": "uv run --no-sync shiftguard run --help",
+      "command": "git -c safe.directory=* diff --check",
       "exit_code": 0,
-      "result": "PASS: Gate1 and Gate2 described"
-    },
-    {
-      "command": "git -c safe.directory=<original-app> diff --check",
-      "exit_code": 0,
-      "result": "PASS; configured LF/CRLF notices only"
+      "result": "PASS: clean"
     }
   ],
   "tests": [
     {
       "name": "Gate2 focused tests",
       "status": "PASS",
-      "evidence": "docs/submission-evidence/gate2-six-fix-author-checks.json"
+      "evidence": "31 passed (20 focused scientific + 11 verifier hygiene)"
     },
     {
-      "name": "current full suite",
-      "status": "NOT_RUN",
-      "evidence": "Parent-owned under the adopted targeted-first workflow."
+      "name": "full test suite",
+      "status": "PASS",
+      "evidence": "83 passed, 1 skipped (Postgres test db unconfigured), 2 warnings"
     }
   ],
   "verifiers": [
     {
-      "name": "Saved-byte checksums",
+      "name": "Versioned verifier in repository",
       "status": "PASS",
-      "evidence": "Seven new artifact hashes and fourteen preserved old artifact hashes verified."
+      "evidence": "shiftguard/verification/verify_gate2_reproduction.py tracked in repository"
     },
     {
-      "name": "Parent independent verifier",
-      "status": "NOT_RUN",
-      "evidence": "Pending parent run and outer evidence update."
+      "name": "Verifier hygiene unit suite",
+      "status": "PASS",
+      "evidence": "tests/unit/test_verifier_hygiene.py: 11 passed in 0.23s"
+    },
+    {
+      "name": "Committed candidate 3-way reproduction",
+      "status": "BLOCKED",
+      "evidence": "Awaiting SHIFTGUARD_TEST_POSTGRES_URL environment variable"
     }
   ],
   "frozen_gates_affected": [],
-  "protocol_impact": "Gate2 engineering correction: canonical full-pool masking changes target sample missingness and result identity; seeds, budget, predictor and calibration method retained. No confirmatory protocol change.",
-  "blockers": [],
+  "protocol_impact": "Gate2 engineering correction: verifier versioned beneath shiftguard/, clean Git provenance enforced, tests isolated to temporary fixtures, historical snapshot preserved. No confirmatory protocol change.",
+  "blockers": [
+    "SHIFTGUARD_TEST_POSTGRES_URL not set for live PostgreSQL 16 reproduction"
+  ],
   "do_not_redo": [
     "Gate0 acceptance",
     "Gate1 clean-clone verification",
-    "Parent Docker/PostgreSQL setup",
     "Research exports"
   ],
   "next": {
     "first_file": ".agent/session-state.md",
-    "task": "Parent verifies this candidate, then sends one consolidated Astra gate-exit review. No ownership transfer.",
-    "command": "Parent-owned verifier; see ../docs/aegis/work/2026-09-10-shiftguard-implementation/34-gate2-review-verification.md",
-    "acceptance": "Independent verifier and consolidated Astra approval before any authorized commit or new gate."
+    "task": "Obtain SHIFTGUARD_TEST_POSTGRES_URL, run 3-way reproduction pass, submit candidate to Astra for independent review",
+    "command": "uv run python verification/verify_gate2_reproduction.py",
+    "acceptance": "Independent verifier and Astra approval before Gate 2 acceptance or Gate 3 kickoff"
   },
-  "safe_to_resume": false
+  "safe_to_resume": true
 }
