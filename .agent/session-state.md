@@ -1,16 +1,16 @@
 # Session state
 
 Updated: 16 September 2026.
-CURRENT_GATE=2 (FROZEN); NEXT_GATE=3 (NOT_STARTED)
-CURRENT_SUBTASK=Gate 2 accepted; documentation-only closure checkpoint
+CURRENT_GATE=3 (CANDIDATE); GATE_2=FROZEN
+CURRENT_SUBTASK=Gate 3 candidate verification (clean commit reproduction & review packet assembly)
 BRANCH=implementation/gate-0
 BASE_COMMIT=6c4d682884aac8ddf0a7c1fdff94572ae322ac27
-LAST_VERIFIED_COMMIT=937f33c5c0f96ca18c9e7e0a82769c430d71bfa1
-ACCEPTED_SOURCE_COMMIT=937f33c5c0f96ca18c9e7e0a82769c430d71bfa1
-CHECKPOINT_COMMIT=Resolve latest docs-only closure commit with git log; recorded separately in parent evidence.
-ACTIVE_WRITER=codex_parent (governance only; no application batch active)
-NEXT=Follow docs/next-execution.md: prepare Gate 3 bounded contract before implementation.
-HANDOFF=COMPLETED; Gemini candidate returned to Codex for authorized review and closure.
+GATE2_ACCEPTED_SOURCE=937f33c5c0f96ca18c9e7e0a82769c430d71bfa1
+GATE2_CHECKPOINT_COMMIT=c9cc001b3c76d24cbc1aecc0afb963b6ceb7ebbf
+TAKEOVER_SOURCE_COMMIT=c9cc001b3c76d24cbc1aecc0afb963b6ceb7ebbf
+ACTIVE_WRITER=gemini_antigravity
+NEXT=Commit Gate 3 candidate, run verification/verify_gate3_reproduction.py against 2 SQLite and 1 PostgreSQL execution, assemble review packet.
+HANDOFF=IN_PROGRESS; Gate 3 candidate implementation complete (119 passed, 0 skipped, 2 warnings).
 
 Verification on clean source 937f33c5c0f96ca18c9e7e0a82769c430d71bfa1:
 - Independent full suite: 91 passed, 1 skipped, 2 known dependency warnings (28.50s).
@@ -31,4 +31,4 @@ Initial failed candidate: 8d89c7f4a2a7a31fe2ea9392; its FAIL history remains unc
 Target vs outage-source: Brier +0.004136873913246311; log loss +0.044964128881780974. Harmful; no confirmatory or recovery claim.
 DO_NOT_REDO=Gate0/Gate1 accepted verification, literature discovery, research exports.
 AFFECTED_FROZEN_GATES=none.
-Gate 3 code has not begun. Assign its sole writer in ownership.json before editing.
+Gate 3 candidate implementation complete. Full test suite: 119 passed, 0 skipped, 2 warnings. All 8 calibration conditions and 4 UI payloads verified.

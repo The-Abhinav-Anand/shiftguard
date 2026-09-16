@@ -1,0 +1,16 @@
+# SHIFTGUARD Adult Confirmatory Protocol Configuration
+# SEALED: Non-executable for confirmatory scoring until Gate 8 protocol lock.
+run_type: adult_confirmatory
+protocol_id: sg-protocol-1.0-draft
+evaluation_tier: confirmatory
+sealed: true
+status: NON_EXECUTABLE_BEFORE_GATE_8_PROTOCOL_LOCK
+dataset_id: uci-adult-2
+source_manifest: data/manifests/adult.json
+master_seed: 41001
+role_fractions:
+  train: 0.6875
+  source_cal: 0.1875
+  target_pool: 0.1250
+confirmatory_test_file: adult.test
+confirmatory_test_sealed: true

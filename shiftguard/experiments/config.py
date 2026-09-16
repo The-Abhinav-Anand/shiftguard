@@ -81,22 +81,118 @@ class OutageConfig(BaselineConfig):
         return {**super().to_dict(), "run_type": self.run_type, "history_row_probability": self.history_row_probability, "target_label_budget": self.target_label_budget, "source_calibrator": self.source_calibrator, "target_calibrator": self.target_calibrator}
 
 
-def load_run_config(path: Path) -> BaselineConfig | OutageConfig:
+SUPPORTED_PREDICTORS = ("logistic_regression", "random_forest")
+SUPPORTED_BUDGETS = (0, 25, 50, 100, 200)
+SUPPORTED_CALIBRATION_METHODS = (
+    "raw",
+    "source_temperature",
+    "source_remasked_temperature",
+    "source_fraction_binned_temperature",
+    "target_temperature",
+    "target_platt_logodds",
+    "target_beta",
+    "target_isotonic",
+)
+
+
+@dataclass(frozen=True)
+class StressConfig(BaselineConfig):
+    run_type: str = "stress_engine"
+    predictors: tuple[str, ...] = ("logistic_regression", "random_forest")
+    budgets: tuple[int, ...] = (0, 25, 50, 100, 200)
+    mcar_rates: tuple[float, ...] = (0.00, 0.10, 0.30)
+    history_row_probability: float = 0.50
+    calibration_methods: tuple[str, ...] = SUPPORTED_CALIBRATION_METHODS
+    cost_grid: tuple[tuple[float, float], ...] = (
+        (1.0, 1.0),
+        (1.0, 4.0),
+        (1.0, 9.0),
+        (4.0, 1.0),
+        (9.0, 1.0),
+    )
+    protocol_id: str = "sg-protocol-1.0-draft-gate3"
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        if self.run_type != "stress_engine":
+            raise ValueError("Gate3 run_type must be stress_engine")
+        for p in self.predictors:
+            if p not in SUPPORTED_PREDICTORS:
+                raise ValueError(f"unsupported predictor: {p}")
+        for b in self.budgets:
+            if b not in SUPPORTED_BUDGETS:
+                raise ValueError(f"unsupported budget: {b}")
+        for m in self.calibration_methods:
+            if m not in SUPPORTED_CALIBRATION_METHODS:
+                raise ValueError(f"unsupported calibration method: {m}")
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            **super().to_dict(),
+            "run_type": self.run_type,
+            "predictors": list(self.predictors),
+            "budgets": list(self.budgets),
+            "mcar_rates": list(self.mcar_rates),
+            "history_row_probability": self.history_row_probability,
+            "calibration_methods": list(self.calibration_methods),
+            "cost_grid": [list(item) for item in self.cost_grid],
+        }
+
+
+def load_stress_config(path: Path) -> StressConfig:
+    if path.suffix in {".yaml", ".yml"}:
+        payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+    else:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError("Gate3 configuration must be a mapping")
+    allowed = {
+        "master_seed", "features", "role_fractions", "artifact_root", "dataset_csv",
+        "dataset_manifest", "protocol_id", "evaluation_tier", "run_type", "predictors",
+        "budgets", "mcar_rates", "history_row_probability", "calibration_methods", "cost_grid",
+    }
+    unknown = set(payload) - allowed
+    if unknown:
+        raise ValueError(f"unknown Gate3 configuration keys: {sorted(unknown)}")
+    for key in ("artifact_root", "dataset_csv", "dataset_manifest"):
+        if key in payload:
+            payload[key] = Path(payload[key])
+    if "features" in payload:
+        payload["features"] = tuple(payload["features"])
+    if "predictors" in payload:
+        payload["predictors"] = tuple(payload["predictors"])
+    if "budgets" in payload:
+        payload["budgets"] = tuple(payload["budgets"])
+    if "mcar_rates" in payload:
+        payload["mcar_rates"] = tuple(payload["mcar_rates"])
+    if "calibration_methods" in payload:
+        payload["calibration_methods"] = tuple(payload["calibration_methods"])
+    if "cost_grid" in payload:
+        payload["cost_grid"] = tuple((float(pair[0]), float(pair[1])) for pair in payload["cost_grid"])
+    return StressConfig(**payload)
+
+
+def load_run_config(path: Path) -> BaselineConfig | OutageConfig | StressConfig:
     if path.suffix in {".yaml", ".yml"}:
         payload = yaml.safe_load(path.read_text(encoding="utf-8"))
     else:
         payload = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(payload, dict):
         raise ValueError("Gate configuration must be a mapping")
-    if payload.get("run_type") != "outage_recovery":
-        return load_baseline_config(path)
-    allowed = {"master_seed", "features", "role_fractions", "artifact_root", "dataset_csv", "dataset_manifest", "protocol_id", "evaluation_tier", "run_type", "history_row_probability", "target_label_budget", "source_calibrator", "target_calibrator"}
-    unknown = set(payload) - allowed
-    if unknown:
-        raise ValueError(f"unknown Gate2 configuration keys: {sorted(unknown)}")
-    for key in ("artifact_root", "dataset_csv", "dataset_manifest"):
-        if key in payload:
-            payload[key] = Path(payload[key])
-    if "features" in payload:
-        payload["features"] = tuple(payload["features"])
-    return OutageConfig(**payload)
+    run_type = payload.get("run_type")
+    if run_type == "adult_confirmatory":
+        raise RuntimeError("Adult confirmatory execution is sealed until Gate 8 protocol lock.")
+    if run_type == "stress_engine":
+        return load_stress_config(path)
+    if run_type == "outage_recovery":
+        allowed = {"master_seed", "features", "role_fractions", "artifact_root", "dataset_csv", "dataset_manifest", "protocol_id", "evaluation_tier", "run_type", "history_row_probability", "target_label_budget", "source_calibrator", "target_calibrator"}
+        unknown = set(payload) - allowed
+        if unknown:
+            raise ValueError(f"unknown Gate2 configuration keys: {sorted(unknown)}")
+        for key in ("artifact_root", "dataset_csv", "dataset_manifest"):
+            if key in payload:
+                payload[key] = Path(payload[key])
+        if "features" in payload:
+            payload["features"] = tuple(payload["features"])
+        return OutageConfig(**payload)
+    return load_baseline_config(path)

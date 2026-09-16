@@ -9,9 +9,10 @@ from pathlib import Path
 from shiftguard.migrations import upgrade_database
 from shiftguard.settings import Settings
 from shiftguard.datasets.bank import BankDataset
-from shiftguard.experiments.config import OutageConfig, load_run_config
+from shiftguard.experiments.config import OutageConfig, StressConfig, load_run_config
 from shiftguard.experiments.runner import prepare_baseline_handoff, run_baseline
 from shiftguard.experiments.outage_runner import prepare_outage_handoff, run_outage_recovery
+from shiftguard.experiments.stress_runner import run_stress_engine
 
 
 app = typer.Typer(no_args_is_help=True)
@@ -39,11 +40,21 @@ def run(
     context: typer.Context,
     config: Path = typer.Option(..., "--config", exists=True, readable=True),
 ) -> None:
-    """Run the Gate1 baseline or Gate2 development outage-recovery configuration."""
+    """Run the Gate1 baseline, Gate2 development outage-recovery, or Gate3 stress-engine configuration."""
     run_config = load_run_config(config)
     manifest = json.loads(run_config.dataset_manifest.read_text(encoding="utf-8"))
     dataset = BankDataset.from_clean_csv(run_config.dataset_csv, manifest)
     database_url = context.obj["db_url"] or Settings().db_url
+    if isinstance(run_config, StressConfig):
+        result = run_stress_engine(dataset, run_config, database_url)
+        typer.echo(json.dumps({
+            "experiment_id": result.experiment_id,
+            "execution_id": result.execution_id,
+            "condition_count": len(result.conditions),
+            "payload_keys": list(result.payloads.keys()),
+            "content_hashes": result.content_hashes,
+        }, sort_keys=True))
+        return
     if isinstance(run_config, OutageConfig):
         result = run_outage_recovery(prepare_outage_handoff(dataset, run_config), run_config, database_url)
         typer.echo(json.dumps({"experiment_id": result.experiment_id, "execution_id": result.execution_id, "conditions": result.conditions, "comparisons": result.comparisons, "content_hashes": result.content_hashes}, sort_keys=True))

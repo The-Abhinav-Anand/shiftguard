@@ -1,19 +1,19 @@
-# Handoff: Gate 2 accepted
+# Handoff: Gate 3 Active Implementation
 
-Accepted scientific source: 937f33c5c0f96ca18c9e7e0a82769c430d71bfa1.
-Current owner: Codex parent; Gemini implementation handoff completed. No concurrent application writer.
-Gate 0 and Gate 1 remain frozen. Gate 3 is NOT_STARTED.
+Accepted scientific source (Gate 2): 937f33c5c0f96ca18c9e7e0a82769c430d71bfa1.
+Documentation closure checkpoint (Gate 2): c9cc001b3c76d24cbc1aecc0afb963b6ceb7ebbf.
+Current owner: Gemini Antigravity; Gate 3 Candidate implementation complete; preparing 3-way reproduction verification and review packet.
+Gate 0, Gate 1, and Gate 2 remain frozen. Gate 3 is CANDIDATE.
 
-Independent checks: 91 full-suite passes; the skipped PostgreSQL test separately passed.
-Two SQLite executions and one PostgreSQL execution reproduced eight identical hashes,
-three unique UUIDs and clean exact-source audits. Astra High final review: PASS.
+Independent Gate 2 checks (historical evidence):
+- 91 full-suite passes, 1 PostgreSQL test separately passed, 2 known warnings.
+- Two SQLite executions and one PostgreSQL execution reproduced identical hashes.
+- Astra High final review: PASS. Gate 2 is FROZEN.
+- Harmful target adaptation remains recorded (Brier +0.004137; log loss +0.044964).
 
-Closure changes only governance, evidence dispositions and next-step instructions.
-The source commit and later docs-only checkpoint are distinct.
-See `.agent/session-state.md`, `.agent/gates.json`, and `docs/next-execution.md`.
-
-History: initial8d89c7f candidate FAIL; Terra six-fix experimentc6678b6b;
-Gemini verifier hardening committed at937f33c; Codex independent verification and Astra acceptance.
-Harmful target adaptation remains recorded (Brier +0.004137; log loss +0.044964).
-No confirmatory execution or public claims follow from this development slice.
-No new user input is required for local Gate 3 work.
+Gate 3 Scope:
+- Phase 3A: Bounded development contract (`docs/gate3-development-contract.md`).
+- Phase 3B: Predictors (LR, RF), MCAR missingness (0, 0.10, 0.30), matched rate, nested budgets (0, 25, 50, 100, 200).
+- Phase 3C: Eight calibration conditions, Brier/logloss/reliability/ECE/AUROC/AP/decision loss, 4 UI payloads.
+- Phase 3D: Adult train-only ownership (`adult.data`), schema, manifest, split, confirmatory test seal.
+- Phase 3E: Reproduction verifier, clean commit, Astra High review packet.

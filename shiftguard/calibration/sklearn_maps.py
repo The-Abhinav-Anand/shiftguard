@@ -100,3 +100,103 @@ def fit_temperature(
     except Exception as error:
         return CalibrationFit(pipeline, CalibrationRecord(requested_method, "raw", "not_fitted", f"{type(error).__name__}: {error}", len(labels), None))
     return CalibrationFit(calibrator, CalibrationRecord(requested_method, requested_method, "fitted", None, len(labels), temperature))
+
+
+class IsotonicCalibrationMap:
+    def __init__(self, pipeline: Pipeline, iso, clip_eps: float = 1e-15) -> None:
+        self.pipeline = pipeline
+        self.iso = iso
+        self.clip_eps = clip_eps
+
+    def predict_proba(self, features) -> np.ndarray:
+        raw_probs = self.pipeline.predict_proba(features)[:, 1]
+        p_clipped = np.clip(raw_probs, self.clip_eps, 1.0 - self.clip_eps)
+        cal_probs = self.iso.predict(p_clipped)
+        cal_probs = np.clip(cal_probs, self.clip_eps, 1.0 - self.clip_eps)
+        return np.column_stack([1.0 - cal_probs, cal_probs])
+
+
+def fit_isotonic_calibration(
+    pipeline: Pipeline,
+    rows: tuple[dict[str, str | int | None], ...],
+    labels: tuple[int, ...],
+    clip_eps: float = 1e-15,
+) -> CalibrationFit:
+    from sklearn.isotonic import IsotonicRegression
+
+    requested_method = "target_isotonic"
+    if not labels or len(set(labels)) < 2:
+        return CalibrationFit(
+            pipeline,
+            CalibrationRecord(requested_method, "raw", "not_fitted", "one_class_or_empty", len(labels), None),
+        )
+    try:
+        features = rows_to_features(list(rows))
+        raw_probs = pipeline.predict_proba(features)[:, 1]
+        p_clipped = np.clip(raw_probs, clip_eps, 1.0 - clip_eps)
+        iso = IsotonicRegression(out_of_bounds="clip", y_min=0.0, y_max=1.0)
+        iso.fit(p_clipped, list(labels))
+        prob_map = IsotonicCalibrationMap(pipeline, iso, clip_eps)
+        test_probs = prob_map.predict_proba(features)
+        if not np.isfinite(test_probs).all():
+            raise ValueError("nonfinite_isotonic_probabilities")
+    except Exception as error:
+        return CalibrationFit(
+            pipeline,
+            CalibrationRecord(requested_method, "raw", "not_fitted", f"{type(error).__name__}: {error}", len(labels), None),
+        )
+    return CalibrationFit(
+        prob_map,
+        CalibrationRecord(requested_method, requested_method, "fitted", None, len(labels), None),
+    )
+
+
+def predict_conditions_with_fallback(
+    fits: dict[str, CalibrationFit | ProbabilityMap],
+    fallback_graph: dict[str, str | None],
+    rows: tuple[dict[str, str | int | None], ...],
+) -> tuple[dict[str, PredictionResolution], dict[str, dict[str, str]]]:
+    """Resolve predictions and fallbacks across arbitrary condition graphs before evaluator scoring."""
+    features = rows_to_features(list(rows))
+    resolutions: dict[str, PredictionResolution] = {}
+    attempts: dict[str, dict[str, str]] = {}
+
+    def resolve(method: str) -> None:
+        if method in resolutions:
+            return
+        fallback = fallback_graph.get(method)
+        if fallback is not None and fallback not in resolutions:
+            resolve(fallback)
+
+        fit = fits.get(method)
+        if fit is None:
+            previous = resolutions[fallback] if fallback is not None else PredictionResolution(None, None, ())
+            resolutions[method] = previous
+            return
+
+        prob_map = fit.probability_map if isinstance(fit, CalibrationFit) else fit
+        if isinstance(fit, CalibrationFit) and fit.record.fit_status != "fitted":
+            failure = {"method": method, "phase": "fit", "reason": fit.record.fallback_reason or "not_fitted"}
+        else:
+            try:
+                values = np.asarray(prob_map.predict_proba(features), dtype=float)
+                if values.shape != (len(rows), 2):
+                    raise ValueError("invalid_probability_shape")
+                if not np.isfinite(values).all() or (values < 0).any() or (values > 1).any():
+                    raise ValueError("invalid_probability_values")
+                if not np.allclose(values.sum(axis=1), 1.0):
+                    raise ValueError("probability_rows_do_not_sum_to_one")
+            except Exception as error:
+                failure = {"method": method, "phase": "prediction", "reason": f"{type(error).__name__}: {error}"}
+                attempts[method] = {"status": "failed", "reason": failure["reason"]}
+            else:
+                attempts[method] = {"status": "succeeded"}
+                resolutions[method] = PredictionResolution(values[:, 1].tolist(), method, ())
+                return
+
+        previous = resolutions[fallback] if fallback is not None else PredictionResolution(None, None, ())
+        resolutions[method] = PredictionResolution(previous.probabilities, previous.resolved_method, (failure, *previous.failures))
+
+    for m in fits:
+        resolve(m)
+    return resolutions, attempts

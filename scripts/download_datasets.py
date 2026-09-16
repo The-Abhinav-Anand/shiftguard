@@ -10,6 +10,7 @@ from pathlib import Path
 from urllib.request import urlopen
 import zipfile
 
+from shiftguard.datasets.adult import acquire_adult_train_only
 from shiftguard.datasets.bank import clean_bank_rows, write_clean_csv
 
 
@@ -62,26 +63,31 @@ def acquire_bank(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Acquire, verify, and clean a frozen Gate1 dataset.")
-    parser.add_argument("--dataset", choices=("bank",), required=True)
-    parser.add_argument("--manifest", type=Path, default=Path("data/manifests/bank.json"))
-    parser.add_argument("--cache", type=Path, default=Path("../.tools/input-cache/bank-marketing.zip"))
-    parser.add_argument("--raw-output", type=Path, default=Path("data/raw/bank-marketing.zip"))
-    parser.add_argument("--clean-output", type=Path, default=Path("var/datasets/bank.csv"))
-    parser.add_argument("--run-manifest-output", type=Path, default=Path("var/datasets/bank.manifest.json"))
+    parser = argparse.ArgumentParser(description="Acquire, verify, and clean a frozen dataset.")
+    parser.add_argument("--dataset", choices=("bank", "adult"), required=True)
+    parser.add_argument("--manifest", type=Path, default=None)
+    parser.add_argument("--cache", type=Path, default=None)
+    parser.add_argument("--raw-output", type=Path, default=None)
+    parser.add_argument("--clean-output", type=Path, default=None)
+    parser.add_argument("--run-manifest-output", type=Path, default=None)
     args = parser.parse_args()
-    print(
-        json.dumps(
-            acquire_bank(
-                args.manifest,
-                args.cache,
-                args.raw_output,
-                args.clean_output,
-                args.run_manifest_output,
-            ),
-            sort_keys=True,
-        )
-    )
+
+    if args.dataset == "bank":
+        manifest = args.manifest or Path("data/manifests/bank.json")
+        cache = args.cache or Path("../.tools/input-cache/bank-marketing.zip")
+        raw_output = args.raw_output or Path("data/raw/bank-marketing.zip")
+        clean_output = args.clean_output or Path("var/datasets/bank.csv")
+        run_manifest_output = args.run_manifest_output or Path("var/datasets/bank.manifest.json")
+        result = acquire_bank(manifest, cache, raw_output, clean_output, run_manifest_output)
+    else:
+        manifest = args.manifest or Path("data/manifests/adult.json")
+        cache = args.cache or Path("../.tools/input-cache/adult.data")
+        raw_output = args.raw_output or Path("data/raw/adult.data")
+        clean_output = args.clean_output or Path("var/datasets/adult.csv")
+        run_manifest_output = args.run_manifest_output or Path("var/datasets/adult.manifest.json")
+        result = acquire_adult_train_only(manifest, raw_output, clean_output, run_manifest_output, cache)
+
+    print(json.dumps(result, sort_keys=True))
 
 
 if __name__ == "__main__":

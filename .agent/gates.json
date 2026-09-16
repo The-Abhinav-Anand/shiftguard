@@ -17,8 +17,8 @@
     "next": "Gate 3 contract and development stress-engine batches; see docs/next-execution.md"
   },
   "gate_3": {
-    "status": "NOT_STARTED",
+    "status": "CANDIDATE",
     "verified_commit": null,
-    "next": "Prepare bounded development contract before code; docs/next-execution.md"
+    "next": "Run clean candidate three-way reproduction verification (2 SQLite, 1 PostgreSQL) and assemble Astra High review packet"
   }
 }

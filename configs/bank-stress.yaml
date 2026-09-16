@@ -1,0 +1,36 @@
+master_seed: 31001
+run_type: stress_engine
+protocol_id: sg-protocol-1.0-draft-gate3
+evaluation_tier: development
+predictors:
+  - logistic_regression
+  - random_forest
+budgets:
+  - 0
+  - 25
+  - 50
+  - 100
+  - 200
+mcar_rates:
+  - 0.00
+  - 0.10
+  - 0.30
+history_row_probability: 0.50
+calibration_methods:
+  - raw
+  - source_temperature
+  - source_remasked_temperature
+  - source_fraction_binned_temperature
+  - target_temperature
+  - target_platt_logodds
+  - target_beta
+  - target_isotonic
+cost_grid:
+  - [1.0, 1.0]
+  - [1.0, 4.0]
+  - [1.0, 9.0]
+  - [4.0, 1.0]
+  - [9.0, 1.0]
+artifact_root: var/artifacts
+dataset_csv: var/datasets/bank-additional-full.csv
+dataset_manifest: var/datasets/bank-marketing.manifest.json
