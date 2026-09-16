@@ -44,9 +44,9 @@
     },
     {
       "experiment_id": "c6678b6b4ddbc482c5bc4e81",
-      "status": "CANDIDATE",
-      "accepted": false,
-      "review": "Parent verification and consolidated Astra gate-exit review pending.",
+      "status": "ACCEPTED_DEVELOPMENT",
+      "accepted": true,
+      "review": "Independent parent verification and Astra High PASS, 16 September 2026",
       "content_hashes": {
         "acquisition": "fcd2c75e271f3ccdea59e19f5cdb372d4f9f7b9090a735b22f4af1cbfa953b90",
         "comparisons": "fb579886ef92d0ce175d24ee8b1ea0a5d52a71b42962a293bd85d7e9b0772eca",
@@ -56,7 +56,9 @@
         "masks": "072d04fb7ca41e59d70f78aca14b9982a9bbba3e05aa29062b1bada52adedf15",
         "metadata": "be5079018b3cd16794d5f270f45ef6d42d2ce7697e939ce6c80496899b299d87",
         "seeds": "238ad97d7728ad789ddc60e6a7181a7b175c4258d0047fe18d659528df24f27e"
-      }
+      },
+      "accepted_source_commit": "937f33c5c0f96ca18c9e7e0a82769c430d71bfa1"
     }
-  ]
+  ],
+  "accepted_experiment": "c6678b6b4ddbc482c5bc4e81"
 }

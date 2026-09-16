@@ -1,26 +1,19 @@
-# Handoff status: ACTIVE (User-authorized transfer)
+# Handoff: Gate 2 accepted
 
-Active writer: gemini_antigravity
-Current gate: 2
-Current subtask: Gate 2 closure / verifier hygiene / committed candidate
-Safe to resume: true
+Accepted scientific source: 937f33c5c0f96ca18c9e7e0a82769c430d71bfa1.
+Current owner: Codex parent; Gemini implementation handoff completed. No concurrent application writer.
+Gate 0 and Gate 1 remain frozen. Gate 3 is NOT_STARTED.
 
-## Historical handoffs
-- Gate 0 -> Gate 1: Codex First baseline commit 6c4d682884aac8ddf0a7c1fdff94572ae322ac27 (Frozen & Accepted)
-- Gate 1 -> Gate 2 initial candidate: Codex (8d89c7f4a2a7a31fe2ea9392, Astra verdict FAIL, 6 blockers identified)
-- Gate 2 escalation: Terra High six-fix correction batch (c6678b6b4ddbc482c5bc4e81, 20 focused tests PASS)
-- Gate 2 closure transfer: User-authorized transfer to Gemini Antigravity for verifier hardening and committed candidate closure (2026-09-16)
+Independent checks: 91 full-suite passes; the skipped PostgreSQL test separately passed.
+Two SQLite executions and one PostgreSQL execution reproduced eight identical hashes,
+three unique UUIDs and clean exact-source audits. Astra High final review: PASS.
 
-## Current state
-Branch: implementation/gate-0
-Base commit: 6c4d682884aac8ddf0a7c1fdff94572ae322ac27
-Last verified commit: 6c4d682884aac8ddf0a7c1fdff94572ae322ac27 (Gate 1 accepted baseline)
-Candidate commit: tracked in git HEAD; verifier versioned beneath shiftguard/
-Worktree clean: true
-Gate 2 status: CANDIDATE / READY_FOR_INDEPENDENT_REVIEW (pending live PostgreSQL reproduction and Astra re-review; acceptance remains PENDING)
-Gate 0 (a9d0aa0) and Gate 1 (6c4d682) remain frozen.
+Closure changes only governance, evidence dispositions and next-step instructions.
+The source commit and later docs-only checkpoint are distinct.
+See `.agent/session-state.md`, `.agent/gates.json`, and `docs/next-execution.md`.
 
-Tests: 39 focused tests PASS (20 scientific + 19 verifier hygiene); 83 full suite tests PASS (1 optional Postgres service skipped).
-Target adaptation remains harmful in development slice (Brier +0.004137, log loss +0.044964). Retained unchanged.
-No confirmatory run, Gate 3, or frozen-clone mutation permitted.
-Next action: Awaiting SHIFTGUARD_TEST_POSTGRES_URL for final 3-way reproduction pass, then independent Astra review.
+History: initial8d89c7f candidate FAIL; Terra six-fix experimentc6678b6b;
+Gemini verifier hardening committed at937f33c; Codex independent verification and Astra acceptance.
+Harmful target adaptation remains recorded (Brier +0.004137; log loss +0.044964).
+No confirmatory execution or public claims follow from this development slice.
+No new user input is required for local Gate 3 work.

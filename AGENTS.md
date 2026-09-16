@@ -9,7 +9,7 @@
 - Read .agent/session-state.md for the live subtask.
 - Read .agent/gates.json for accepted and frozen commits.
 - Read .agent/ownership.json before writing.
-- Gate2 is active; no Gate3 work is authorized.
+- Gate status and next authorized batch are recorded in .agent/gates.json and .agent/session-state.md.
 - Never infer acceptance from passing author tests.
 - No staging or commit before parent verification and authorization.
 
@@ -28,9 +28,8 @@
 ## Ownership and escalation
 - Default writer: the cheapest capable Codex model.
 - One agent writes the application branch at a time.
-- This batch explicitly belongs to Terra High.
-- Reason: scientific masking boundaries and audit provenance.
-- Parent is verifier and maintains outer evidence.
+- .agent/ownership.json is the canonical current writer assignment.
+- Parent verifies evidence and may maintain governance/checkpoint files under user authorization.
 - Astra is reviewer, never a concurrent application writer.
 - Complete coherent atomic batches before seeking review.
 - Ordinary failures stay with the active writer.
@@ -39,7 +38,7 @@
 - Escalate protocol contradictions, leakage, or architecture decisions.
 - Terra High is reserved for complex authorized work.
 - Gemini transfer requires an explicit user/quota-triggered handoff.
-- Current handoff is inactive; to_agent is null.
+- Read .agent/handoff.json for current transfer status; do not infer it from historical assignments.
 - No agent may resume as a new writer while safe_to_resume is false.
 - Model ownership is a workflow assignment, not an acceptance claim.
 
@@ -182,8 +181,7 @@
 - Preserve ../SHIFTGUARD_Implementation_Blueprint_v2_2026-09-09.md.
 - Preserve parent evidence, toolchain, daemon sessions, and verification clone.
 - Do not access paid APIs, cloud services, or publish.
-- No Gate3, source remasking, broader sweep, or new UI in this batch.
+- Gate2 closure excludes Gate3 implementation, source remasking, broader sweeps and new UI.
 - Do not log secrets or expose raw/final labels through artifacts.
 - Do not bundle caches, secrets, or raw data in source control.
 - Stop at the completed candidate and parent-verification boundary.
-

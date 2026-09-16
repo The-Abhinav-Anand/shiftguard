@@ -10,10 +10,15 @@
     "verification": "../docs/aegis/work/2026-09-10-shiftguard-implementation/32-gate1-resume-verification.md"
   },
   "gate_2": {
-    "status": "ACTIVE",
-    "subtask": "Gate 2 closure / verifier hygiene / committed candidate",
-    "verified_commit": null,
+    "status": "FROZEN",
+    "subtask": "Accepted development outage slice",
+    "verified_commit": "937f33c5c0f96ca18c9e7e0a82769c430d71bfa1",
     "verification": "../docs/aegis/work/2026-09-10-shiftguard-implementation/34-gate2-review-verification.md",
-    "next": "verifier hygiene, targeted testing, committed candidate, reproduction"
+    "next": "Gate 3 contract and development stress-engine batches; see docs/next-execution.md"
+  },
+  "gate_3": {
+    "status": "NOT_STARTED",
+    "verified_commit": null,
+    "next": "Prepare bounded development contract before code; docs/next-execution.md"
   }
 }

@@ -1,36 +1,34 @@
 # Session state
 
-CURRENT_GATE=2
-CURRENT_SUBTASK=Gate 2 closure / verifier hygiene / committed candidate
+Updated: 16 September 2026.
+CURRENT_GATE=2 (FROZEN); NEXT_GATE=3 (NOT_STARTED)
+CURRENT_SUBTASK=Gate 2 accepted; documentation-only closure checkpoint
 BRANCH=implementation/gate-0
 BASE_COMMIT=6c4d682884aac8ddf0a7c1fdff94572ae322ac27
-LAST_VERIFIED_COMMIT=6c4d682884aac8ddf0a7c1fdff94572ae322ac27
-CANDIDATE_STATUS=COMMITTED (tracked in git HEAD)
-WORKTREE_CLEAN=true
-ACTIVE_WRITER=gemini_antigravity
-NEXT=Awaiting SHIFTGUARD_TEST_POSTGRES_URL for final 3-way reproduction pass, then independent Astra review
-HANDOFF=ACTIVE; from=terra; to=gemini_antigravity; safe_to_resume=true
+LAST_VERIFIED_COMMIT=937f33c5c0f96ca18c9e7e0a82769c430d71bfa1
+ACCEPTED_SOURCE_COMMIT=937f33c5c0f96ca18c9e7e0a82769c430d71bfa1
+CHECKPOINT_COMMIT=Resolve latest docs-only closure commit with git log; recorded separately in parent evidence.
+ACTIVE_WRITER=codex_parent (governance only; no application batch active)
+NEXT=Follow docs/next-execution.md: prepare Gate 3 bounded contract before implementation.
+HANDOFF=COMPLETED; Gemini candidate returned to Codex for authorized review and closure.
 
-Completed: prediction-time cascades before evaluator; explicit failed/null conditions;
-observed-all/history denominator counts; full 4119-row pool mask before 50-label reveal;
-context/map/order identities and non-duplicated fallback counts; frozen-state,
-failure, leakage, and DB-reopen regressions; old artifact dispositions; control files;
-versioned verifier in repo; clean Git provenance validation with explicit boolean enforcement;
-isolated verifier hygiene tests covering SQLite reuse, invocation isolation, UTF-8 reading paths, and publication flows.
+Verification on clean source 937f33c5c0f96ca18c9e7e0a82769c430d71bfa1:
+- Independent full suite: 91 passed, 1 skipped, 2 known dependency warnings (28.50s).
+- Previously skipped PostgreSQL16 service test: separately PASS, 1 passed (0.46s).
+- Tracked verifier: PASS; two SQLite runs reuse one temporary database, plus PostgreSQL.
+- Eight identical artifact hashes; three unique execution UUIDs; all audits available=true, dirty=false, HEAD=937f33c5c0f96ca18c9e7e0a82769c430d71bfa1.
+- Astra High final review: PASS; no remaining blockers; docs-only checkpoint permitted.
+- Protected three originals MATCH; scientific source/config/tests unchanged in closure.
 
-Checks: targeted Gate2 suite 39 passed (20 focused scientific + 19 verifier hygiene);
-full suite 83 passed, 1 skipped (PostgreSQL service not configured), 2 known warnings;
-git diff --check PASS; clean working tree.
+Evidence: ../verification/gate2/accepted-937f33c/verification.json
+Review: ../verification/gate2/review-record.json (initial FAIL retained separately).
+Exact command forms: .venv/Scripts/python.exe -B -m pytest -q -p no:cacheprovider --basetemp <new-temp-dir>; separately tests/integration/test_postgres.py with isolated test URL.
+Verifier: .venv/Scripts/python.exe -B verification/verify_gate2_reproduction.py with SHIFTGUARD_EXPECTED_COMMIT=937f33c5c0f96ca18c9e7e0a82769c430d71bfa1, SHIFTGUARD_VERIFICATION_OUTPUT=<new-external-output>, SHIFTGUARD_TEST_POSTGRES_URL=<isolated-local-test-url>.
+No credentials persisted here. Test-container lifecycle is recorded in parent checkpoint.
 
-Historical Initial Candidate: 8d89c7f4a2a7a31fe2ea9392 (Codex initial; Astra verdict: FAIL)
-Historical Corrected Experiment: c6678b6b4ddbc482c5bc4e81 (Terra six-fix batch; 20 tests PASS)
-Current Candidate: committed in git HEAD (Gate 2 closure candidate by Gemini Antigravity)
-Target vs outage-source: Brier +0.004136873913246311,
-log loss +0.044964128881780974; harmful, retained unchanged.
-
-DO_NOT_REDO=Gate0/Gate1 accepted verification; parent container/service setup
-LAST_REVIEW=Astra initial candidate NOT_APPROVED (initial_verdict: FAIL); verifier hardening and hygiene fixes implemented
-FINAL_VERDICT=PENDING (Gate 2 unaccepted; awaiting PostgreSQL reproduction and Astra independent review)
-AFFECTED_FROZEN_GATES=none; Gate1 scientific and persistence behavior retained
-Canonical parent checkpoint: ../docs/aegis/work/2026-09-10-shiftguard-implementation/20-checkpoint.md
-Parent gate evidence: ../docs/aegis/work/2026-09-10-shiftguard-implementation/34-gate2-review-verification.md
+Accepted experiment: c6678b6b4ddbc482c5bc4e81 (development seed31001 only).
+Initial failed candidate: 8d89c7f4a2a7a31fe2ea9392; its FAIL history remains unchanged.
+Target vs outage-source: Brier +0.004136873913246311; log loss +0.044964128881780974. Harmful; no confirmatory or recovery claim.
+DO_NOT_REDO=Gate0/Gate1 accepted verification, literature discovery, research exports.
+AFFECTED_FROZEN_GATES=none.
+Gate 3 code has not begun. Assign its sole writer in ownership.json before editing.

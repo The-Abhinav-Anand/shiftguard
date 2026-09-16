@@ -1,11 +1,11 @@
 {
-  "active_writer": "gemini_antigravity",
-  "state": "ANTIGRAVITY_CLOSURE_OWNS",
+  "active_writer": "codex_parent",
+  "state": "PARENT_REVIEW_AND_CHECKPOINT",
   "branch": "implementation/gate-0",
   "current_gate": "2",
-  "current_subtask": "Gate 2 closure / verifier hygiene / committed candidate",
+  "current_subtask": "Independent Gate 2 review, evidence reconciliation and next execution instructions",
   "ownership_started_at": "2026-09-16",
-  "handoff_from": "terra",
-  "handoff_commit": "6c4d682",
-  "reason": "User-authorized Antigravity takeover for Gate 2 verifier hygiene, verification, and committed candidate preparation."
+  "handoff_from": "gemini_antigravity",
+  "handoff_commit": "937f33c5c0f96ca18c9e7e0a82769c430d71bfa1",
+  "reason": "User requested Codex to review the completed Gemini candidate, make relevant corrections and provide next workflow instructions. Application science is unchanged; parent owns governance/evidence reconciliation."
 }

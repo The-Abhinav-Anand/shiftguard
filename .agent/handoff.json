@@ -1,79 +1,69 @@
 {
-  "handoff_id": "handoff-gate2-gemini-closure-20260916",
-  "status": "ACTIVE",
-  "from_agent": "terra",
-  "to_agent": "gemini_antigravity",
-  "timestamp": "2026-09-16T02:30:00Z",
+  "handoff_id": "gate2-codex-reviewed-closure-20260916",
+  "status": "COMPLETED",
+  "from_agent": "gemini_antigravity",
+  "to_agent": "codex_parent",
+  "timestamp": "2026-09-16T04:20:18.776894+00:00",
   "branch": "implementation/gate-0",
   "current_gate": "2",
-  "current_subtask": "Gate 2 closure / verifier hygiene / committed candidate",
+  "current_subtask": "Gate 2 accepted; Gate 3 execution handoff prepared",
   "base_commit": "6c4d682884aac8ddf0a7c1fdff94572ae322ac27",
-  "last_verified_commit": "6c4d682884aac8ddf0a7c1fdff94572ae322ac27",
-  "candidate_state": "COMMITTED (tracked in git HEAD)",
-  "worktree_clean": true,
-  "dirty_files": [],
+  "last_verified_commit": "937f33c5c0f96ca18c9e7e0a82769c430d71bfa1",
+  "candidate_state": "ACCEPTED_SOURCE",
   "changed_files": [
-    ".agent/HANDOFF.md",
-    ".agent/handoff.json",
+    "AGENTS.md",
+    ".agent/ownership.json",
+    ".agent/gates.json",
     ".agent/session-state.md",
-    ".gitignore",
-    "tests/unit/test_verifier_hygiene.py",
-    "verification/verify_gate2_reproduction.py"
+    ".agent/handoff.json",
+    ".agent/HANDOFF.md",
+    "docs/next-execution.md",
+    "docs/submission-evidence/gate2-artifact-status.json",
+    "docs/submission-evidence/gate2-acceptance.json"
   ],
   "created_files": [
-    "verification/verify_gate2_reproduction.py"
+    "docs/next-execution.md",
+    "docs/submission-evidence/gate2-acceptance.json"
   ],
   "commands_run": [
     {
-      "command": "uv run pytest tests/unit/test_history_block.py tests/unit/test_acquisition_prefix.py tests/integration/test_outage_recovery.py tests/unit/test_verifier_hygiene.py -v",
+      "command": "python -B -m pytest -q -p no:cacheprovider --basetemp <isolated-temp>",
       "exit_code": 0,
-      "result": "PASS: 39 passed in 5.28s"
+      "result": "91 passed, 1 skipped, 2 warnings in 28.50s"
     },
     {
-      "command": "uv run pytest -v",
+      "command": "python -B -m pytest tests/integration/test_postgres.py -q -p no:cacheprovider (isolated PostgreSQL16 configured)",
       "exit_code": 0,
-      "result": "PASS: 83 passed, 1 skipped (Postgres), 2 warnings"
+      "result": "1 passed in 0.46s"
     },
     {
-      "command": "git -c safe.directory=* diff --check",
+      "command": "python -B verification/verify_gate2_reproduction.py (exact source SHA and fresh external output configured)",
       "exit_code": 0,
-      "result": "PASS: clean"
+      "result": "PASS: two SQLite executions and PostgreSQL, exact clean source, matching artifacts"
     }
   ],
   "tests": [
     {
-      "name": "Gate2 focused tests",
+      "name": "full suite",
       "status": "PASS",
-      "evidence": "39 passed (20 focused scientific + 19 verifier hygiene)"
-    },
-    {
-      "name": "full test suite",
-      "status": "PASS",
-      "evidence": "83 passed, 1 skipped (Postgres test db unconfigured), 2 warnings"
+      "evidence": "91 passed; one skip subsequently passed separately against PostgreSQL16; two known warnings"
     }
   ],
   "verifiers": [
     {
-      "name": "Versioned verifier in repository",
+      "name": "clean-commit three-way reproduction",
       "status": "PASS",
-      "evidence": "shiftguard/verification/verify_gate2_reproduction.py tracked in repository"
+      "evidence": "../verification/gate2/accepted-937f33c/verification.json"
     },
     {
-      "name": "Verifier hygiene unit suite",
+      "name": "Astra High final review",
       "status": "PASS",
-      "evidence": "tests/unit/test_verifier_hygiene.py: 19 passed in 0.47s"
-    },
-    {
-      "name": "Committed candidate 3-way reproduction",
-      "status": "BLOCKED",
-      "evidence": "Awaiting SHIFTGUARD_TEST_POSTGRES_URL environment variable"
+      "evidence": "../verification/gate2/review-record.json"
     }
   ],
   "frozen_gates_affected": [],
   "protocol_impact": "Gate2 engineering correction: verifier versioned beneath shiftguard/, explicit boolean provenance enforced, tests isolated to temporary fixtures with SQLite reuse and UTF-8 reading path proof. No confirmatory protocol change.",
-  "blockers": [
-    "SHIFTGUARD_TEST_POSTGRES_URL not set for live PostgreSQL 16 reproduction"
-  ],
+  "blockers": [],
   "do_not_redo": [
     "Gate0 acceptance",
     "Gate1 clean-clone verification",
@@ -81,9 +71,11 @@
   ],
   "next": {
     "first_file": ".agent/session-state.md",
-    "task": "Obtain SHIFTGUARD_TEST_POSTGRES_URL, run 3-way reproduction pass, submit candidate to Astra for independent review",
-    "command": "uv run python verification/verify_gate2_reproduction.py",
-    "acceptance": "Independent verifier and Astra approval before Gate 2 acceptance or Gate 3 kickoff"
+    "task": "Gate 3 bounded contract followed by sequenced development batches; see docs/next-execution.md",
+    "acceptance": "Keep Gate3 NOT_STARTED until its writer and bounded contract are assigned; gate exit requires independent tests/reproduction and consolidated Astra review."
   },
-  "safe_to_resume": true
+  "safe_to_resume": true,
+  "accepted_source_commit": "937f33c5c0f96ca18c9e7e0a82769c430d71bfa1",
+  "worktree_clean_at_source_verification": true,
+  "checkpoint_state": "Governance-only closure; resolve checkpoint commit from git history and parent checkpoint-record.json."
 }
