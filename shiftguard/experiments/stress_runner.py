@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 from dataclasses import dataclass
 from pathlib import Path
 from uuid import uuid4
@@ -95,6 +96,56 @@ def _fitted_logistic_state(preprocessor, predictor) -> dict[str, object]:
         "intercepts": predictor.intercept_.tolist(),
         "classes": predictor.classes_.tolist(),
     }
+
+
+def _extract_fitted_parameters(method: str, fit_obj: CalibrationFit | ProbabilityMap) -> dict[str, object]:
+    if isinstance(fit_obj, CalibrationFit):
+        rec = fit_obj.record
+        if rec.fit_status != "fitted":
+            return {"fit_status": rec.fit_status, "fallback_reason": rec.fallback_reason}
+        if rec.fitted_temperature is not None:
+            return {"fit_status": "fitted", "temperature": float(rec.fitted_temperature)}
+        prob_map = fit_obj.probability_map
+        if hasattr(prob_map, "lr"):
+            lr = prob_map.lr
+            return {
+                "fit_status": "fitted",
+                "coef": lr.coef_.tolist(),
+                "intercept": lr.intercept_.tolist(),
+            }
+        if hasattr(prob_map, "a") and hasattr(prob_map, "b") and hasattr(prob_map, "c"):
+            return {
+                "fit_status": "fitted",
+                "a": float(prob_map.a),
+                "b": float(prob_map.b),
+                "c": float(prob_map.c),
+            }
+        if hasattr(prob_map, "iso"):
+            iso = prob_map.iso
+            return {
+                "fit_status": "fitted",
+                "y_thresholds": iso.y_thresholds_.tolist() if hasattr(iso, "y_thresholds_") else [],
+                "x_thresholds": iso.X_thresholds_.tolist() if hasattr(iso, "X_thresholds_") else [],
+            }
+        if hasattr(prob_map, "bin_temperatures"):
+            return {
+                "fit_status": "fitted",
+                "bin_temperatures": prob_map.bin_temperatures,
+                "bin_fallbacks": prob_map.bin_fallbacks,
+            }
+        return {"fit_status": "fitted", "record": rec.__dict__}
+    return {"fit_status": "pipeline_direct", "type": "raw_frozen_pipeline"}
+
+
+def _extract_threshold_0_5_loss(decision_loss_items: list[dict[str, object]] | None) -> float | None:
+    if not decision_loss_items:
+        return None
+    for item in decision_loss_items:
+        thresh = item.get("threshold")
+        if thresh is not None and math.isclose(float(thresh), 0.5, abs_tol=1e-3):
+            loss = item.get("loss")
+            return float(loss) if loss is not None else None
+    return None
 
 
 def _stress_seed_bundle(master_seed: int) -> dict[str, int]:
@@ -209,17 +260,24 @@ def execute_stress_engine(
         shared_uniforms=pool_uniforms,
     )
 
-    test_mcar_10 = generate_mcar_mask(test_record_ids, BANK_FEATURES, rate=0.10, shared_uniforms=test_uniforms)
-    pool_mcar_10 = generate_mcar_mask(pool_record_ids, BANK_FEATURES, rate=0.10, shared_uniforms=pool_uniforms)
-    test_mcar_30 = generate_mcar_mask(test_record_ids, BANK_FEATURES, rate=0.30, shared_uniforms=test_uniforms)
-    pool_mcar_30 = generate_mcar_mask(pool_record_ids, BANK_FEATURES, rate=0.30, shared_uniforms=pool_uniforms)
+    mcar_scenarios: dict[str, dict[str, object]] = {}
+    for rate in config.mcar_rates:
+        if rate == 0.0:
+            continue
+        scen_name = f"mcar_{rate:.2f}".replace(".", "_")
+        t_mask = generate_mcar_mask(test_record_ids, BANK_FEATURES, rate=rate, shared_uniforms=test_uniforms)
+        p_mask = generate_mcar_mask(pool_record_ids, BANK_FEATURES, rate=rate, shared_uniforms=pool_uniforms)
+        mcar_scenarios[scen_name] = {
+            "pool_mask": p_mask,
+            "test_mask": t_mask,
+            "test_rows": t_mask.apply(final_features),
+        }
 
     scenarios = {
         "baseline": {"pool_mask": None, "test_mask": None, "test_rows": final_features},
         "history_block_0_50": {"pool_mask": pool_block_mask, "test_mask": test_block_mask, "test_rows": test_block_mask.apply(final_features)},
         "mcar_matched_history": {"pool_mask": pool_matched_mcar_mask, "test_mask": test_matched_mcar_mask, "test_rows": test_matched_mcar_mask.apply(final_features)},
-        "mcar_0_10": {"pool_mask": pool_mcar_10, "test_mask": test_mcar_10, "test_rows": test_mcar_10.apply(final_features)},
-        "mcar_0_30": {"pool_mask": pool_mcar_30, "test_mask": test_mcar_30, "test_rows": test_mcar_30.apply(final_features)},
+        **mcar_scenarios,
     }
 
     all_conditions: dict[str, dict[str, object]] = {}
@@ -268,6 +326,7 @@ def execute_stress_engine(
             remasked_labels=remasked_labels,
             missing_fractions=missing_fractions,
             global_fit=source_remasked_fit,
+            source_fit=source_temp_fit,
             n_bins=10,
             min_bin_samples=10,
         )
@@ -323,7 +382,7 @@ def execute_stress_engine(
                 else:
                     acquired_outage = ()
                     acq_new_rate = 0.0
-                    rec_empty = CalibrationRecord("not_fitted", "not_fitted", "not_fitted", "empty_budget", 0, None)
+                    rec_empty = CalibrationRecord("not_fitted", "not_fitted", "not_fitted", "budget_zero_unattempted", 0, None)
                     target_temp_fit = CalibrationFit(pipeline, rec_empty)
                     target_platt_fit = CalibrationFit(pipeline, rec_empty)
                     target_beta_fit = CalibrationFit(pipeline, rec_empty)
@@ -357,7 +416,7 @@ def execute_stress_engine(
                     f["method"]
                     for res in resolutions.values()
                     for f in res.failures
-                    if f.get("phase") == "fit"
+                    if f.get("phase") == "fit" and f.get("reason") != "budget_zero_unattempted"
                 }
                 pred_failures = {
                     f["method"]
@@ -365,12 +424,15 @@ def execute_stress_engine(
                     for f in res.failures
                     if f.get("phase") == "prediction"
                 }
-                unique_fit_failures = len(fit_failures)
-                unique_prediction_failures = len(pred_failures)
 
                 sparse_bin_diag = None
                 if hasattr(source_binned_fit.probability_map, "last_diagnostics"):
                     sparse_bin_diag = dict(source_binned_fit.probability_map.last_diagnostics)
+
+                if sparse_bin_diag and int(sparse_bin_diag.get("sparse_prediction_failures", 0)) > 0:
+                    pred_failures.add("source_fraction_binned_temperature")
+                unique_fit_failures = len(fit_failures)
+                unique_prediction_failures = len(pred_failures)
 
                 for method in config.calibration_methods:
                     res = resolutions[method]
@@ -381,14 +443,28 @@ def execute_stress_engine(
                     metrics = evaluator.score(res.probabilities, include_stress_metrics=True) if res.probabilities is not None else None
                     status = "scored" if metrics is not None else "failed"
 
+                    pool_mask_id = getattr(pool_mask, "mask_id", None)
+                    test_mask_id = getattr(test_mask, "mask_id", None)
+                    acquired_ids = list(acquired.record_ids)
+                    fitted_params = _extract_fitted_parameters(method, fit_obj)
+
                     cond_key = f"{pred_name}__{scen_name}__b{budget}__{method}"
                     cond_payload = {
                         "name": cond_key,
+                        "dataset_id": context_base["dataset_id"],
+                        "evaluation_rows_id": context_base["evaluation_rows_id"],
+                        "predictor_id": context_base["predictor_id"],
+                        "predictor_name": pred_name,
+                        "source_map_id": context_base["source_map_id"],
+                        "pool_mask_id": pool_mask_id,
+                        "test_mask_id": test_mask_id,
+                        "acquired_record_ids": acquired_ids,
+                        "fitted_parameters": fitted_params,
                         "model_family": "linear" if pred_name == "logistic_regression" else "tree",
                         "predictor": pred_name,
                         "scenario": scen_name,
                         "budget": budget,
-                        "mask_id": mask_id,
+                        "mask_id": test_mask_id,
                         "method": method,
                         "requested_method": method,
                         "resolved_method": res.resolved_method,
@@ -420,7 +496,7 @@ def execute_stress_engine(
                         "ece": metrics["ece"] if metrics else None,
                         "roc_auc": metrics["roc_auc"] if metrics else None,
                         "average_precision": metrics["average_precision"] if metrics else None,
-                        "decision_loss_threshold_0_5": (metrics["decision_loss"][0]["loss"] if metrics and metrics.get("decision_loss") else None),
+                        "decision_loss_threshold_0_5": _extract_threshold_0_5_loss(metrics.get("decision_loss")) if metrics else None,
                     }
                     scen_budget_curve[method].append(point)
 
@@ -449,6 +525,12 @@ def execute_stress_engine(
             "budget": 50,
             "methods": {},
         }
+        is_comp_qualified = bool(matched_report.get("comparison_qualified", False))
+        match_status = matched_report.get("matching_status")
+        tolerance = matched_report.get("tolerance")
+        residual_mismatch = matched_report.get("residual_mismatch")
+        qual_reason = None if is_comp_qualified else matched_report.get("qualification_reason", "outside_tolerance_or_impossible")
+
         for m in config.calibration_methods:
             block_cond = all_conditions[f"{p_block}__{m}"]
             cell_cond = all_conditions[f"{p_cell}__{m}"]
@@ -457,6 +539,10 @@ def execute_stress_engine(
             available = (block_m is not None and cell_m is not None)
             method_comp = {
                 "available": available,
+                "comparison_qualified": is_comp_qualified,
+                "matching_status": match_status,
+                "tolerance": tolerance,
+                "residual_mismatch": residual_mismatch,
                 "block_condition_id": block_cond["condition_id"],
                 "cellwise_condition_id": cell_cond["condition_id"],
                 "block_brier": block_m["brier_score"] if block_m else None,
@@ -468,6 +554,8 @@ def execute_stress_engine(
                 "block_log_loss": block_m["log_loss"] if block_m else None,
                 "cellwise_log_loss": cell_m["log_loss"] if cell_m else None,
             }
+            if not is_comp_qualified:
+                method_comp["qualification_reason"] = qual_reason
             if not available:
                 method_comp["unavailability_reason"] = "condition_metrics_unavailable"
             payload_pattern_vs_rate["comparisons"][pred_name]["methods"][m] = method_comp
@@ -485,16 +573,32 @@ def execute_stress_engine(
 
     masks_summary = {
         "history_block_test_rates": test_block_rates,
+        "history_block_pool_rates": pool_block_mask.rates(target_provider.pool_features),
+        "history_block_test_mask_id": getattr(test_block_mask, "mask_id", None),
+        "history_block_pool_mask_id": getattr(pool_block_mask, "mask_id", None),
         "mcar_matched_test_rates": test_matched_mcar_mask.rates(final_features),
-        "mcar_0_10_test_rates": test_mcar_10.rates(final_features),
-        "mcar_0_30_test_rates": test_mcar_30.rates(final_features),
+        "mcar_matched_pool_rates": pool_matched_mcar_mask.rates(target_provider.pool_features),
+        "mcar_matched_test_mask_id": getattr(test_matched_mcar_mask, "mask_id", None),
+        "mcar_matched_pool_mask_id": getattr(pool_matched_mcar_mask, "mask_id", None),
     }
+    for s_name, s_data in mcar_scenarios.items():
+        t_m = s_data["test_mask"]
+        p_m = s_data["pool_mask"]
+        masks_summary[f"{s_name}_test_rates"] = t_m.rates(final_features)
+        masks_summary[f"{s_name}_pool_rates"] = p_m.rates(target_provider.pool_features)
+        masks_summary[f"{s_name}_test_mask_id"] = getattr(t_m, "mask_id", None)
+        masks_summary[f"{s_name}_pool_mask_id"] = getattr(p_m, "mask_id", None)
 
+    revealed_prefixes = {
+        str(b): list(target_provider.reveal_prefix(b).record_ids)
+        for b in config.budgets
+    }
     acquisition_summary = {
         "provider_seed": target_provider.seed,
         "order_id": order_id,
         "order_length": len(target_provider.order),
         "supported_budgets": list(config.budgets),
+        "revealed_prefixes": revealed_prefixes,
     }
 
     deterministic = {

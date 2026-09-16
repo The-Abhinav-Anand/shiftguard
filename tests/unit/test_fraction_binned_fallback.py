@@ -117,3 +117,46 @@ def test_fraction_binned_natural_missingness_routing():
     _ = b_map.predict_proba(feat_array, injected_fractions=injected_25)
     assert b_map.last_diagnostics["bin_eval_counts"][2] == 10
     assert b_map.last_diagnostics["bin_eval_counts"][0] == 0
+
+
+def test_fraction_binned_cascade_with_nonidentity_source_map():
+    pipeline, source_rows = _setup()
+    source_labels = tuple(int(r["y"]) for r in source_rows)
+
+    remasked_rows, remasked_labels, fractions = generate_source_remasked_dataset(
+        source_rows, source_labels, seed=31201, features=BANK_FEATURES,
+    )
+
+    # Fit a real, nonidentity source temperature calibrator
+    source_temp_fit = fit_temperature(pipeline, source_rows, source_labels, "source_temperature")
+    assert source_temp_fit.record.fit_status == "fitted"
+    assert source_temp_fit.record.fitted_temperature is not None
+
+    feat_array = rows_to_features(list(source_rows[:20]))
+    raw_p = pipeline.predict_proba(feat_array)[:, 1]
+    source_p = source_temp_fit.probability_map.predict_proba(feat_array)[:, 1]
+
+    # When remasked calibration fails (global_fit is None or not_fitted)
+    binned_fit = fit_source_fraction_binned_temperature(
+        pipeline=pipeline,
+        remasked_rows=remasked_rows,
+        remasked_labels=remasked_labels,
+        missing_fractions=fractions,
+        global_fit=None,
+        source_fit=source_temp_fit,
+        n_bins=10,
+        min_bin_samples=1000,  # force all bins to be sparse
+    )
+    assert binned_fit.record.fit_status == "fitted"
+    b_map: FractionBinnedTemperatureMap = binned_fit.probability_map
+
+    # Predict with injected fractions - sparse rows must cascade to source_temperature, NOT raw
+    injected = [0.50] * 20
+    cal_p = b_map.predict_proba(feat_array, injected_fractions=injected)[:, 1]
+
+    # Verify sparse bin resolved to source_temperature
+    diag = b_map.last_diagnostics
+    assert diag["bin_resolved_maps"][5] == "source_temperature"
+    np.testing.assert_allclose(cal_p, source_p, atol=1e-6)
+    # Confirm it did NOT fall back to raw
+    assert not np.allclose(cal_p, raw_p, atol=1e-5)

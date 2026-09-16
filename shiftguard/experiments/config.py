@@ -141,12 +141,17 @@ class StressConfig(BaselineConfig):
                 raise ValueError(f"unsupported calibration method: {m}")
         if not self.cost_grid:
             raise ValueError("cost_grid must not be empty")
+        has_0_5_thresh = False
         for item in self.cost_grid:
             if len(item) != 2:
                 raise ValueError(f"each cost_grid entry must have length 2, got {item}")
             fp, fn = float(item[0]), float(item[1])
             if not (math.isfinite(fp) and math.isfinite(fn) and fp > 0 and fn > 0):
                 raise ValueError(f"cost_grid items must be positive finite floats, got {(fp, fn)}")
+            if math.isclose(fp / (fp + fn), 0.5, abs_tol=1e-3):
+                has_0_5_thresh = True
+        if not has_0_5_thresh:
+            raise ValueError("cost_grid must include at least one cost pair with threshold 0.5 (equal FP and FN costs)")
 
     def to_dict(self) -> dict[str, object]:
         return {

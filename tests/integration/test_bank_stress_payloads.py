@@ -111,5 +111,41 @@ def test_stress_engine_produces_all_conditions_and_four_payloads(tmp_path: Path)
         stored = repo.get(result.experiment_id)
         assert stored is not None
         assert stored.content_hashes == result.content_hashes
+
+        # Verify context-bound identities, failure counts, and prefixes after reopen (FIX06)
+        d_reopen = stored.deterministic_payload
+        assert "revealed_prefixes" in d_reopen["acquisition"]
+        assert "0" in d_reopen["acquisition"]["revealed_prefixes"]
+        assert len(d_reopen["acquisition"]["revealed_prefixes"]["0"]) == 0
+        assert len(d_reopen["acquisition"]["revealed_prefixes"]["25"]) == 25
+
+        # Check conditions in reopened state
+        reopen_conds = d_reopen["conditions"]
+        for c_key, c_val in reopen_conds.items():
+            assert "condition_id" in c_val
+            assert "dataset_id" in c_val
+            assert "evaluation_rows_id" in c_val
+            assert "predictor_id" in c_val
+            assert "source_map_id" in c_val
+            assert "pool_mask_id" in c_val
+            assert "test_mask_id" in c_val
+            assert "acquired_record_ids" in c_val
+            assert "fitted_parameters" in c_val
+            assert "unique_fit_failures" in c_val
+            assert "unique_prediction_failures" in c_val
+
+            # At budget 0, unattempted fits must NOT count toward unique_fit_failures
+            if c_val["budget"] == 0 and c_val["requested_method"].startswith("target_"):
+                assert c_val["fallback_reason"] == "budget_zero_unattempted"
+                assert c_val["unique_fit_failures"] == 0
+
+        # Check comparisons qualification after reopen (FIX09)
+        pattern_comps = d_reopen["comparisons"]["pattern_comparison"]
+        for pred_name, p_data in pattern_comps.items():
+            for m_name, m_comp in p_data["methods"].items():
+                assert "comparison_qualified" in m_comp
+                assert "matching_status" in m_comp
+                assert "tolerance" in m_comp
+                assert "residual_mismatch" in m_comp
     finally:
         repo.dispose()

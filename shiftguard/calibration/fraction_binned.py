@@ -69,6 +69,8 @@ class FractionBinnedTemperatureMap:
         bin_fallback_counts = {b: 0 for b in range(self.n_bins)}
         bin_resolved_maps = {b: "fitted_bin_temperature" for b in range(self.n_bins)}
 
+        failed_attempts: list[dict[str, object]] = []
+
         for i in range(n_samples):
             b = bin_index(fractions[i], self.n_bins)
             bin_eval_counts[b] += 1
@@ -94,8 +96,8 @@ class FractionBinnedTemperatureMap:
                         scaled_p[i] = float(p_sub[0, 1]) if p_sub.ndim == 2 else float(p_sub[0])
                         bin_resolved_maps[b] = "source_remasked_temperature"
                         resolved = True
-                    except Exception:
-                        pass
+                    except Exception as err:
+                        failed_attempts.append({"bin": b, "fallback": "source_remasked_temperature", "error": str(err)})
 
                 # 2. Try source map
                 if not resolved and self.source_map is not None:
@@ -105,8 +107,8 @@ class FractionBinnedTemperatureMap:
                         scaled_p[i] = float(p_sub[0, 1]) if p_sub.ndim == 2 else float(p_sub[0])
                         bin_resolved_maps[b] = "source_temperature"
                         resolved = True
-                    except Exception:
-                        pass
+                    except Exception as err:
+                        failed_attempts.append({"bin": b, "fallback": "source_temperature", "error": str(err)})
 
                 # 3. Fallback to raw
                 if not resolved:
@@ -120,6 +122,8 @@ class FractionBinnedTemperatureMap:
             "bin_eval_counts": bin_eval_counts,
             "bin_fallback_counts": bin_fallback_counts,
             "bin_resolved_maps": bin_resolved_maps,
+            "failed_attempts": failed_attempts,
+            "sparse_prediction_failures": len(failed_attempts),
         }
         return np.column_stack([1.0 - scaled_p, scaled_p])
 
