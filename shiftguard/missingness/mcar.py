@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 from dataclasses import dataclass
 from typing import Sequence
 
@@ -136,6 +137,9 @@ def generate_mcar_mask(
     return CellwiseFeatureMask(record_ids, features, mask_matrix, rate)
 
 
+MATCHING_TOLERANCE: float = 0.02
+
+
 def compute_matched_mcar(
     record_ids: tuple[int, ...],
     rows: tuple[dict[str, str | int], ...],
@@ -143,13 +147,36 @@ def compute_matched_mcar(
     seed: int,
     features: tuple[str, ...] = BANK_FEATURES,
     shared_uniforms: np.ndarray | None = None,
+    tolerance: float = MATCHING_TOLERANCE,
 ) -> tuple[CellwiseFeatureMask, dict[str, object]]:
     """Construct cellwise MCAR mask matched to the realized eligible cell missingness of a block outage.
 
-    Reports requested rate, realized numerator/denominator, matching strategy, and residual mismatch.
+    Uses Bernoulli cellwise generation matching the block's realized eligible-cell missingness probability.
+    Reports requested rate, realized numerator/denominator, honest matching strategy, and residual mismatch.
     """
-    # The block outage realized overall observed-cell missing rate
-    target_rate = float(block_rates["observed_all_feature_cells_new_missing_rate"])
+    block_denom = int(block_rates.get("observed_all_feature_cells", 0))
+    target_rate = float(block_rates.get("observed_all_feature_cells_new_missing_rate", 0.0))
+
+    if block_denom <= 0 or not (math.isfinite(target_rate) and 0.0 <= target_rate <= 1.0):
+        empty_mask = CellwiseFeatureMask(record_ids, features, tuple((False,) * len(features) for _ in record_ids), 0.0)
+        report = {
+            "matching_strategy": "bernoulli_matched_rate",
+            "matching_status": "impossible",
+            "tolerance": tolerance,
+            "target_rate": target_rate,
+            "block_realized_rate": target_rate,
+            "mcar_requested_rate": 0.0,
+            "mcar_realized_rate": 0.0,
+            "residual_mismatch": None,
+            "matched_within_tolerance": False,
+            "comparison_qualified": False,
+            "block_numerator": int(block_rates.get("newly_missing_cells", 0)),
+            "block_denominator": block_denom,
+            "mcar_numerator": 0,
+            "mcar_denominator": 0,
+        }
+        return empty_mask, report
+
     mcar_mask = generate_mcar_mask(
         record_ids=record_ids,
         features=features,
@@ -160,18 +187,29 @@ def compute_matched_mcar(
     mcar_rates = mcar_mask.rates(rows)
     realized_mcar_rate = float(mcar_rates["observed_all_feature_cells_new_missing_rate"])
     residual = abs(realized_mcar_rate - target_rate)
+    within_tol = bool(residual <= tolerance)
+
+    if residual == 0.0:
+        status = "exact_match"
+    elif within_tol:
+        status = "within_tolerance"
+    else:
+        status = "outside_tolerance"
 
     report = {
-        "matching_strategy": "exact_realized_rate",
+        "matching_strategy": "bernoulli_matched_rate",
+        "matching_status": status,
+        "tolerance": tolerance,
         "target_rate": target_rate,
         "block_realized_rate": target_rate,
         "mcar_requested_rate": target_rate,
         "mcar_realized_rate": realized_mcar_rate,
         "residual_mismatch": residual,
-        "matched_within_tolerance": bool(residual < 0.02),
-        "block_numerator": block_rates["newly_missing_cells"],
-        "block_denominator": block_rates["observed_all_feature_cells"],
-        "mcar_numerator": mcar_rates["newly_missing_cells"],
-        "mcar_denominator": mcar_rates["observed_all_feature_cells"],
+        "matched_within_tolerance": within_tol,
+        "comparison_qualified": within_tol,
+        "block_numerator": int(block_rates["newly_missing_cells"]),
+        "block_denominator": int(block_rates["observed_all_feature_cells"]),
+        "mcar_numerator": int(mcar_rates["newly_missing_cells"]),
+        "mcar_denominator": int(mcar_rates["observed_all_feature_cells"]),
     }
     return mcar_mask, report

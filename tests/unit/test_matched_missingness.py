@@ -93,7 +93,9 @@ def test_matched_mcar_to_block_reporting():
         features=BANK_FEATURES,
     )
 
-    assert report["matching_strategy"] == "exact_realized_rate"
+    assert report["matching_strategy"] == "bernoulli_matched_rate"
+    assert report["matching_status"] in ("within_tolerance", "exact_match")
+    assert report["comparison_qualified"] is True
     assert report["block_realized_rate"] == block_rates["observed_all_feature_cells_new_missing_rate"]
     assert report["mcar_requested_rate"] == report["block_realized_rate"]
     assert "residual_mismatch" in report

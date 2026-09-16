@@ -78,7 +78,9 @@ def test_stress_engine_produces_all_conditions_and_four_payloads(tmp_path: Path)
     pvr = result.payloads["pattern_vs_rate"]
     assert "matching_report" in pvr
     report = pvr["matching_report"]
-    assert report["matching_strategy"] == "exact_realized_rate"
+    assert report["matching_strategy"] == "bernoulli_matched_rate"
+    assert report["matching_status"] in ("within_tolerance", "exact_match")
+    assert report["comparison_qualified"] is True
     assert "residual_mismatch" in report
     assert report["residual_mismatch"] >= 0.0
 

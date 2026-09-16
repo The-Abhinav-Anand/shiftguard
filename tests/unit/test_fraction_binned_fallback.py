@@ -85,3 +85,35 @@ def test_fraction_binned_sparse_fallback():
     probs = b_map.predict_proba(feat_array)
     assert probs.shape == (20, 2)
     np.testing.assert_allclose(probs.sum(axis=1), 1.0)
+
+
+def test_fraction_binned_natural_missingness_routing():
+    pipeline, source_rows = _setup()
+    source_labels = tuple(int(r["y"]) for r in source_rows)
+
+    remasked_rows, remasked_labels, fractions = generate_source_remasked_dataset(
+        source_rows, source_labels, seed=31201, features=BANK_FEATURES,
+    )
+    global_fit = fit_source_remasked_temperature(pipeline, remasked_rows, remasked_labels)
+    binned_fit = fit_source_fraction_binned_temperature(
+        pipeline=pipeline,
+        remasked_rows=remasked_rows,
+        remasked_labels=remasked_labels,
+        missing_fractions=fractions,
+        global_fit=global_fit,
+        n_bins=10,
+        min_bin_samples=10,
+    )
+    b_map: FractionBinnedTemperatureMap = binned_fit.probability_map
+    feat_array = rows_to_features(list(source_rows[:10]))
+
+    # Without injected fractions (or zeros), must route to bin 0 (not a non-zero bin from natural missingness)
+    _ = b_map.predict_proba(feat_array)
+    assert b_map.last_diagnostics["bin_eval_counts"][0] == 10
+    assert sum(b_map.last_diagnostics["bin_eval_counts"][b] for b in range(1, 10)) == 0
+
+    # With injected fraction 0.25, must route to bin 2
+    injected_25 = [0.25] * 10
+    _ = b_map.predict_proba(feat_array, injected_fractions=injected_25)
+    assert b_map.last_diagnostics["bin_eval_counts"][2] == 10
+    assert b_map.last_diagnostics["bin_eval_counts"][0] == 0

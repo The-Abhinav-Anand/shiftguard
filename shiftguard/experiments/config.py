@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 import json
+import math
 from pathlib import Path
 
 import yaml
@@ -116,15 +117,36 @@ class StressConfig(BaselineConfig):
         super().__post_init__()
         if self.run_type != "stress_engine":
             raise ValueError("Gate3 run_type must be stress_engine")
+        if not self.predictors:
+            raise ValueError("predictors must not be empty")
         for p in self.predictors:
             if p not in SUPPORTED_PREDICTORS:
                 raise ValueError(f"unsupported predictor: {p}")
+        if not self.budgets:
+            raise ValueError("budgets must not be empty")
         for b in self.budgets:
             if b not in SUPPORTED_BUDGETS:
                 raise ValueError(f"unsupported budget: {b}")
+        if 50 not in self.budgets:
+            raise ValueError("budgets must include budget 50 required for pattern-vs-rate comparison")
+        if not self.mcar_rates:
+            raise ValueError("mcar_rates must not be empty")
+        for r in self.mcar_rates:
+            if not (math.isfinite(r) and 0.0 <= r < 1.0):
+                raise ValueError(f"invalid mcar_rate: {r}")
+        if not self.calibration_methods:
+            raise ValueError("calibration_methods must not be empty")
         for m in self.calibration_methods:
             if m not in SUPPORTED_CALIBRATION_METHODS:
                 raise ValueError(f"unsupported calibration method: {m}")
+        if not self.cost_grid:
+            raise ValueError("cost_grid must not be empty")
+        for item in self.cost_grid:
+            if len(item) != 2:
+                raise ValueError(f"each cost_grid entry must have length 2, got {item}")
+            fp, fn = float(item[0]), float(item[1])
+            if not (math.isfinite(fp) and math.isfinite(fn) and fp > 0 and fn > 0):
+                raise ValueError(f"cost_grid items must be positive finite floats, got {(fp, fn)}")
 
     def to_dict(self) -> dict[str, object]:
         return {

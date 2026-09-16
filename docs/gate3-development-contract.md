@@ -53,8 +53,11 @@ Missingness is injected exclusively on eligible originally observed raw features
 4. **Matched Cellwise Comparison (`mcar_matched_history`)**:
    - Realized eligible-cell rate:
      $$r_{\text{realized}} = \frac{\text{newly missing eligible cells}}{\text{total observed eligible cells}}$$
-   - Cellwise MCAR is generated with probability $p = r_{\text{realized}}$ to directly isolate pattern impact (block vs cellwise) from missingness volume.
-   - Both requested rate, realized rate (numerator/denominator), matching strategy (`exact_realized_rate` or `nearest_grid`), and residual mismatch $|r_{\text{cellwise}} - r_{\text{block}}|$ are explicitly persisted.
+   - Cellwise MCAR is generated with Bernoulli probability $p = r_{\text{realized}}$ to directly isolate pattern impact (block vs cellwise) from missingness volume.
+   - Strategy is declared as `bernoulli_matched_rate`.
+   - Matching status is explicitly recorded as `exact_match` (residual == 0), `within_tolerance` (residual $\le 0.02$), `outside_tolerance` (residual $> 0.02$), or `impossible` (invalid denominator/rate).
+   - Both requested rate, realized rate (numerator/denominator), matching strategy (`bernoulli_matched_rate`), tolerance ($0.02$), matching status, comparison qualification (`comparison_qualified`), and residual mismatch $|r_{\text{cellwise}} - r_{\text{block}}|$ are explicitly persisted.
+   - Comparisons are marked `comparison_qualified: false` if outside tolerance or impossible.
 
 ### 2.3 Budget Grid & Independent Seed Namespaces
 - **Target Label Budgets**: $B \in \{0, 25, 50, 100, 200\}$.
@@ -99,11 +102,13 @@ Every experiment condition is identified by one of eight explicit method keys:
 - **Source Remasked Calibration**:
   - Source rows are replicated across simulated missingness patterns (rates 0.0, 0.1, 0.3, 0.5) drawn from the declared missingness distribution without reading target outcomes.
 - **Source Fraction-Binned Temperature**:
-  - Binning variable: newly injected missingness fraction $f = \text{newly missing eligible features} / \text{eligible feature count} \in [0, 1]$.
-  - 10 equal-width bins: $b \in \{0, \dots, 9\}$ corresponding to $[0.0, 0.1), [0.1, 0.2), \dots, [0.9, 1.0]$.
-  - Bin assignment: $\min(9, \lfloor 10 \cdot f \rfloor)$.
-  - A positive scalar temperature $T_b > 0$ is fit per bin on source-remasked data.
-  - If a bin has fewer than 10 samples or only 1 class or fails optimization: fallback to `source_remasked_temperature` with `fallback_reason="sparse_fraction_bin"`.
+   - Binning variable: newly injected missingness fraction $f = \text{newly missing eligible features} / \text{eligible feature count} \in [0, 1]$.
+   - Inference uses the exact newly injected missingness fraction (not total missingness, which would misroute natural missingness).
+   - 10 equal-width bins: $b \in \{0, \dots, 9\}$ corresponding to $[0.0, 0.1), [0.1, 0.2), \dots, [0.9, 1.0]$.
+   - Bin assignment: $\min(9, \lfloor 10 \cdot f \rfloor)$.
+   - A positive scalar temperature $T_b > 0$ is fit per bin on source-remasked data.
+   - If a bin has fewer than 10 samples or only 1 class or fails optimization: sparse bins execute the actual object fallback chain: `sparse_fraction_bin` $\to$ `source_remasked_temperature` $\to$ `source_temperature` $\to$ `raw` without fabricating temperature 1.0. Per-bin support, fallback reason, resolved map, and affected-row counts are persisted.
+   - Raw probabilities are validated for shape, row count, finiteness, bounds $[0, 1]$, and row normalization ($p_0 + p_1 = 1.0 \pm 10^{-4}$) before clipping. NaN, inf, or out-of-range values trigger prediction failure rather than silent clipping.
 
 ### 2.6 Decision Loss & Cost Grid
 - Decision threshold: $\tau = \frac{C_{\text{FP}}}{C_{\text{FP}} + C_{\text{FN}}}$.

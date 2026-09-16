@@ -59,7 +59,7 @@ def fit_tree_preprocessor(train_rows: list[dict[str, str | int]]) -> TrainOnlyPr
     return TrainOnlyPreprocessor(preprocessor)
 
 
-def preprocessing_config(model_family: str = "linear") -> dict[str, object]:
+def preprocessing_config(model_family: str | None = None) -> dict[str, object]:
     if model_family == "tree":
         return {
             "model_family": "tree",
@@ -69,7 +69,6 @@ def preprocessing_config(model_family: str = "linear") -> dict[str, object]:
             "categorical": {"missing_value": EXPLICIT_MISSING_CATEGORY, "encoder": "one_hot", "handle_unknown": "ignore"},
         }
     return {
-        "model_family": "linear",
         "numeric_features": list(NUMERIC_FEATURES),
         "numeric": {"imputer": "median", "scaler": "standard"},
         "categorical_features": list(CATEGORICAL_FEATURES),

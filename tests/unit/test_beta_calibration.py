@@ -61,3 +61,37 @@ def test_beta_calibration_one_class_fallback():
     assert fit.record.fit_status == "not_fitted"
     assert fit.record.fallback_reason == "one_class_or_empty"
     assert fit.record.resolved_method == "raw"
+
+
+def test_beta_calibration_rejects_failed_optimization(monkeypatch):
+    pipeline, rows = _setup_pipeline_and_rows()
+    labels = tuple(int(r["y"]) for r in rows[:50])
+
+    class MockOptimizeResult:
+        success = False
+        message = "iteration limit reached"
+        x = np.array([1.0, 1.0, 0.0])
+
+    import shiftguard.calibration.beta as beta_mod
+    monkeypatch.setattr(beta_mod, "minimize", lambda *args, **kwargs: MockOptimizeResult())
+
+    fit = fit_beta_calibration(pipeline, rows[:50], labels)
+    assert fit.record.fit_status == "not_fitted"
+    assert fit.record.resolved_method == "raw"
+    assert "optimizer_failed" in (fit.record.fallback_reason or "")
+
+
+def test_beta_calibration_rejects_invalid_raw_probabilities():
+    pipeline, rows = _setup_pipeline_and_rows()
+    labels = tuple(int(r["y"]) for r in rows[:50])
+    fit = fit_beta_calibration(pipeline, rows[:50], labels)
+    assert fit.record.fit_status == "fitted"
+
+    class BadPipeline:
+        def predict_proba(self, features):
+            # Probe: infinite probability
+            return np.array([[0.0, np.inf]])
+
+    bad_map = fit.probability_map.__class__(BadPipeline(), fit.probability_map.a, fit.probability_map.b, fit.probability_map.c)
+    with pytest.raises(ValueError, match="raw probabilities contain NaN or infinite values"):
+        bad_map.predict_proba(rows_to_features(list(rows[:1])))

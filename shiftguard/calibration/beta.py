@@ -7,7 +7,7 @@ import numpy as np
 from scipy.optimize import minimize
 from sklearn.pipeline import Pipeline
 
-from shiftguard.calibration.base import CalibrationRecord, ProbabilityMap
+from shiftguard.calibration.base import CalibrationRecord, ProbabilityMap, validate_raw_probabilities
 from shiftguard.calibration.sklearn_maps import CalibrationFit
 from shiftguard.preprocessing.tabular import rows_to_features
 
@@ -21,7 +21,8 @@ class BetaCalibrationMap:
         self.clip_eps = clip_eps
 
     def predict_proba(self, features) -> np.ndarray:
-        raw_probs = self.pipeline.predict_proba(features)[:, 1]
+        raw = self.pipeline.predict_proba(features)
+        raw_probs = validate_raw_probabilities(raw, expected_rows=len(features))
         p_clipped = np.clip(raw_probs, self.clip_eps, 1.0 - self.clip_eps)
         log_p = np.log(p_clipped)
         log_1_minus_p = np.log(1.0 - p_clipped)
@@ -72,7 +73,8 @@ def fit_beta_calibration(
         )
     try:
         features = rows_to_features(list(rows))
-        raw_probs = pipeline.predict_proba(features)[:, 1]
+        raw = pipeline.predict_proba(features)
+        raw_probs = validate_raw_probabilities(raw, expected_rows=len(rows))
         p_clipped = np.clip(raw_probs, clip_eps, 1.0 - clip_eps)
         log_p = np.log(p_clipped)
         log_1_minus_p = np.log(1.0 - p_clipped)
@@ -91,6 +93,9 @@ def fit_beta_calibration(
             bounds=bounds,
             options={"maxiter": 500, "ftol": 1e-9},
         )
+
+        if not res.success:
+            raise ValueError(f"optimizer_failed: {res.message}")
 
         a, b, c = res.x
         if not (math.isfinite(a) and math.isfinite(b) and math.isfinite(c) and a >= 0 and b >= 0):

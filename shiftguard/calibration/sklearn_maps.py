@@ -8,7 +8,7 @@ from sklearn.calibration import CalibratedClassifierCV
 from sklearn.frozen import FrozenEstimator
 from sklearn.pipeline import Pipeline
 
-from shiftguard.calibration.base import CalibrationRecord, ProbabilityMap
+from shiftguard.calibration.base import CalibrationRecord, ProbabilityMap, validate_raw_probabilities
 from shiftguard.preprocessing.tabular import TrainOnlyPreprocessor, rows_to_features
 
 
@@ -76,13 +76,23 @@ def frozen_pipeline(preprocessor: TrainOnlyPreprocessor, predictor) -> Pipeline:
 
 def _temperature(calibrator: CalibratedClassifierCV) -> float | None:
     try:
-        inverse_temperature = float(calibrator.calibrated_classifiers_[0].calibrators[0].beta_)
-    except (AttributeError, IndexError, TypeError, ValueError):
+        for estimator in getattr(calibrator, "calibrated_classifiers_", []):
+            scale = getattr(estimator, "scale_", None)
+            if scale is not None:
+                value = float(np.asarray(scale).squeeze())
+                if math.isfinite(value) and value > 0:
+                    return value
+            calibrators = getattr(estimator, "calibrators", None)
+            if calibrators and hasattr(calibrators[0], "beta_"):
+                inv_temp = float(calibrators[0].beta_)
+                if math.isfinite(inv_temp) and inv_temp > 0:
+                    return 1.0 / inv_temp
+    except Exception:
         return None
-    return 1 / inverse_temperature if math.isfinite(inverse_temperature) and inverse_temperature > 0 else None
+    return None
 
 
-def fit_temperature(
+def fit_temperature_calibration(
     pipeline: Pipeline,
     rows: tuple[dict[str, str | int | None], ...],
     labels: tuple[int, ...],
@@ -91,15 +101,21 @@ def fit_temperature(
     if not labels or len(set(labels)) < 2:
         return CalibrationFit(pipeline, CalibrationRecord(requested_method, "raw", "not_fitted", "one_class_or_empty", len(labels), None))
     try:
+        features = rows_to_features(list(rows))
+        raw = pipeline.predict_proba(features)
+        validate_raw_probabilities(raw, expected_rows=len(rows))
         calibrator = CalibratedClassifierCV(FrozenEstimator(pipeline), method="temperature")
-        calibrator.fit(rows_to_features(list(rows)), list(labels))
+        calibrator.fit(features, list(labels))
         temperature = _temperature(calibrator)
-        probabilities = calibrator.predict_proba(rows_to_features(list(rows)))[:, 1]
+        probabilities = calibrator.predict_proba(features)[:, 1]
         if temperature is None or not np.isfinite(probabilities).all():
             raise ValueError("invalid_temperature_or_prediction")
     except Exception as error:
         return CalibrationFit(pipeline, CalibrationRecord(requested_method, "raw", "not_fitted", f"{type(error).__name__}: {error}", len(labels), None))
     return CalibrationFit(calibrator, CalibrationRecord(requested_method, requested_method, "fitted", None, len(labels), temperature))
+
+
+fit_temperature = fit_temperature_calibration
 
 
 class IsotonicCalibrationMap:
@@ -109,7 +125,8 @@ class IsotonicCalibrationMap:
         self.clip_eps = clip_eps
 
     def predict_proba(self, features) -> np.ndarray:
-        raw_probs = self.pipeline.predict_proba(features)[:, 1]
+        raw = self.pipeline.predict_proba(features)
+        raw_probs = validate_raw_probabilities(raw, expected_rows=len(features))
         p_clipped = np.clip(raw_probs, self.clip_eps, 1.0 - self.clip_eps)
         cal_probs = self.iso.predict(p_clipped)
         cal_probs = np.clip(cal_probs, self.clip_eps, 1.0 - self.clip_eps)
@@ -132,7 +149,8 @@ def fit_isotonic_calibration(
         )
     try:
         features = rows_to_features(list(rows))
-        raw_probs = pipeline.predict_proba(features)[:, 1]
+        raw = pipeline.predict_proba(features)
+        raw_probs = validate_raw_probabilities(raw, expected_rows=len(rows))
         p_clipped = np.clip(raw_probs, clip_eps, 1.0 - clip_eps)
         iso = IsotonicRegression(out_of_bounds="clip", y_min=0.0, y_max=1.0)
         iso.fit(p_clipped, list(labels))
@@ -155,6 +173,7 @@ def predict_conditions_with_fallback(
     fits: dict[str, CalibrationFit | ProbabilityMap],
     fallback_graph: dict[str, str | None],
     rows: tuple[dict[str, str | int | None], ...],
+    injected_fractions: np.ndarray | None = None,
 ) -> tuple[dict[str, PredictionResolution], dict[str, dict[str, str]]]:
     """Resolve predictions and fallbacks across arbitrary condition graphs before evaluator scoring."""
     features = rows_to_features(list(rows))
@@ -179,7 +198,10 @@ def predict_conditions_with_fallback(
             failure = {"method": method, "phase": "fit", "reason": fit.record.fallback_reason or "not_fitted"}
         else:
             try:
-                values = np.asarray(prob_map.predict_proba(features), dtype=float)
+                if hasattr(prob_map, "bin_temperatures"):
+                    values = np.asarray(prob_map.predict_proba(features, injected_fractions=injected_fractions), dtype=float)
+                else:
+                    values = np.asarray(prob_map.predict_proba(features), dtype=float)
                 if values.shape != (len(rows), 2):
                     raise ValueError("invalid_probability_shape")
                 if not np.isfinite(values).all() or (values < 0).any() or (values > 1).any():

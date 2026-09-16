@@ -61,6 +61,20 @@ STRESS_FALLBACK_GRAPH = {
 
 
 @dataclass(frozen=True)
+class StressPartitions:
+    dataset_identity: dict[str, str]
+    roles: dict[str, tuple[int, ...]]
+    train_features: tuple[dict[str, str | int | None], ...]
+    train_labels: tuple[int, ...]
+    source_features: tuple[dict[str, str | int | None], ...]
+    source_labels: tuple[int, ...]
+    final_features: tuple[dict[str, str | int | None], ...]
+    target_provider: LabelBlindTargetProvider
+    seeds: dict[str, int]
+    mask_seeds: dict[str, int]
+
+
+@dataclass(frozen=True)
 class StressResult:
     experiment_id: str
     execution_id: str
@@ -89,7 +103,14 @@ def _stress_seed_bundle(master_seed: int) -> dict[str, int]:
     return {name: int(child.generate_state(1)[0]) for name, child in zip(names, children, strict=True)}
 
 
-def run_stress_engine(dataset: BankDataset, config: StressConfig, database_url: str) -> StressResult:
+def prepare_stress_partitions(dataset: BankDataset, config: StressConfig) -> tuple[StressPartitions, FinalTestEvaluator]:
+    """Prepare raw partitions and isolated evaluator under strict label-access boundary.
+
+    The returned StressPartitions contains training features/labels, source calibration features/labels,
+    unlabeled final evaluation features, and a LabelBlindTargetProvider that only reveals labels for
+    explicitly requested prefixes. Ground truth evaluation labels are passed strictly and exclusively
+    to FinalTestEvaluator and are not present anywhere in StressPartitions.
+    """
     seeds = _stress_seed_bundle(config.master_seed)
     seq = np.random.SeedSequence(seeds["mask"])
     mask_children = seq.spawn(4)
@@ -118,26 +139,61 @@ def run_stress_engine(dataset: BankDataset, config: StressConfig, database_url: 
     final_features = tuple({"row_id": int(row["row_id"]), **feature_rows([row])[0]} for row in final)
     final_labels = tuple(int(row["y"]) for row in final)
 
-    evaluator = FinalTestEvaluator(final_labels, tier="stress")
+    evaluator = FinalTestEvaluator(final_labels, tier="stress", cost_grid=config.cost_grid)
     target_provider = LabelBlindTargetProvider(pool, seeds["acquisition"])
 
     dataset_identity = {"raw_hash": dataset.raw_hash, "clean_hash": dataset.clean_hash}
+
+    partitions = StressPartitions(
+        dataset_identity=dataset_identity,
+        roles=roles,
+        train_features=train_features,
+        train_labels=train_labels,
+        source_features=source_features,
+        source_labels=source_labels,
+        final_features=final_features,
+        target_provider=target_provider,
+        seeds=seeds,
+        mask_seeds=mask_seeds,
+    )
+    return partitions, evaluator
+
+
+def execute_stress_engine(
+    partitions: StressPartitions,
+    config: StressConfig,
+    evaluator: FinalTestEvaluator,
+    database_url: str,
+) -> StressResult:
+    """Execute the stress engine under strict boundary rules.
+
+    Calibration fitting scope only has access to:
+    - training data & labels
+    - source calibration data & labels
+    - restricted target provider revealing only requested prefixes
+    - unlabeled evaluation features
+    Final evaluation scoring happens strictly after probability resolution is finalized.
+    """
+    dataset_identity = partitions.dataset_identity
+    seeds = partitions.seeds
+    mask_seeds = partitions.mask_seeds
+    roles = partitions.roles
+    target_provider = partitions.target_provider
+    final_features = partitions.final_features
+
     order_id = stable_hash({"dataset": dataset_identity, "seed": seeds["acquisition"], "order": target_provider.order})
 
-    # Prepare shared uniforms for monotone MCAR nesting
     pool_record_ids = target_provider.pool_record_ids
     test_record_ids = tuple(int(r["row_id"]) for r in final_features)
 
     pool_uniforms = generate_shared_uniforms(len(pool_record_ids), len(BANK_FEATURES), mask_seeds["pool_mcar"])
     test_uniforms = generate_shared_uniforms(len(test_record_ids), len(BANK_FEATURES), mask_seeds["test_mcar"])
 
-    # Prepare Masks for scenarios
-    # 1. Block outage
+    # Masks for scenarios
     pool_block_mask = history_block_mask(pool_record_ids, mask_seeds["pool_block"], config.history_row_probability)
     test_block_mask = history_block_mask(test_record_ids, mask_seeds["test_block"], config.history_row_probability)
     test_block_rates = test_block_mask.rates(final_features)
 
-    # 2. Matched MCAR to block outage
     test_matched_mcar_mask, matched_report = compute_matched_mcar(
         record_ids=test_record_ids,
         rows=final_features,
@@ -149,11 +205,10 @@ def run_stress_engine(dataset: BankDataset, config: StressConfig, database_url: 
     pool_matched_mcar_mask = generate_mcar_mask(
         record_ids=pool_record_ids,
         features=BANK_FEATURES,
-        rate=matched_report["target_rate"],
+        rate=float(matched_report["target_rate"]),
         shared_uniforms=pool_uniforms,
     )
 
-    # 3. Cellwise MCAR at 0.10 and 0.30
     test_mcar_10 = generate_mcar_mask(test_record_ids, BANK_FEATURES, rate=0.10, shared_uniforms=test_uniforms)
     pool_mcar_10 = generate_mcar_mask(pool_record_ids, BANK_FEATURES, rate=0.10, shared_uniforms=pool_uniforms)
     test_mcar_30 = generate_mcar_mask(test_record_ids, BANK_FEATURES, rate=0.30, shared_uniforms=test_uniforms)
@@ -173,16 +228,28 @@ def run_stress_engine(dataset: BankDataset, config: StressConfig, database_url: 
     payload_reliability: dict[str, object] = {"scenarios": {}}
     payload_decision_loss: dict[str, object] = {"scenarios": {}}
 
+    eligible_count = len(BANK_FEATURES)
+
+    def calc_injected_fractions(orig_rows, masked_rows):
+        fracs = []
+        for orig, masked in zip(orig_rows, masked_rows, strict=True):
+            newly_missing = sum(
+                orig.get(feat) not in (None, "") and masked.get(feat) in (None, "")
+                for feat in BANK_FEATURES
+            )
+            fracs.append(newly_missing / eligible_count if eligible_count > 0 else 0.0)
+        return np.array(fracs, dtype=float)
+
     for pred_name in config.predictors:
         # Fit predictor & preprocessor on training partition only
         if pred_name == "logistic_regression":
-            preprocessor = fit_train_preprocessor(list(train_features))
-            model = fit_initial_logistic_regression(preprocessor.transform(list(train_features)), list(train_labels), seeds["model"])
+            preprocessor = fit_train_preprocessor(list(partitions.train_features))
+            model = fit_initial_logistic_regression(preprocessor.transform(list(partitions.train_features)), list(partitions.train_labels), seeds["model"])
             pred_meta = {**predictor_identity(model), "fitted_state": _fitted_logistic_state(preprocessor, model)}
             prep_cfg = preprocessing_config("linear")
         else:
-            preprocessor = fit_tree_preprocessor(list(train_features))
-            model = fit_initial_random_forest(preprocessor.transform(list(train_features)), list(train_labels), seeds["model"])
+            preprocessor = fit_tree_preprocessor(list(partitions.train_features))
+            model = fit_initial_random_forest(preprocessor.transform(list(partitions.train_features)), list(partitions.train_labels), seeds["model"])
             pred_meta = {**random_forest_identity(model), "fitted_state": fitted_rf_state(preprocessor, model)}
             prep_cfg = preprocessing_config("tree")
 
@@ -190,9 +257,9 @@ def run_stress_engine(dataset: BankDataset, config: StressConfig, database_url: 
         predictor_id = stable_hash({"dataset": dataset_identity, "train_ids": roles["train"], "preprocessing": prep_cfg, "predictor": pred_meta})
 
         # Fit Source Calibrators (using source calibration rows only, 0 target labels)
-        source_temp_fit = fit_temperature(pipeline, source_features, source_labels, "source_temperature")
+        source_temp_fit = fit_temperature(pipeline, partitions.source_features, partitions.source_labels, "source_temperature")
         remasked_rows, remasked_labels, missing_fractions = generate_source_remasked_dataset(
-            source_features, source_labels, seed=seeds["source_remask"], features=BANK_FEATURES,
+            partitions.source_features, partitions.source_labels, seed=seeds["source_remask"], features=BANK_FEATURES,
         )
         source_remasked_fit = fit_source_remasked_temperature(pipeline, remasked_rows, remasked_labels)
         source_binned_fit = fit_source_fraction_binned_temperature(
@@ -201,6 +268,8 @@ def run_stress_engine(dataset: BankDataset, config: StressConfig, database_url: 
             remasked_labels=remasked_labels,
             missing_fractions=missing_fractions,
             global_fit=source_remasked_fit,
+            n_bins=10,
+            min_bin_samples=10,
         )
 
         source_map_id = stable_hash({"predictor_id": predictor_id, "calibration_ids": roles["source_cal"], "record": source_temp_fit.record.__dict__})
@@ -219,13 +288,22 @@ def run_stress_engine(dataset: BankDataset, config: StressConfig, database_url: 
             test_rows = scen_data["test_rows"]
             mask_id = getattr(test_mask, "mask_id", None)
 
-            # Mask pool if scenario specifies a mask
-            if pool_mask is not None:
-                masked_pool = {int(r["row_id"]): r for r in pool_mask.apply(target_provider.pool_features)}
-            else:
-                masked_pool = {int(r["row_id"]): r for r in target_provider.pool_features}
+            # Injected fractions for evaluation rows
+            scen_injected_fractions = calc_injected_fractions(final_features, test_rows)
+            eval_new_rate = float(
+                test_mask.rates(final_features)["observed_all_feature_cells_new_missing_rate"]
+                if test_mask is not None else 0.0
+            )
 
-            # Evaluate each budget
+            # Mask pool if scenario specifies a mask
+            pool_features = target_provider.pool_features
+            if pool_mask is not None:
+                masked_pool_features = {int(r["row_id"]): r for r in pool_mask.apply(pool_features)}
+                pool_new_rate = float(pool_mask.rates(pool_features)["observed_all_feature_cells_new_missing_rate"])
+            else:
+                masked_pool_features = {int(r["row_id"]): r for r in pool_features}
+                pool_new_rate = 0.0
+
             scen_budget_curve: dict[str, list[dict[str, object]]] = {m: [] for m in config.calibration_methods}
             scen_reliability: dict[str, object] = {}
             scen_decision_loss: dict[str, object] = {}
@@ -233,13 +311,18 @@ def run_stress_engine(dataset: BankDataset, config: StressConfig, database_url: 
             for budget in config.budgets:
                 acquired = target_provider.reveal_prefix(budget)
                 if budget > 0:
-                    acquired_outage = tuple(masked_pool[rid] for rid in acquired.record_ids)
+                    acquired_outage = tuple(masked_pool_features[rid] for rid in acquired.record_ids)
+                    acq_new_rate = float(
+                        pool_mask.rates(acquired.features)["observed_all_feature_cells_new_missing_rate"]
+                        if pool_mask is not None else 0.0
+                    )
                     target_temp_fit = fit_temperature(pipeline, acquired_outage, acquired.labels, "target_temperature")
                     target_platt_fit = fit_platt_logodds(pipeline, acquired_outage, acquired.labels)
                     target_beta_fit = fit_beta_calibration(pipeline, acquired_outage, acquired.labels)
                     target_iso_fit = fit_isotonic_calibration(pipeline, acquired_outage, acquired.labels)
                 else:
-                    # Budget 0 consumes 0 target labels; target methods are not fitted
+                    acquired_outage = ()
+                    acq_new_rate = 0.0
                     rec_empty = CalibrationRecord("not_fitted", "not_fitted", "not_fitted", "empty_budget", 0, None)
                     target_temp_fit = CalibrationFit(pipeline, rec_empty)
                     target_platt_fit = CalibrationFit(pipeline, rec_empty)
@@ -257,7 +340,37 @@ def run_stress_engine(dataset: BankDataset, config: StressConfig, database_url: 
                     "target_isotonic": target_iso_fit,
                 }
 
-                resolutions, attempts = predict_conditions_with_fallback(fits_map, STRESS_FALLBACK_GRAPH, test_rows)
+                resolutions, attempts = predict_conditions_with_fallback(
+                    fits_map,
+                    STRESS_FALLBACK_GRAPH,
+                    test_rows,
+                    injected_fractions=scen_injected_fractions,
+                )
+
+                mask_rates = {
+                    "pool_new_missing_rate": pool_new_rate,
+                    "acquired_new_missing_rate": acq_new_rate,
+                    "eval_new_missing_rate": eval_new_rate,
+                }
+
+                fit_failures = {
+                    f["method"]
+                    for res in resolutions.values()
+                    for f in res.failures
+                    if f.get("phase") == "fit"
+                }
+                pred_failures = {
+                    f["method"]
+                    for res in resolutions.values()
+                    for f in res.failures
+                    if f.get("phase") == "prediction"
+                }
+                unique_fit_failures = len(fit_failures)
+                unique_prediction_failures = len(pred_failures)
+
+                sparse_bin_diag = None
+                if hasattr(source_binned_fit.probability_map, "last_diagnostics"):
+                    sparse_bin_diag = dict(source_binned_fit.probability_map.last_diagnostics)
 
                 for method in config.calibration_methods:
                     res = resolutions[method]
@@ -271,12 +384,21 @@ def run_stress_engine(dataset: BankDataset, config: StressConfig, database_url: 
                     cond_key = f"{pred_name}__{scen_name}__b{budget}__{method}"
                     cond_payload = {
                         "name": cond_key,
+                        "model_family": "linear" if pred_name == "logistic_regression" else "tree",
                         "predictor": pred_name,
                         "scenario": scen_name,
                         "budget": budget,
                         "mask_id": mask_id,
+                        "method": method,
                         "requested_method": method,
                         "resolved_method": res.resolved_method,
+                        "fit_status": cal_rec.fit_status,
+                        "fallback_reason": cal_rec.fallback_reason,
+                        "fallback_chain": [f["method"] for f in res.failures],
+                        "mask_rates": mask_rates,
+                        "unique_fit_failures": unique_fit_failures,
+                        "unique_prediction_failures": unique_prediction_failures,
+                        "sparse_bin_diagnostics": sparse_bin_diag if method == "source_fraction_binned_temperature" else None,
                         "labels_consumed": labels_consumed,
                         "failures": list(res.failures),
                         "status": status,
@@ -285,7 +407,6 @@ def run_stress_engine(dataset: BankDataset, config: StressConfig, database_url: 
                     cond_id = stable_hash(cond_payload)[:24]
                     all_conditions[cond_key] = {"condition_id": cond_id, **cond_payload}
 
-                    # Append to budget curve
                     point = {
                         "condition_id": cond_id,
                         "budget": budget,
@@ -293,6 +414,7 @@ def run_stress_engine(dataset: BankDataset, config: StressConfig, database_url: 
                         "requested_method": method,
                         "resolved_method": res.resolved_method,
                         "status": status,
+                        "available": (status == "scored"),
                         "brier_score": metrics["brier_score"] if metrics else None,
                         "log_loss": metrics["log_loss"] if metrics else None,
                         "ece": metrics["ece"] if metrics else None,
@@ -302,7 +424,6 @@ def run_stress_engine(dataset: BankDataset, config: StressConfig, database_url: 
                     }
                     scen_budget_curve[method].append(point)
 
-                    # For primary budget (e.g. 50 or 200), record reliability and decision loss for payloads
                     if budget == 50 or (budget == 0 and method.startswith("source_")):
                         if method not in scen_reliability:
                             scen_reliability[method] = {
@@ -326,24 +447,31 @@ def run_stress_engine(dataset: BankDataset, config: StressConfig, database_url: 
             "block_scenario": "history_block_0_50",
             "cellwise_scenario": "mcar_matched_history",
             "budget": 50,
-            "methods": {
-                m: {
-                    "block_condition_id": all_conditions[f"{p_block}__{m}"]["condition_id"],
-                    "cellwise_condition_id": all_conditions[f"{p_cell}__{m}"]["condition_id"],
-                    "block_brier": all_conditions[f"{p_block}__{m}"]["metrics"]["brier_score"] if all_conditions[f"{p_block}__{m}"]["metrics"] else None,
-                    "cellwise_brier": all_conditions[f"{p_cell}__{m}"]["metrics"]["brier_score"] if all_conditions[f"{p_cell}__{m}"]["metrics"] else None,
-                    "delta_brier": (
-                        float(all_conditions[f"{p_block}__{m}"]["metrics"]["brier_score"]) - float(all_conditions[f"{p_cell}__{m}"]["metrics"]["brier_score"])
-                        if all_conditions[f"{p_block}__{m}"]["metrics"] and all_conditions[f"{p_cell}__{m}"]["metrics"] else None
-                    ),
-                    "block_log_loss": all_conditions[f"{p_block}__{m}"]["metrics"]["log_loss"] if all_conditions[f"{p_block}__{m}"]["metrics"] else None,
-                    "cellwise_log_loss": all_conditions[f"{p_cell}__{m}"]["metrics"]["log_loss"] if all_conditions[f"{p_cell}__{m}"]["metrics"] else None,
-                }
-                for m in config.calibration_methods
-            }
+            "methods": {},
         }
+        for m in config.calibration_methods:
+            block_cond = all_conditions[f"{p_block}__{m}"]
+            cell_cond = all_conditions[f"{p_cell}__{m}"]
+            block_m = block_cond["metrics"]
+            cell_m = cell_cond["metrics"]
+            available = (block_m is not None and cell_m is not None)
+            method_comp = {
+                "available": available,
+                "block_condition_id": block_cond["condition_id"],
+                "cellwise_condition_id": cell_cond["condition_id"],
+                "block_brier": block_m["brier_score"] if block_m else None,
+                "cellwise_brier": cell_m["brier_score"] if cell_m else None,
+                "delta_brier": (
+                    float(block_m["brier_score"]) - float(cell_m["brier_score"])
+                    if available else None
+                ),
+                "block_log_loss": block_m["log_loss"] if block_m else None,
+                "cellwise_log_loss": cell_m["log_loss"] if cell_m else None,
+            }
+            if not available:
+                method_comp["unavailability_reason"] = "condition_metrics_unavailable"
+            payload_pattern_vs_rate["comparisons"][pred_name]["methods"][m] = method_comp
 
-    # Summary comparisons
     comparisons = {
         "pattern_comparison": payload_pattern_vs_rate["comparisons"],
     }
@@ -378,6 +506,7 @@ def run_stress_engine(dataset: BankDataset, config: StressConfig, database_url: 
         "masks": masks_summary,
         "acquisition": acquisition_summary,
         "conditions": all_conditions,
+        "condition_count": len(all_conditions),
         "comparisons": comparisons,
         "payloads": payloads,
         "protocol": {
@@ -427,3 +556,9 @@ def run_stress_engine(dataset: BankDataset, config: StressConfig, database_url: 
         payloads=payloads,
         content_hashes=content_hashes,
     )
+
+
+def run_stress_engine(dataset: BankDataset, config: StressConfig, database_url: str) -> StressResult:
+    """Run stress engine: prepare partitions and execute under strict boundary rules."""
+    partitions, evaluator = prepare_stress_partitions(dataset, config)
+    return execute_stress_engine(partitions, config, evaluator, database_url)

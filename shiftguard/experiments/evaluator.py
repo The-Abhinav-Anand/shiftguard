@@ -7,11 +7,22 @@ from shiftguard.metrics.reliability import expected_calibration_error, reliabili
 
 
 class FinalTestEvaluator:
-    def __init__(self, labels: tuple[int, ...], tier: str = "baseline") -> None:
+    def __init__(
+        self,
+        labels: tuple[int, ...],
+        tier: str = "baseline",
+        cost_grid: tuple[tuple[float, float], ...] | None = None,
+    ) -> None:
         self._labels = labels
         self._tier = tier
+        self._cost_grid = cost_grid
 
-    def score(self, probabilities: list[float], include_stress_metrics: bool | None = None) -> dict[str, object]:
+    def score(
+        self,
+        probabilities: list[float],
+        include_stress_metrics: bool | None = None,
+        cost_grid: tuple[tuple[float, float], ...] | None = None,
+    ) -> dict[str, object]:
         metrics: dict[str, object] = {
             "brier_score": brier_score(self._labels, probabilities, scale_by_half=True),
             "log_loss": log_loss(self._labels, probabilities, clip=1e-15),
@@ -24,5 +35,6 @@ class FinalTestEvaluator:
             metrics["roc_auc"] = ranking["roc_auc"]
             metrics["average_precision"] = ranking["average_precision"]
             metrics["prevalence"] = ranking["prevalence"]
-            metrics["decision_loss"] = compute_decision_loss_grid(self._labels, probabilities)
+            active_grid = cost_grid if cost_grid is not None else self._cost_grid
+            metrics["decision_loss"] = compute_decision_loss_grid(self._labels, probabilities, cost_grid=active_grid)
         return metrics
