@@ -33,6 +33,13 @@ REQUIRED_SCENARIOS = ("baseline", "history_block_0_50", "mcar_matched_history", 
 REQUIRED_BUDGETS = (0, 25, 50, 100, 200)
 EXPECTED_EVAL_ROWS = 8238
 EXPECTED_CONDITION_COUNT = 400
+REQUIRED_COST_GRID = (
+    (1.0, 1.0),
+    (1.0, 4.0),
+    (1.0, 9.0),
+    (4.0, 1.0),
+    (9.0, 1.0),
+)
 
 
 def get_output_dir() -> Path:
@@ -286,7 +293,7 @@ def validate_scientific_payloads(
                     c_ref.get("predictor") != p
                     or c_ref.get("scenario") != s
                     or c_ref.get("requested_method") != m
-                    or c_ref.get("budget") not in REQUIRED_BUDGETS
+                    or c_ref.get("budget") != 50
                 ):
                     raise AssertionError(f"Reliability entry {ps_key}/{m} refers to mismatched condition: {cid}")
                 bins = m_data.get("reliability_bins")
@@ -339,18 +346,49 @@ def validate_scientific_payloads(
                     c_ref.get("predictor") != p
                     or c_ref.get("scenario") != s
                     or c_ref.get("requested_method") != m
-                    or c_ref.get("budget") not in REQUIRED_BUDGETS
+                    or c_ref.get("budget") != 50
                 ):
-                    raise AssertionError(f"Decision loss entry {ps_key}/{m} refers to mismatched condition: {cid}")
+                    raise AssertionError(
+                        f"Decision loss entry {ps_key}/{m} refers to mismatched condition: {cid} "
+                        f"(expected predictor={p}, scenario={s}, budget=50, method={m}; "
+                        f"got predictor={c_ref.get('predictor')}, scenario={c_ref.get('scenario')}, "
+                        f"budget={c_ref.get('budget')}, method={c_ref.get('requested_method')})"
+                    )
+                c_metrics = c_ref.get("metrics")
+                if not c_metrics or "decision_loss" not in c_metrics:
+                    raise AssertionError(f"Condition {cid} referenced by decision loss {ps_key}/{m} missing decision_loss metrics")
+                cond_cost_losses = c_metrics["decision_loss"]
+                if not isinstance(cond_cost_losses, list) or len(cond_cost_losses) != len(REQUIRED_COST_GRID):
+                    raise AssertionError(f"Condition {cid} decision_loss metrics length != {len(REQUIRED_COST_GRID)}")
                 cost_losses = m_data.get("cost_grid_losses")
                 if not cost_losses or not isinstance(cost_losses, list):
                     raise AssertionError(f"Decision loss entry {ps_key}/{m} has empty or non-list cost_grid_losses")
-                if len(cost_losses) != 5:
-                    raise AssertionError(f"Decision loss entry {ps_key}/{m} cost_grid_losses count {len(cost_losses)} != 5")
-                for row in cost_losses:
+                if len(cost_losses) != len(REQUIRED_COST_GRID):
+                    raise AssertionError(f"Decision loss entry {ps_key}/{m} cost_grid_losses count {len(cost_losses)} != {len(REQUIRED_COST_GRID)}")
+                actual_cost_pairs = tuple((float(row.get("fp_cost", 0.0)), float(row.get("fn_cost", 0.0))) for row in cost_losses)
+                if actual_cost_pairs != REQUIRED_COST_GRID:
+                    raise AssertionError(f"Decision loss entry {ps_key}/{m} cost pairs {actual_cost_pairs} != expected {REQUIRED_COST_GRID}")
+                for idx, row in enumerate(cost_losses):
+                    cond_row = cond_cost_losses[idx]
                     for k in ("fp_cost", "fn_cost", "threshold", "loss", "n_samples", "tp_count", "fp_count", "tn_count", "fn_count"):
                         if k not in row:
                             raise AssertionError(f"Decision loss row in {ps_key}/{m} missing required key: {k}")
+                        if k not in cond_row:
+                            raise AssertionError(f"Condition {cid} decision_loss row missing required key: {k}")
+                        val = row[k]
+                        cond_val = cond_row[k]
+                        if k in ("fp_cost", "fn_cost", "threshold", "loss"):
+                            if not math.isclose(float(val), float(cond_val), abs_tol=1e-6):
+                                raise AssertionError(
+                                    f"Decision loss row in {ps_key}/{m} key {k} value {val} does not agree with "
+                                    f"referenced condition {cid} metric value {cond_val}"
+                                )
+                        else:
+                            if val != cond_val:
+                                raise AssertionError(
+                                    f"Decision loss row in {ps_key}/{m} key {k} value {val} does not agree with "
+                                    f"referenced condition {cid} metric value {cond_val}"
+                                )
                     if row["n_samples"] != EXPECTED_EVAL_ROWS:
                         raise AssertionError(f"Decision loss row in {ps_key}/{m} has n_samples {row['n_samples']} != {EXPECTED_EVAL_ROWS}")
                     tp, fp, tn, fn = row["tp_count"], row["fp_count"], row["tn_count"], row["fn_count"]
@@ -364,6 +402,12 @@ def validate_scientific_payloads(
                     thresh = row["threshold"]
                     if not (math.isfinite(thresh) and 0.0 <= thresh <= 1.0):
                         raise AssertionError(f"Decision loss row in {ps_key}/{m} has invalid threshold: {thresh}")
+                    expected_thresh = row["fp_cost"] / (row["fp_cost"] + row["fn_cost"])
+                    if not math.isclose(thresh, expected_thresh, abs_tol=1e-6):
+                        raise AssertionError(
+                            f"Decision loss row in {ps_key}/{m} threshold {thresh} != "
+                            f"expected FP/(FP+FN) {expected_thresh} for costs ({row['fp_cost']}, {row['fn_cost']})"
+                        )
                     expected_loss = (row["fp_cost"] * fp + row["fn_cost"] * fn) / EXPECTED_EVAL_ROWS
                     if not math.isclose(loss, expected_loss, abs_tol=1e-6):
                         raise AssertionError(f"Decision loss row in {ps_key}/{m} loss mismatch: reported {loss}, calculated {expected_loss}")

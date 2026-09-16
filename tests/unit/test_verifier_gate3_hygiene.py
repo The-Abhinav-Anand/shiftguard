@@ -340,8 +340,9 @@ def test_validate_scientific_payloads_rejects_decision_loss_confusion_sum_mismat
     dl_path = pay_root / "decision_loss.json"
     data = json.loads(dl_path.read_text(encoding="utf-8"))
     first_scen = next(iter(data["scenarios"].values()))
-    # Corrupt confusion counts so sum != 8238
+    # Corrupt confusion counts in both payload and condition so agreement passes but sum != 8238 fails
     first_scen["raw"]["cost_grid_losses"][0]["fp_count"] = 500
+    conditions["logistic_regression__baseline__b50__raw"]["metrics"]["decision_loss"][0]["fp_count"] = 500
     dl_path.write_text(json.dumps(data), encoding="utf-8")
 
     with pytest.raises(AssertionError, match="confusion counts sum to"):
@@ -381,4 +382,65 @@ def test_validate_scientific_payloads_rejects_unsupported_evaluator_rows(tmp_pat
     rel_path.write_text(json.dumps(data), encoding="utf-8")
 
     with pytest.raises(AssertionError, match="missing or empty reliability_bins"):
+        vg3.validate_scientific_payloads(art_root, pay_root, conditions)
+
+
+def test_validate_scientific_payloads_rejects_cost_grid_sequence_mismatch(tmp_path):
+    art_root, pay_root, conditions = _build_valid_test_payloads(tmp_path)
+
+    dl_path = pay_root / "decision_loss.json"
+    data = json.loads(dl_path.read_text(encoding="utf-8"))
+    first_scen = next(iter(data["scenarios"].values()))
+    # Duplicate first cost pair (1.0, 1.0) into second row instead of (1.0, 4.0)
+    first_scen["raw"]["cost_grid_losses"][1]["fp_cost"] = 1.0
+    first_scen["raw"]["cost_grid_losses"][1]["fn_cost"] = 1.0
+    dl_path.write_text(json.dumps(data), encoding="utf-8")
+
+    with pytest.raises(AssertionError, match="cost pairs .* != expected"):
+        vg3.validate_scientific_payloads(art_root, pay_root, conditions)
+
+
+def test_validate_scientific_payloads_rejects_threshold_formula_mismatch(tmp_path):
+    art_root, pay_root, conditions = _build_valid_test_payloads(tmp_path)
+
+    dl_path = pay_root / "decision_loss.json"
+    data = json.loads(dl_path.read_text(encoding="utf-8"))
+    first_scen = next(iter(data["scenarios"].values()))
+    # Set symmetric-cost row (1.0, 1.0) threshold to 0.9 (expected is 0.5)
+    first_scen["raw"]["cost_grid_losses"][0]["threshold"] = 0.9
+    # Keep referenced condition in sync so agreement check passes and threshold formula fails
+    conditions["logistic_regression__baseline__b50__raw"]["metrics"]["decision_loss"][0]["threshold"] = 0.9
+    dl_path.write_text(json.dumps(data), encoding="utf-8")
+
+    with pytest.raises(AssertionError, match="expected FP/\\(FP\\+FN\\) 0.5"):
+        vg3.validate_scientific_payloads(art_root, pay_root, conditions)
+
+
+def test_validate_scientific_payloads_rejects_decision_loss_non_budget50_binding(tmp_path):
+    art_root, pay_root, conditions = _build_valid_test_payloads(tmp_path)
+
+    dl_path = pay_root / "decision_loss.json"
+    data = json.loads(dl_path.read_text(encoding="utf-8"))
+    first_scen = next(iter(data["scenarios"].values()))
+    # Point raw decision_loss to b0 instead of b50
+    first_scen["raw"]["condition_id"] = conditions["logistic_regression__baseline__b0__raw"]["condition_id"]
+    dl_path.write_text(json.dumps(data), encoding="utf-8")
+
+    with pytest.raises(AssertionError, match="budget=50"):
+        vg3.validate_scientific_payloads(art_root, pay_root, conditions)
+
+
+def test_validate_scientific_payloads_rejects_decision_loss_copied_from_different_condition(tmp_path):
+    art_root, pay_root, conditions = _build_valid_test_payloads(tmp_path)
+
+    dl_path = pay_root / "decision_loss.json"
+    data = json.loads(dl_path.read_text(encoding="utf-8"))
+    first_scen = next(iter(data["scenarios"].values()))
+    # Alter confusion counts so row is internally consistent but disagrees with referenced condition
+    first_scen["raw"]["cost_grid_losses"][0]["tp_count"] = 750
+    first_scen["raw"]["cost_grid_losses"][0]["tn_count"] = 7050
+    first_scen["raw"]["cost_grid_losses"][0]["loss"] = (1.0 * 200 + 1.0 * 238) / 8238
+    dl_path.write_text(json.dumps(data), encoding="utf-8")
+
+    with pytest.raises(AssertionError, match="does not agree with referenced condition"):
         vg3.validate_scientific_payloads(art_root, pay_root, conditions)
