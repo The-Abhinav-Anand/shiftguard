@@ -148,6 +148,12 @@ def _extract_threshold_0_5_loss(decision_loss_items: list[dict[str, object]] | N
     return None
 
 
+def _format_mcar_scenario_name(rate: float) -> str:
+    if math.isclose(rate, round(rate, 2), abs_tol=1e-5):
+        return f"mcar_{rate:.2f}".replace(".", "_")
+    return f"mcar_{str(rate).replace('.', '_')}"
+
+
 def _stress_seed_bundle(master_seed: int) -> dict[str, int]:
     names = ("split", "model", "mask", "acquisition", "source_remask")
     children = np.random.SeedSequence(master_seed).spawn(5)
@@ -264,7 +270,9 @@ def execute_stress_engine(
     for rate in config.mcar_rates:
         if rate == 0.0:
             continue
-        scen_name = f"mcar_{rate:.2f}".replace(".", "_")
+        scen_name = _format_mcar_scenario_name(rate)
+        if scen_name in mcar_scenarios or scen_name in ("baseline", "history_block_0_50", "mcar_matched_history"):
+            raise ValueError(f"MCAR scenario name collision detected for rate {rate}: '{scen_name}' already exists")
         t_mask = generate_mcar_mask(test_record_ids, BANK_FEATURES, rate=rate, shared_uniforms=test_uniforms)
         p_mask = generate_mcar_mask(pool_record_ids, BANK_FEATURES, rate=rate, shared_uniforms=pool_uniforms)
         mcar_scenarios[scen_name] = {
@@ -412,25 +420,42 @@ def execute_stress_engine(
                     "eval_new_missing_rate": eval_new_rate,
                 }
 
-                fit_failures = {
-                    f["method"]
-                    for res in resolutions.values()
-                    for f in res.failures
-                    if f.get("phase") == "fit" and f.get("reason") != "budget_zero_unattempted"
-                }
-                pred_failures = {
-                    f["method"]
-                    for res in resolutions.values()
-                    for f in res.failures
-                    if f.get("phase") == "prediction"
-                }
+                # 1. Fit failure attempts (identifiable)
+                fit_failures: list[dict[str, object]] = []
+                for m, fit in fits_map.items():
+                    if isinstance(fit, CalibrationFit) and fit.record.fit_status != "fitted":
+                        if fit.record.fallback_reason != "budget_zero_unattempted":
+                            fit_failures.append({
+                                "method": m,
+                                "phase": "fit",
+                                "reason": fit.record.fallback_reason or "not_fitted",
+                            })
+
+                # 2. Prediction failure attempts (identifiable)
+                pred_failures: list[dict[str, object]] = []
+                for m, att in attempts.items():
+                    if att.get("status") == "failed":
+                        pred_failures.append({
+                            "method": m,
+                            "phase": "prediction",
+                            "reason": att.get("reason", "unknown"),
+                        })
 
                 sparse_bin_diag = None
                 if hasattr(source_binned_fit.probability_map, "last_diagnostics"):
                     sparse_bin_diag = dict(source_binned_fit.probability_map.last_diagnostics)
 
-                if sparse_bin_diag and int(sparse_bin_diag.get("sparse_prediction_failures", 0)) > 0:
-                    pred_failures.add("source_fraction_binned_temperature")
+                if sparse_bin_diag and sparse_bin_diag.get("failed_attempts"):
+                    for fa in sparse_bin_diag["failed_attempts"]:
+                        pred_failures.append({
+                            "method": "source_fraction_binned_temperature",
+                            "phase": "prediction",
+                            "sample_index": fa.get("sample_index"),
+                            "bin": fa.get("bin"),
+                            "fallback": fa.get("fallback"),
+                            "reason": fa.get("error", "sparse_fallback_failed"),
+                        })
+
                 unique_fit_failures = len(fit_failures)
                 unique_prediction_failures = len(pred_failures)
 
@@ -474,6 +499,8 @@ def execute_stress_engine(
                         "mask_rates": mask_rates,
                         "unique_fit_failures": unique_fit_failures,
                         "unique_prediction_failures": unique_prediction_failures,
+                        "identifiable_fit_failures": list(fit_failures),
+                        "identifiable_prediction_failures": list(pred_failures),
                         "sparse_bin_diagnostics": sparse_bin_diag if method == "source_fraction_binned_temperature" else None,
                         "labels_consumed": labels_consumed,
                         "failures": list(res.failures),
@@ -500,17 +527,16 @@ def execute_stress_engine(
                     }
                     scen_budget_curve[method].append(point)
 
-                    if budget == 50 or (budget == 0 and method.startswith("source_")):
-                        if method not in scen_reliability:
-                            scen_reliability[method] = {
-                                "condition_id": cond_id,
-                                "reliability_bins": metrics["reliability"] if metrics else None,
-                                "ece": metrics["ece"] if metrics else None,
-                            }
-                            scen_decision_loss[method] = {
-                                "condition_id": cond_id,
-                                "cost_grid_losses": metrics["decision_loss"] if metrics else None,
-                            }
+                    if budget == 50:
+                        scen_reliability[method] = {
+                            "condition_id": cond_id,
+                            "reliability_bins": metrics["reliability"] if metrics else None,
+                            "ece": metrics["ece"] if metrics else None,
+                        }
+                        scen_decision_loss[method] = {
+                            "condition_id": cond_id,
+                            "cost_grid_losses": metrics["decision_loss"] if metrics else None,
+                        }
 
             payload_budget_curve["scenarios"][f"{pred_name}__{scen_name}"] = scen_budget_curve
             payload_reliability["scenarios"][f"{pred_name}__{scen_name}"] = scen_reliability

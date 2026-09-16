@@ -67,7 +67,22 @@ class FractionBinnedTemperatureMap:
         affected_fallback_rows = 0
         bin_eval_counts = {b: 0 for b in range(self.n_bins)}
         bin_fallback_counts = {b: 0 for b in range(self.n_bins)}
-        bin_resolved_maps = {b: "fitted_bin_temperature" for b in range(self.n_bins)}
+
+        resolution_counts: dict[str, int] = {
+            "fitted_bin_temperature": 0,
+            "source_remasked_temperature": 0,
+            "source_temperature": 0,
+            "raw": 0,
+        }
+        bin_resolution_counts: dict[int, dict[str, int]] = {
+            b: {
+                "fitted_bin_temperature": 0,
+                "source_remasked_temperature": 0,
+                "source_temperature": 0,
+                "raw": 0,
+            }
+            for b in range(self.n_bins)
+        }
 
         failed_attempts: list[dict[str, object]] = []
 
@@ -83,10 +98,12 @@ class FractionBinnedTemperatureMap:
                 else:
                     prob = math.exp(scaled_z) / (1.0 + math.exp(scaled_z))
                 scaled_p[i] = prob
+                res_map = "fitted_bin_temperature"
             else:
                 affected_fallback_rows += 1
                 bin_fallback_counts[b] += 1
                 resolved = False
+                res_map = "raw"
 
                 # 1. Try global remasked map
                 if self.global_remasked_map is not None:
@@ -94,10 +111,16 @@ class FractionBinnedTemperatureMap:
                         p_sub = self.global_remasked_map.predict_proba(features[i:i + 1])
                         validate_raw_probabilities(p_sub, expected_rows=1)
                         scaled_p[i] = float(p_sub[0, 1]) if p_sub.ndim == 2 else float(p_sub[0])
-                        bin_resolved_maps[b] = "source_remasked_temperature"
+                        res_map = "source_remasked_temperature"
                         resolved = True
                     except Exception as err:
-                        failed_attempts.append({"bin": b, "fallback": "source_remasked_temperature", "error": str(err)})
+                        failed_attempts.append({
+                            "sample_index": i,
+                            "bin": b,
+                            "row_fraction": float(fractions[i]),
+                            "fallback": "source_remasked_temperature",
+                            "error": str(err),
+                        })
 
                 # 2. Try source map
                 if not resolved and self.source_map is not None:
@@ -105,15 +128,35 @@ class FractionBinnedTemperatureMap:
                         p_sub = self.source_map.predict_proba(features[i:i + 1])
                         validate_raw_probabilities(p_sub, expected_rows=1)
                         scaled_p[i] = float(p_sub[0, 1]) if p_sub.ndim == 2 else float(p_sub[0])
-                        bin_resolved_maps[b] = "source_temperature"
+                        res_map = "source_temperature"
                         resolved = True
                     except Exception as err:
-                        failed_attempts.append({"bin": b, "fallback": "source_temperature", "error": str(err)})
+                        failed_attempts.append({
+                            "sample_index": i,
+                            "bin": b,
+                            "row_fraction": float(fractions[i]),
+                            "fallback": "source_temperature",
+                            "error": str(err),
+                        })
 
                 # 3. Fallback to raw
                 if not resolved:
                     scaled_p[i] = p_clipped[i]
-                    bin_resolved_maps[b] = "raw"
+                    res_map = "raw"
+
+            resolution_counts[res_map] += 1
+            bin_resolution_counts[b][res_map] += 1
+
+        bin_resolved_maps: dict[int, str] = {}
+        for b in range(self.n_bins):
+            b_counts = bin_resolution_counts[b]
+            active_maps = [k for k, v in b_counts.items() if v > 0]
+            if len(active_maps) == 1:
+                bin_resolved_maps[b] = active_maps[0]
+            elif len(active_maps) > 1:
+                bin_resolved_maps[b] = "mixed"
+            else:
+                bin_resolved_maps[b] = "empty"
 
         scaled_p = np.clip(scaled_p, self.clip_eps, 1.0 - self.clip_eps)
         self.last_diagnostics = {
@@ -121,6 +164,8 @@ class FractionBinnedTemperatureMap:
             "bin_support": self.bin_counts,
             "bin_eval_counts": bin_eval_counts,
             "bin_fallback_counts": bin_fallback_counts,
+            "resolution_counts": resolution_counts,
+            "bin_resolution_counts": bin_resolution_counts,
             "bin_resolved_maps": bin_resolved_maps,
             "failed_attempts": failed_attempts,
             "sparse_prediction_failures": len(failed_attempts),

@@ -165,16 +165,27 @@ def validate_scientific_payloads(
                 points = scenarios[ps_key][m]
                 if not points or len(points) != len(REQUIRED_BUDGETS):
                     raise AssertionError(f"Expected {len(REQUIRED_BUDGETS)} points in budget_curve for {ps_key}/{m}, got {len(points)}")
+                point_budgets = tuple(pt.get("budget") for pt in points)
+                if point_budgets != REQUIRED_BUDGETS:
+                    raise AssertionError(f"Expected budgets {REQUIRED_BUDGETS} in budget_curve for {ps_key}/{m}, got {point_budgets}")
                 for pt in points:
                     cid = pt.get("condition_id")
                     if not cid or cid not in valid_condition_ids:
                         raise AssertionError(f"Point in budget_curve {ps_key}/{m} has nonexistent condition_id: {cid}")
                     b = pt.get("budget")
-                    if b not in REQUIRED_BUDGETS:
-                        raise AssertionError(f"Point in budget_curve {ps_key}/{m} has unsupported budget: {b}")
                     c_ref = valid_condition_ids[cid]
-                    if c_ref.get("budget") != b or c_ref.get("requested_method") != m:
-                        raise AssertionError(f"Point in budget_curve {ps_key}/{m} refers to mismatched condition: {cid}")
+                    if (
+                        c_ref.get("predictor") != p
+                        or c_ref.get("scenario") != s
+                        or c_ref.get("budget") != b
+                        or c_ref.get("requested_method") != m
+                    ):
+                        raise AssertionError(
+                            f"Point in budget_curve {ps_key}/{m} refers to mismatched condition: {cid} "
+                            f"(expected predictor={p}, scenario={s}, budget={b}, method={m}; "
+                            f"got predictor={c_ref.get('predictor')}, scenario={c_ref.get('scenario')}, "
+                            f"budget={c_ref.get('budget')}, method={c_ref.get('requested_method')})"
+                        )
 
     # 2. pattern_vs_rate
     pvr_file = payload_root / "pattern_vs_rate.json"
@@ -194,7 +205,12 @@ def validate_scientific_payloads(
     for p in REQUIRED_PREDICTORS:
         if p not in comparisons:
             raise AssertionError(f"Missing predictor {p} in pattern_vs_rate comparisons")
-        methods = comparisons[p].get("methods", {})
+        p_comp = comparisons[p]
+        if p_comp.get("block_scenario") != "history_block_0_50" or p_comp.get("cellwise_scenario") != "mcar_matched_history":
+            raise AssertionError(f"pattern_vs_rate comparison {p} has invalid scenario pair")
+        if p_comp.get("budget") != 50:
+            raise AssertionError(f"pattern_vs_rate comparison {p} has budget {p_comp.get('budget')} != 50")
+        methods = p_comp.get("methods", {})
         if set(methods.keys()) != set(REQUIRED_METHODS):
             raise AssertionError(f"Missing methods in pattern_vs_rate comparisons for {p}: expected {sorted(REQUIRED_METHODS)}, got {sorted(methods.keys())}")
         for m in REQUIRED_METHODS:
@@ -207,11 +223,40 @@ def validate_scientific_payloads(
                 raise AssertionError(f"Missing or nonexistent block_condition_id in pattern_vs_rate {p}/{m}: {bcid}")
             if not ccid or ccid not in valid_condition_ids:
                 raise AssertionError(f"Missing or nonexistent cellwise_condition_id in pattern_vs_rate {p}/{m}: {ccid}")
+            bc_ref = valid_condition_ids[bcid]
+            cc_ref = valid_condition_ids[ccid]
+            if (
+                bc_ref.get("predictor") != p
+                or bc_ref.get("scenario") != "history_block_0_50"
+                or bc_ref.get("budget") != 50
+                or bc_ref.get("requested_method") != m
+            ):
+                raise AssertionError(f"pattern_vs_rate {p}/{m} block condition mismatch: {bcid}")
+            if (
+                cc_ref.get("predictor") != p
+                or cc_ref.get("scenario") != "mcar_matched_history"
+                or cc_ref.get("budget") != 50
+                or cc_ref.get("requested_method") != m
+            ):
+                raise AssertionError(f"pattern_vs_rate {p}/{m} cellwise condition mismatch: {ccid}")
             if "comparison_qualified" not in m_comp:
                 raise AssertionError(f"Missing comparison_qualified in comparison for {p}/{m}")
             if m_comp["available"] is True:
                 if m_comp.get("delta_brier") is None or not math.isfinite(float(m_comp["delta_brier"])):
                     raise AssertionError(f"Available comparison {p}/{m} missing finite delta_brier")
+                b_metrics = bc_ref.get("metrics")
+                c_metrics = cc_ref.get("metrics")
+                if not b_metrics or not c_metrics:
+                    raise AssertionError(f"Available comparison {p}/{m} condition metrics missing")
+                b_brier = float(b_metrics["brier_score"])
+                c_brier = float(c_metrics["brier_score"])
+                expected_delta = b_brier - c_brier
+                reported_delta = float(m_comp["delta_brier"])
+                if not math.isclose(reported_delta, expected_delta, abs_tol=1e-6):
+                    raise AssertionError(
+                        f"Delta Brier mismatch for {p}/{m}: reported {reported_delta}, "
+                        f"expected {expected_delta} = ({b_brier} - {c_brier})"
+                    )
 
     # 3. reliability
     rel_file = payload_root / "reliability.json"
@@ -221,21 +266,50 @@ def validate_scientific_payloads(
     rel_scenarios = rel_data.get("scenarios", {})
     if not rel_scenarios:
         raise AssertionError("reliability.json has empty scenarios")
-    if not set(rel_scenarios.keys()).issubset(expected_scenarios):
-        raise AssertionError(f"reliability.json contains invented scenarios: {sorted(set(rel_scenarios.keys()) - expected_scenarios)}")
-    for scen_key, methods_dict in rel_scenarios.items():
-        if not methods_dict:
-            raise AssertionError(f"reliability.json scenario {scen_key} is empty")
-        for m, m_data in methods_dict.items():
-            cid = m_data.get("condition_id")
-            if not cid or cid not in valid_condition_ids:
-                raise AssertionError(f"Reliability entry {scen_key}/{m} has nonexistent condition_id: {cid}")
-            bins = m_data.get("reliability_bins")
-            if bins is None:
-                raise AssertionError(f"Reliability entry {scen_key}/{m} missing reliability_bins")
-            total_samples = sum(b.get("count", 0) for b in bins)
-            if total_samples != EXPECTED_EVAL_ROWS:
-                raise AssertionError(f"Reliability diagram in {scen_key}/{m} has total count {total_samples} != {EXPECTED_EVAL_ROWS}")
+    if set(rel_scenarios.keys()) != expected_scenarios:
+        raise AssertionError(f"reliability.json scenarios mismatch: expected {sorted(expected_scenarios)}, got {sorted(rel_scenarios.keys())}")
+    for p in REQUIRED_PREDICTORS:
+        for s in REQUIRED_SCENARIOS:
+            ps_key = f"{p}__{s}"
+            if ps_key not in rel_scenarios:
+                raise AssertionError(f"Missing scenario in reliability.json: {ps_key}")
+            methods_dict = rel_scenarios[ps_key]
+            if set(methods_dict.keys()) != set(REQUIRED_METHODS):
+                raise AssertionError(f"reliability.json {ps_key} missing methods: expected {sorted(REQUIRED_METHODS)}, got {sorted(methods_dict.keys())}")
+            for m in REQUIRED_METHODS:
+                m_data = methods_dict[m]
+                cid = m_data.get("condition_id")
+                if not cid or cid not in valid_condition_ids:
+                    raise AssertionError(f"Reliability entry {ps_key}/{m} has nonexistent condition_id: {cid}")
+                c_ref = valid_condition_ids[cid]
+                if (
+                    c_ref.get("predictor") != p
+                    or c_ref.get("scenario") != s
+                    or c_ref.get("requested_method") != m
+                    or c_ref.get("budget") not in REQUIRED_BUDGETS
+                ):
+                    raise AssertionError(f"Reliability entry {ps_key}/{m} refers to mismatched condition: {cid}")
+                bins = m_data.get("reliability_bins")
+                if not bins or not isinstance(bins, list) or len(bins) == 0:
+                    raise AssertionError(f"Reliability entry {ps_key}/{m} missing or empty reliability_bins")
+                total_samples = sum(b.get("count", 0) for b in bins)
+                if total_samples != EXPECTED_EVAL_ROWS:
+                    raise AssertionError(f"Reliability diagram in {ps_key}/{m} has total count {total_samples} != {EXPECTED_EVAL_ROWS}")
+                for b_dict in bins:
+                    for k in ("lower", "upper", "count", "mean_probability", "positive_fraction"):
+                        if k not in b_dict:
+                            raise AssertionError(f"Reliability bin in {ps_key}/{m} missing required key: {k}")
+                        val = b_dict[k]
+                        if k == "count":
+                            if not isinstance(val, int) or val < 0:
+                                raise AssertionError(f"Reliability bin in {ps_key}/{m} invalid count: {val}")
+                        elif k in ("lower", "upper"):
+                            if not (isinstance(val, (int, float)) and math.isfinite(val) and 0.0 <= val <= 1.0):
+                                raise AssertionError(f"Reliability bin in {ps_key}/{m} invalid bounds: {val}")
+                        else:
+                            if val is not None:
+                                if not (isinstance(val, (int, float)) and math.isfinite(val) and 0.0 <= val <= 1.0):
+                                    raise AssertionError(f"Reliability bin in {ps_key}/{m} has out-of-bounds {k}: {val}")
 
     # 4. decision_loss
     dl_file = payload_root / "decision_loss.json"
@@ -245,18 +319,54 @@ def validate_scientific_payloads(
     dl_scenarios = dl_data.get("scenarios", {})
     if not dl_scenarios:
         raise AssertionError("decision_loss.json has empty scenarios")
-    if not set(dl_scenarios.keys()).issubset(expected_scenarios):
-        raise AssertionError(f"decision_loss.json contains invented scenarios: {sorted(set(dl_scenarios.keys()) - expected_scenarios)}")
-    for scen_key, methods_dict in dl_scenarios.items():
-        if not methods_dict:
-            raise AssertionError(f"decision_loss.json scenario {scen_key} is empty")
-        for m, m_data in methods_dict.items():
-            cid = m_data.get("condition_id")
-            if not cid or cid not in valid_condition_ids:
-                raise AssertionError(f"Decision loss entry {scen_key}/{m} has nonexistent condition_id: {cid}")
-            cost_losses = m_data.get("cost_grid_losses")
-            if not cost_losses:
-                raise AssertionError(f"Decision loss entry {scen_key}/{m} has empty cost_grid_losses")
+    if set(dl_scenarios.keys()) != expected_scenarios:
+        raise AssertionError(f"decision_loss.json scenarios mismatch: expected {sorted(expected_scenarios)}, got {sorted(dl_scenarios.keys())}")
+    for p in REQUIRED_PREDICTORS:
+        for s in REQUIRED_SCENARIOS:
+            ps_key = f"{p}__{s}"
+            if ps_key not in dl_scenarios:
+                raise AssertionError(f"Missing scenario in decision_loss.json: {ps_key}")
+            methods_dict = dl_scenarios[ps_key]
+            if set(methods_dict.keys()) != set(REQUIRED_METHODS):
+                raise AssertionError(f"decision_loss.json {ps_key} missing methods: expected {sorted(REQUIRED_METHODS)}, got {sorted(methods_dict.keys())}")
+            for m in REQUIRED_METHODS:
+                m_data = methods_dict[m]
+                cid = m_data.get("condition_id")
+                if not cid or cid not in valid_condition_ids:
+                    raise AssertionError(f"Decision loss entry {ps_key}/{m} has nonexistent condition_id: {cid}")
+                c_ref = valid_condition_ids[cid]
+                if (
+                    c_ref.get("predictor") != p
+                    or c_ref.get("scenario") != s
+                    or c_ref.get("requested_method") != m
+                    or c_ref.get("budget") not in REQUIRED_BUDGETS
+                ):
+                    raise AssertionError(f"Decision loss entry {ps_key}/{m} refers to mismatched condition: {cid}")
+                cost_losses = m_data.get("cost_grid_losses")
+                if not cost_losses or not isinstance(cost_losses, list):
+                    raise AssertionError(f"Decision loss entry {ps_key}/{m} has empty or non-list cost_grid_losses")
+                if len(cost_losses) != 5:
+                    raise AssertionError(f"Decision loss entry {ps_key}/{m} cost_grid_losses count {len(cost_losses)} != 5")
+                for row in cost_losses:
+                    for k in ("fp_cost", "fn_cost", "threshold", "loss", "n_samples", "tp_count", "fp_count", "tn_count", "fn_count"):
+                        if k not in row:
+                            raise AssertionError(f"Decision loss row in {ps_key}/{m} missing required key: {k}")
+                    if row["n_samples"] != EXPECTED_EVAL_ROWS:
+                        raise AssertionError(f"Decision loss row in {ps_key}/{m} has n_samples {row['n_samples']} != {EXPECTED_EVAL_ROWS}")
+                    tp, fp, tn, fn = row["tp_count"], row["fp_count"], row["tn_count"], row["fn_count"]
+                    if not all(isinstance(c, int) and c >= 0 for c in (tp, fp, tn, fn)):
+                        raise AssertionError(f"Decision loss row in {ps_key}/{m} has non-integer or negative confusion counts")
+                    if tp + fp + tn + fn != EXPECTED_EVAL_ROWS:
+                        raise AssertionError(f"Decision loss row in {ps_key}/{m} confusion counts sum to {tp + fp + tn + fn} != {EXPECTED_EVAL_ROWS}")
+                    loss = row["loss"]
+                    if not (math.isfinite(loss) and loss >= 0.0):
+                        raise AssertionError(f"Decision loss row in {ps_key}/{m} has invalid loss: {loss}")
+                    thresh = row["threshold"]
+                    if not (math.isfinite(thresh) and 0.0 <= thresh <= 1.0):
+                        raise AssertionError(f"Decision loss row in {ps_key}/{m} has invalid threshold: {thresh}")
+                    expected_loss = (row["fp_cost"] * fp + row["fn_cost"] * fn) / EXPECTED_EVAL_ROWS
+                    if not math.isclose(loss, expected_loss, abs_tol=1e-6):
+                        raise AssertionError(f"Decision loss row in {ps_key}/{m} loss mismatch: reported {loss}, calculated {expected_loss}")
 
     return {
         "condition_count": len(conditions_data),

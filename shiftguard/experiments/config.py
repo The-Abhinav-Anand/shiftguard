@@ -131,9 +131,16 @@ class StressConfig(BaselineConfig):
             raise ValueError("budgets must include budget 50 required for pattern-vs-rate comparison")
         if not self.mcar_rates:
             raise ValueError("mcar_rates must not be empty")
+        formatted_names: set[str] = set()
         for r in self.mcar_rates:
             if not (math.isfinite(r) and 0.0 <= r < 1.0):
                 raise ValueError(f"invalid mcar_rate: {r}")
+            if r == 0.0:
+                continue
+            name = f"mcar_{r:.2f}".replace(".", "_") if math.isclose(r, round(r, 2), abs_tol=1e-5) else f"mcar_{str(r).replace('.', '_')}"
+            if name in formatted_names or name in ("baseline", "history_block_0_50", "mcar_matched_history"):
+                raise ValueError(f"MCAR rate collision detected in configuration: {r} maps to '{name}'")
+            formatted_names.add(name)
         if not self.calibration_methods:
             raise ValueError("calibration_methods must not be empty")
         for m in self.calibration_methods:

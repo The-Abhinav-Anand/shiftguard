@@ -85,6 +85,7 @@ def _build_valid_test_payloads(tmp_path: Path) -> tuple[Path, Path, dict[str, di
                 for m in vg3.REQUIRED_METHODS:
                     key = f"{p}__{s}__b{b}__{m}"
                     cid = hashlib.sha256(key.encode("utf-8")).hexdigest()[:24]
+                    brier = 0.125 if s == "history_block_0_50" else 0.120
                     conditions[key] = {
                         "name": key,
                         "condition_id": cid,
@@ -95,12 +96,25 @@ def _build_valid_test_payloads(tmp_path: Path) -> tuple[Path, Path, dict[str, di
                         "resolved_method": m,
                         "status": "scored",
                         "metrics": {
-                            "brier_score": 0.12,
+                            "brier_score": brier,
                             "log_loss": 0.35,
                             "ece": 0.04,
                             "roc_auc": 0.88,
                             "average_precision": 0.65,
-                            "decision_loss": [{"cost": [1.0, 1.0], "threshold": 0.5, "loss": 0.1}],
+                            "decision_loss": [
+                                {
+                                    "fp_cost": fp_c,
+                                    "fn_cost": fn_c,
+                                    "threshold": fp_c / (fp_c + fn_c),
+                                    "fp_count": 200,
+                                    "fn_count": 238,
+                                    "tp_count": 800,
+                                    "tn_count": 7000,
+                                    "n_samples": 8238,
+                                    "loss": (fp_c * 200 + fn_c * 238) / 8238,
+                                }
+                                for fp_c, fn_c in [(1.0, 1.0), (1.0, 4.0), (1.0, 9.0), (4.0, 1.0), (9.0, 1.0)]
+                            ],
                         },
                     }
 
@@ -137,9 +151,16 @@ def _build_valid_test_payloads(tmp_path: Path) -> tuple[Path, Path, dict[str, di
                 "residual_mismatch": 0.002,
                 "block_condition_id": b_cid,
                 "cellwise_condition_id": c_cid,
+                "block_brier": 0.125,
+                "cellwise_brier": 0.120,
                 "delta_brier": 0.005,
             }
-        pvr_comparisons[p] = {"methods": methods_comp}
+        pvr_comparisons[p] = {
+            "block_scenario": "history_block_0_50",
+            "cellwise_scenario": "mcar_matched_history",
+            "budget": 50,
+            "methods": methods_comp,
+        }
     pvr_data = {
         "matching_report": {
             "matching_strategy": "bernoulli_matched_rate",
@@ -156,10 +177,19 @@ def _build_valid_test_payloads(tmp_path: Path) -> tuple[Path, Path, dict[str, di
         for s in vg3.REQUIRED_SCENARIOS:
             ps_key = f"{p}__{s}"
             rel_scenarios[ps_key] = {
-                "raw": {
-                    "condition_id": conditions[f"{p}__{s}__b0__raw"]["condition_id"],
-                    "reliability_bins": [{"bin": 0, "count": 8238, "mean_predicted": 0.1, "mean_true": 0.1}],
+                m: {
+                    "condition_id": conditions[f"{p}__{s}__b50__{m}"]["condition_id"],
+                    "reliability_bins": [
+                        {
+                            "lower": 0.0,
+                            "upper": 1.0,
+                            "count": 8238,
+                            "mean_probability": 0.1,
+                            "positive_fraction": 0.1,
+                        }
+                    ],
                 }
+                for m in vg3.REQUIRED_METHODS
             }
     (payload_root / "reliability.json").write_text(json.dumps({"scenarios": rel_scenarios}), encoding="utf-8")
 
@@ -169,10 +199,24 @@ def _build_valid_test_payloads(tmp_path: Path) -> tuple[Path, Path, dict[str, di
         for s in vg3.REQUIRED_SCENARIOS:
             ps_key = f"{p}__{s}"
             dl_scenarios[ps_key] = {
-                "raw": {
-                    "condition_id": conditions[f"{p}__{s}__b0__raw"]["condition_id"],
-                    "cost_grid_losses": [{"cost": [1.0, 1.0], "threshold": 0.5, "loss": 0.1}],
+                m: {
+                    "condition_id": conditions[f"{p}__{s}__b50__{m}"]["condition_id"],
+                    "cost_grid_losses": [
+                        {
+                            "fp_cost": fp_c,
+                            "fn_cost": fn_c,
+                            "threshold": fp_c / (fp_c + fn_c),
+                            "fp_count": 200,
+                            "fn_count": 238,
+                            "tp_count": 800,
+                            "tn_count": 7000,
+                            "n_samples": 8238,
+                            "loss": (fp_c * 200 + fn_c * 238) / 8238,
+                        }
+                        for fp_c, fn_c in [(1.0, 1.0), (1.0, 4.0), (1.0, 9.0), (4.0, 1.0), (9.0, 1.0)]
+                    ],
                 }
+                for m in vg3.REQUIRED_METHODS
             }
     (payload_root / "decision_loss.json").write_text(json.dumps({"scenarios": dl_scenarios}), encoding="utf-8")
 
@@ -218,7 +262,6 @@ def test_validate_scientific_payloads_rejects_wrong_reliability_row_count(tmp_pa
 
     rel_path = pay_root / "reliability.json"
     data = json.loads(rel_path.read_text(encoding="utf-8"))
-    # Corrupt sample count to 8000
     first_scen = next(iter(data["scenarios"].values()))
     first_scen["raw"]["reliability_bins"][0]["count"] = 8000
     rel_path.write_text(json.dumps(data), encoding="utf-8")
@@ -240,7 +283,6 @@ def test_validate_scientific_payloads_rejects_out_of_bounds_metrics(tmp_path):
 def test_validate_scientific_payloads_rejects_nonexistent_condition_reference(tmp_path):
     art_root, pay_root, conditions = _build_valid_test_payloads(tmp_path)
 
-    # Point in budget_curve references a nonexistent condition_id
     bc_path = pay_root / "budget_curve.json"
     data = json.loads(bc_path.read_text(encoding="utf-8"))
     first_scen = next(iter(data["scenarios"].values()))
@@ -251,30 +293,70 @@ def test_validate_scientific_payloads_rejects_nonexistent_condition_reference(tm
         vg3.validate_scientific_payloads(art_root, pay_root, conditions)
 
 
-def test_validate_scientific_payloads_rejects_budget999(tmp_path):
+def test_validate_scientific_payloads_rejects_duplicated_or_wrong_budgets(tmp_path):
     art_root, pay_root, conditions = _build_valid_test_payloads(tmp_path)
 
-    # Point in budget_curve has budget 999
     bc_path = pay_root / "budget_curve.json"
     data = json.loads(bc_path.read_text(encoding="utf-8"))
     first_scen = next(iter(data["scenarios"].values()))
-    first_scen["raw"][0]["budget"] = 999
+    # Duplicate budget 0 instead of budget 25
+    first_scen["raw"][1]["budget"] = 0
     bc_path.write_text(json.dumps(data), encoding="utf-8")
 
-    with pytest.raises(AssertionError, match="unsupported budget: 999"):
+    with pytest.raises(AssertionError, match="Expected budgets"):
+        vg3.validate_scientific_payloads(art_root, pay_root, conditions)
+
+
+def test_validate_scientific_payloads_rejects_mismatched_condition_reference(tmp_path):
+    art_root, pay_root, conditions = _build_valid_test_payloads(tmp_path)
+
+    bc_path = pay_root / "budget_curve.json"
+    data = json.loads(bc_path.read_text(encoding="utf-8"))
+    # Point in logistic_regression__baseline references a random_forest condition
+    first_scen = next(iter(data["scenarios"].values()))
+    first_scen["raw"][0]["condition_id"] = conditions["random_forest__baseline__b0__raw"]["condition_id"]
+    bc_path.write_text(json.dumps(data), encoding="utf-8")
+
+    with pytest.raises(AssertionError, match="refers to mismatched condition"):
+        vg3.validate_scientific_payloads(art_root, pay_root, conditions)
+
+
+def test_validate_scientific_payloads_rejects_delta_brier_mismatch(tmp_path):
+    art_root, pay_root, conditions = _build_valid_test_payloads(tmp_path)
+
+    pvr_path = pay_root / "pattern_vs_rate.json"
+    data = json.loads(pvr_path.read_text(encoding="utf-8"))
+    # Corrupt reported delta_brier to 0.099 (true difference is 0.125 - 0.120 = 0.005)
+    data["comparisons"]["logistic_regression"]["methods"]["raw"]["delta_brier"] = 0.099
+    pvr_path.write_text(json.dumps(data), encoding="utf-8")
+
+    with pytest.raises(AssertionError, match="Delta Brier mismatch"):
+        vg3.validate_scientific_payloads(art_root, pay_root, conditions)
+
+
+def test_validate_scientific_payloads_rejects_decision_loss_confusion_sum_mismatch(tmp_path):
+    art_root, pay_root, conditions = _build_valid_test_payloads(tmp_path)
+
+    dl_path = pay_root / "decision_loss.json"
+    data = json.loads(dl_path.read_text(encoding="utf-8"))
+    first_scen = next(iter(data["scenarios"].values()))
+    # Corrupt confusion counts so sum != 8238
+    first_scen["raw"]["cost_grid_losses"][0]["fp_count"] = 500
+    dl_path.write_text(json.dumps(data), encoding="utf-8")
+
+    with pytest.raises(AssertionError, match="confusion counts sum to"):
         vg3.validate_scientific_payloads(art_root, pay_root, conditions)
 
 
 def test_validate_scientific_payloads_rejects_invented_or_empty_scenarios(tmp_path):
     art_root, pay_root, conditions = _build_valid_test_payloads(tmp_path)
 
-    # Invented scenario in reliability.json
     rel_path = pay_root / "reliability.json"
     data = json.loads(rel_path.read_text(encoding="utf-8"))
     data["scenarios"]["invented_scenario"] = {"raw": {}}
     rel_path.write_text(json.dumps(data), encoding="utf-8")
 
-    with pytest.raises(AssertionError, match="invented scenarios"):
+    with pytest.raises(AssertionError, match="reliability.json scenarios mismatch"):
         vg3.validate_scientific_payloads(art_root, pay_root, conditions)
 
 
@@ -283,7 +365,6 @@ def test_validate_scientific_payloads_rejects_failed_condition_with_nonnull_metr
 
     first_cond = next(iter(conditions.values()))
     first_cond["status"] = "failed"
-    # Metrics remain populated (non-null), violating failed contract
     assert first_cond.get("metrics") is not None
 
     with pytest.raises(AssertionError, match="must have null metrics"):
@@ -293,12 +374,11 @@ def test_validate_scientific_payloads_rejects_failed_condition_with_nonnull_metr
 def test_validate_scientific_payloads_rejects_unsupported_evaluator_rows(tmp_path):
     art_root, pay_root, conditions = _build_valid_test_payloads(tmp_path)
 
-    # Corrupt reliability bins to have 0 bins (empty)
     rel_path = pay_root / "reliability.json"
     data = json.loads(rel_path.read_text(encoding="utf-8"))
     first_scen = next(iter(data["scenarios"].values()))
     first_scen["raw"]["reliability_bins"] = []
     rel_path.write_text(json.dumps(data), encoding="utf-8")
 
-    with pytest.raises(AssertionError, match="total count 0 != 8238"):
+    with pytest.raises(AssertionError, match="missing or empty reliability_bins"):
         vg3.validate_scientific_payloads(art_root, pay_root, conditions)
