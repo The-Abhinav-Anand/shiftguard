@@ -153,3 +153,45 @@ Antigravity remains the application writer. Continue the same fixed checklist:
 No application code, commit, deployment, research file or historical acceptance
 was changed in the service-recovery step. No user-supplied connection URL is now
 needed. Candidate commit authorization remains at the existing parent boundary.
+
+## Candidate Verification & Reproduction Results - 23 September 2026
+
+Candidate source frozen at clean commit **`d9d1f9d10fd366a1a8aa0047d3ab84aa5f8faba0`**.
+Working tree status: clean (`git status --porcelain` is empty).
+
+### 1. Live PostgreSQL 16 Backend Contracts (`tests/integration/test_postgres_backend_contracts.py`)
+Executed against isolated, disposable schemas (`sg_bcontracts_*`) on live PostgreSQL 16.15:
+- **I02**: `test_i02_postgres_concurrent_admission_quota_strictly_two` — 6 concurrent workers; strictly 2 admitted under `FOR UPDATE`, 4 receive `QuotaExceededError`. (PASS)
+- **I02**: `test_i02_postgres_same_key_retries_replay_one_job` — 8 concurrent submitters replay a single job idempotently. (PASS)
+- **I02**: `test_i02_postgres_cross_session_cannot_inspect_or_cancel` — Cross-session job read/cancel strictly rejected with HTTP 403 `CROSS_SESSION_ACCESS_DENIED`. (PASS)
+- **I02**: `test_i02_postgres_submitted_configuration_reaches_persisted_result` — Submitted seed reaches persisted experiments and executions tables. (PASS)
+- **I04**: `test_i04_postgres_concurrent_claims_have_single_owner` — 5 concurrent workers claim simultaneously; exactly 1 claim winner under `FOR UPDATE SKIP LOCKED`. (PASS)
+- **I04**: `test_i04_postgres_expired_or_replaced_owners_cannot_heartbeat_or_finish` — Expired worker heartbeat and mark_completed both return `False`. (PASS)
+- **I04**: `test_i04_postgres_cancellation_survives_claim_and_recovery_races` — Real threading barrier race on PostgreSQL preserves cancellation state. (PASS)
+- **I04**: `test_i04_postgres_http_submission_completes_through_managed_worker` — Lifespan background worker executes and completes submitted job autonomously. (PASS)
+- **I07**: `test_i07_postgres_migration_upgrade_0005_to_0008_preserves_rows` — Representative 0005 database upgrades cleanly to 0008 preserving all rows and backfilled columns on PostgreSQL 16. (PASS)
+
+### 2. Candidate Full-Suite Verification (`scripts/check_gate4_closure.py --candidate`)
+- **Status**: `TEST_EVIDENCE_READY`
+- **Attempt**: `verification/gate4-closure/20260922T194759Z-cf5382b470bb`
+- **Guards**: 27 passed, 0 skipped, 0 failed, 0 errors
+- **Full Suite**: 331 passed, 0 skipped, 0 failed, 0 errors, 2 warnings in 471.71s
+- **Source Integrity**: `source_unchanged: true`, `blockers: []`
+
+### 3. Gate 2 Affected-Source Reproduction (`verification/verify_gate2_reproduction.py`)
+- **Status**: `passed`
+- **Target Experiment**: `c6678b6b4ddbc482c5bc4e81`
+- **Executions**: 3 distinct UUIDs (`69b3d068-...`, `bad38238-...`, `006552eb-...`) across 2 SQLite runs + 1 live PostgreSQL 16 run
+- **Hashes**: All 8 artifact hashes identical across all 3 executions; `sqlite_and_postgres_payloads_equal: true`
+- **Provenance**: `git_available: true`, `git_dirty: false`, `verified_commit: d9d1f9d10fd366a1a8aa0047d3ab84aa5f8faba0`
+
+### 4. Gate 3 Affected-Source Reproduction (`verification/verify_gate3_reproduction.py`)
+- **Status**: `passed`
+- **Attempt ID**: `attempt-20260922T200139Z-fa514d57`
+- **Target Experiment**: `d8a18a371c8c88ee20ba1087`
+- **Executions**: 3 distinct UUIDs (`62bfcaf9-...`, `5f8fb57d-...`, `4e45e5d9-...`) across 2 SQLite runs + 1 live PostgreSQL 16 run
+- **Condition Matrix**: 400 conditions evaluated; 4 scientific payloads verified (`budget_curve`, `pattern_vs_rate`, `reliability`, `decision_loss`)
+- **Hashes**: All 11 artifact hashes identical across all 3 executions; `sqlite_and_postgres_payloads_equal: true`
+- **Provenance**: `git_available: true`, `git_dirty: false`, `verified_commit: d9d1f9d10fd366a1a8aa0047d3ab84aa5f8faba0`
+
+All contract obligations (I01 through I08) and affected-source reproduction proofs are verified on candidate `d9d1f9d10fd366a1a8aa0047d3ab84aa5f8faba0`. Gate 4 review packet is ready for independent review and acceptance by Astra High.

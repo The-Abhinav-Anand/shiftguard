@@ -1,22 +1,26 @@
 {
-  "handoff_id": "gate4-bounded-closure-20260921",
-  "status": "READY_FOR_CANDIDATE_FREEZE",
+  "handoff_id": "gate4-bounded-closure-20260923",
+  "status": "ALL_EVIDENCE_READY_FOR_INDEPENDENT_REVIEW",
   "from_agent": "gemini_antigravity",
   "to_agent": "astra_high",
-  "timestamp": "2026-09-22",
+  "timestamp": "2026-09-23",
   "branch": "implementation/gate-0",
   "current_gate": "4",
-  "current_subtask": "PostgreSQL 16 backend contracts proven (9/9 passed); full suite 331 passed with zero skips; ready for candidate freeze and reproduction",
+  "current_subtask": "Candidate d9d1f9d10fd366a1a8aa0047d3ab84aa5f8faba0 verified: live PostgreSQL 16 backend contracts (9/9), full suite (331 pass / 0 skips), Gate 2 & Gate 3 reproductions proven",
   "base_source_commit": "c11dc059391810f347e8329c558b6b3e45cd037f",
-  "candidate_state": "BACKEND_CONTRACTS_PROVEN",
+  "candidate_commit": "d9d1f9d10fd366a1a8aa0047d3ab84aa5f8faba0",
+  "candidate_state": "ALL_EVIDENCE_READY",
   "active_packet": "docs/gate4-closure.md",
   "fix_ledger": "docs/fix-ledger.md",
+  "latest_review": "docs/gate4-closure-review.md",
+  "acceptance_matrix": "docs/gate4-acceptance.json",
+  "verification_command": ".venv/Scripts/python.exe -B scripts/check_gate4_closure.py --candidate",
+  "latest_attempt": "../verification/gate4-closure/current_attempt.json",
   "frozen_gates_affected": [
-    "Gate2 and Gate3 shared modules: verify new candidate; preserve historical accepted evidence"
+    "Gate2 reproduction proven on candidate d9d1f9d10fd366a1a8aa0047d3ab84aa5f8faba0",
+    "Gate3 reproduction proven on candidate d9d1f9d10fd366a1a8aa0047d3ab84aa5f8faba0"
   ],
-  "blockers": [
-    "Current candidate uncommitted; exact-source candidate verification, package provenance, and affected scientific reproduction outstanding"
-  ],
+  "blockers": [],
   "do_not_redo": [
     "Gate0 acceptance",
     "Gate1 clean-clone verification",
@@ -25,128 +29,44 @@
     "Hardening batches H0-H3"
   ],
   "next": {
-    "batch": "Candidate freeze and reproduction",
-    "task": "Freeze clean candidate commit; run scripts/check_gate4_closure.py --candidate; execute verify_gate2_reproduction.py and verify_gate3_reproduction.py into fresh external directories; see docs/gate4-closure-review.md",
-    "acceptance": "Exact-candidate full suite and affected reproduction with no unexplained required skips; final gate checkpoint"
+    "batch": "Independent review by Astra High",
+    "task": "Perform independent review of candidate commit d9d1f9d10fd366a1a8aa0047d3ab84aa5f8faba0 and verify all immutable evidence artifacts",
+    "acceptance": "Gate 4 final source acceptance and closure"
   },
   "safe_to_resume": true,
-  "accepted_source_commit": "937f33c5c0f96ca18c9e7e0a82769c430d71bfa1",
-  "worktree_clean_at_source_verification": false,
-  "latest_review": "docs/gate4-closure-review.md",
-  "acceptance_matrix": "docs/gate4-acceptance.json",
+  "worktree_clean_at_source_verification": true,
   "open_findings": [],
-  "historical_author_report": {
-    "commands_run": [
-      {
-        "command": ".venv\\Scripts\\python.exe -m pytest tests/integration/test_gate4_review5_regressions.py --basetemp tmp_test_run",
-        "exit_code": 0,
-        "result": "12 passed in 10.45s"
-      },
-      {
-        "command": ".venv\\Scripts\\python.exe -B docs/aegis/reviews/2026-09-19-complete-review/evidence/runtime-probes.py",
-        "exit_code": 0,
-        "result": "All runtime probes passed with corrected behavior (stale attempt protected, corrupt JSON quarantined)"
-      },
-      {
-        "command": ".venv\\Scripts\\python.exe -m pytest -q -p no:cacheprovider --basetemp tmp_test_run --tb=short",
-        "exit_code": 0,
-        "result": "285 passed, 1 skipped, 2 warnings in 216.59s"
-      }
-    ],
-    "tests": [
-      {
-        "name": "Gate 4 Review 5 Regression Suite",
-        "status": "PASS",
-        "evidence": "tests/integration/test_gate4_review5_regressions.py (12 passed covering C01-C06, API-01-API-06, SCI-05, SCI-06)"
-      },
-      {
-        "name": "Gate 4 Review 5 Independent Runtime Probes",
-        "status": "PASS",
-        "evidence": "docs/aegis/reviews/2026-09-19-complete-review/evidence/runtime-probes.py (all probes match corrected expectations)"
-      },
-      {
-        "name": "Gate 4 Review 4 Regression Suite",
-        "status": "PASS",
-        "evidence": "tests/integration/test_gate4_review4_regressions.py (18 passed covering R4-01 through R4-04)"
-      },
-      {
-        "name": "Gate 4 Review 3 Regression Suite",
-        "status": "PASS",
-        "evidence": "tests/integration/test_gate4_review3_regressions.py (8 passed)"
-      },
-      {
-        "name": "Gate 4 Review 2 Regression Suite",
-        "status": "PASS",
-        "evidence": "tests/integration/test_gate4_review2_regressions.py (10 passed)"
-      },
-      {
-        "name": "Full suite baseline, hardening, and Gate 4 integration",
-        "status": "PASS_WITH_SERVICE_SKIP",
-        "evidence": "285 passed, 1 skipped (PostgreSQL service test), 2 warnings in 216.59s"
-      }
-    ],
-    "verifiers": [
-      {
-        "name": "Gate 2 clean-commit three-way reproduction (historical)",
-        "status": "PASS",
-        "evidence": "../verification/gate2/accepted-937f33c/verification.json"
-      },
-      {
-        "name": "Astra High final review (Gate 2 historical)",
-        "status": "PASS",
-        "evidence": "../verification/gate2/review-record.json"
-      },
-      {
-        "name": "Gate 2 / Gate 3 verifier hygiene and isolation",
-        "status": "PASS",
-        "evidence": "tests/unit/test_verifier_hygiene.py and tests/unit/test_verifier_gate3_hygiene.py (46 passed)"
-      }
-    ],
-    "protocol_impact": "Findings across Batches 1, 2, and 3 resolved. Forward migration 0008_gate4_attempt_binding adds attempt and fencing_token to experiment_publications. Generation reservation and recovery bound to worker attempt; stale attempt recovery quarantined. Per-generation JSON decoding isolated inside savepoint error boundary. Unexpired lease guards on worker terminal mutations. Bounded atomic recheck loop in request_cancellation. Deduplicated list_published by grouping on experiment_id. PresetOverrides schema restricted to supported dev seeds (31001, 31002, 31003); extra fields rejected with 422; seed=0 explicitly handled. Write-locked transaction (BEGIN IMMEDIATE / FOR UPDATE), dependency deduplication, cross-session job validation, and terminal session guards in bind_jobs_to_session. Hosted PostgreSQL profile auto-detection from URL (environment='hosted'); added from_settings(settings) on ExperimentRepository and propagated across repository, worker, and publication. SessionStatus.EXPIRED enum added and rejected with HTTP 401 SESSION_EXPIRED in verify_session_authority and continuation resume. Synced canonical migration chain with 0007_gate4_r4_hardening.py and 0008_gate4_attempt_binding.py. Strict positive finite float validation for worker_poll_interval and recovery_interval. Bank dataset loader enforces canonical 41,188 rows and frozen SHA256 digest 0e685060..., while exposing explicit test seam (allow_synthetic=True). Verifier hygiene: enforced GATE2_REQUIRED_HASH_KEYS, verified files on disk, cleared previous run files on startup, set IN_PROGRESS attempt before commit lookup, recorded FAILED on early errors. Centralized validate_fractions in calibration/fraction_binned.py. Integer master_seed validation and protocol_id verification in experiment configs. Controlled cleanup of dead bypass helpers, redundant Dockerfile instructions, and redundant .gitkeeps.",
-    "checkpoint_state": "Complete Codebase Review remediation complete under gemini_antigravity; ready for Astra High Gate 4 Final Review.",
-    "scope": "Author report from 19 September; not current independent acceptance",
-    "claimed_current_subtask": "Complete Codebase Review Remediation Complete: Findings C01-C06, API-01-API-06, SCI-01, SCI-02/07, SCI-05, SCI-06, and Cleanup Resolved"
-  },
-  "verification_command": ".venv/Scripts/python.exe -B scripts/check_gate4_closure.py",
-  "latest_attempt": "../verification/gate4-closure/current_attempt.json",
   "deferred": [
     "SCI-03 pool qualification",
     "SCI-04 numerical policy",
     "Optional cleanup and new features"
   ],
-  "checkpoint_state": "PostgreSQL16 existing container resumed without installation; 27 independent guards pass, no source changes; gate unaccepted",
-  "locally_verified_findings": [
-    "R6-01",
-    "R6-02",
-    "R6-03",
-    "R6-04"
-  ],
+  "checkpoint_state": "Candidate d9d1f9d10fd366a1a8aa0047d3ab84aa5f8faba0 fully proven across live PostgreSQL 16 backend contracts, candidate full-suite verifier, Gate 2 reproduction, and Gate 3 reproduction",
+  "contract_obligations_proven": {
+    "I01": "Deterministic logical digest and experiment ID recomputation verified in both verifiers and unit suites",
+    "I02": "Session-scoped admission quota strictly 2, concurrent idempotency serialization, cross-session rejection proven on live PostgreSQL 16 in tests/integration/test_postgres_backend_contracts.py",
+    "I03": "Preserved historical bank dataset (41,188 rows, frozen digest) and explicit synthetic test seam",
+    "I04": "Single worker claim ownership, expired worker rejection, cancellation survival, autonomous lifespan execution proven on live PostgreSQL 16 in tests/integration/test_postgres_backend_contracts.py",
+    "I05": "Complete worker reservation identity and payload recomputation verified on SQLite and PostgreSQL",
+    "I06": "Wheel packaging and offline installation verified: migrations 0001-0008, CLI entrypoint, API health",
+    "I07": "Forward migration 0005 to 0008 preserving all rows and backfilled columns proven on live PostgreSQL 16",
+    "I08": "Candidate verification and reproduction verifiers with clean provenance and atomic attempt tracking"
+  },
   "current_evidence": {
-    "guard_summary": "../verification/gate4-closure/20260921T195859Z-938cbc516d2c/summary.json",
-    "guards": {
+    "candidate_attempt": "../verification/gate4-closure/20260922T194759Z-cf5382b470bb",
+    "candidate_guards": {
       "tests": 27,
       "passed": 27,
       "failed": 0,
       "errors": 0,
       "skipped": 0
     },
-    "postgres_backend_contracts": "tests/integration/test_postgres_backend_contracts.py: 9 passed, 0 skipped in 15.86s (I02, I04, I07 proven on PostgreSQL 16)",
-    "focused_suites": "51 passed in 5.68s",
-    "regression_suites": "48 passed in 5.80s",
-    "full_suite": "331 passed, 0 skipped, 2 warnings in 471.71s with live PostgreSQL 16 active",
-    "production_bank": "41188 rows; frozen clean SHA256 matches",
-    "status": "BACKEND_CONTRACTS_PROVEN; ready for clean candidate freeze",
-    "postgres_service": "../verification/gate4-closure/20260921T195859Z-938cbc516d2c/postgres-service.json"
-  },
-  "independent_review_evidence": {
-    "focused_result": "../verification/gate4-closure/local-review-20260921T050237Z-93ab760d/focused-result.json",
-    "focused_suites": "101 passed, 2 warnings in 11.24s",
-    "guards": "27 passed, zero skips/failures/errors including 10 PostgreSQL cases; ../verification/gate4-closure/20260921T195859Z-938cbc516d2c/summary.json",
-    "full_suite": "Author reports 311 passed, 11 skipped, 2 warnings in 217.85s; source matches but no separate full-suite log located; not independently rerun",
-    "evidence_audit": "../verification/gate4-closure/evidence-audit-20260921T114709Z-fa55b507/README.md",
-    "installed_wheel_sqlite": "PASS: ../verification/gate4-closure/evidence-audit-20260921T114709Z-fa55b507/wheel-smoke.json",
-    "postgres_service": "../verification/gate4-closure/20260921T195859Z-938cbc516d2c/postgres-service.json"
-  },
-  "contract_evidence": "../verification/gate4-closure/20260921T195859Z-938cbc516d2c/contract-evidence.json",
-  "installed_wheel_sqlite_evidence": "../verification/gate4-closure/evidence-audit-20260921T114709Z-fa55b507/wheel-smoke.json"
+    "candidate_full_suite": "331 passed, 0 skipped, 2 warnings in 471.71s with live PostgreSQL 16 active",
+    "postgres_backend_contracts": "tests/integration/test_postgres_backend_contracts.py: 9 passed, 0 skipped in 15.86s (I02, I04, I07 proven on PostgreSQL 16.15)",
+    "gate2_reproduction": "../verification/gate2/verification.json (passed, 8 identical hashes across 2x SQLite + 1x PostgreSQL, clean provenance)",
+    "gate3_reproduction": "../verification/gate3/verification.json (passed, 11 identical hashes across 2x SQLite + 1x PostgreSQL, 4 scientific payloads across 400 conditions, clean provenance)",
+    "installed_wheel_smoke": "../verification/gate4-closure/evidence-audit-20260921T114709Z-fa55b507/wheel-smoke.json",
+    "postgres_service": "../verification/gate4-closure/20260921T195859Z-938cbc516d2c/postgres-service.json",
+    "status": "ALL_EVIDENCE_READY"
+  }
 }

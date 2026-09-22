@@ -152,3 +152,36 @@ origins. Existing Python/dependencies reused. No normal application DB changed.
 The historical dist wheel is untouched. PostgreSQL16 and exact clean-candidate
 verification remain required; local wheel evidence does not accept Gate 4.
 Full-suite 311 passed/11 skipped is author-reported, not a fresh parent run.
+
+## Candidate verification & reproduction completion - 23 September 2026
+
+Candidate commit frozen at `d9d1f9d10fd366a1a8aa0047d3ab84aa5f8faba0`.
+Working tree clean at verification (`git status --porcelain` empty).
+
+- **PostgreSQL 16 Live Backend Contracts (`test_postgres_backend_contracts.py`)**:
+  - 9 passed, 0 skipped in 15.86s.
+  - I02: concurrent admission quota strictly 2 via `FOR UPDATE` (PASS).
+  - I02: same-key concurrent replay of 1 job (PASS).
+  - I02: cross-session boundary isolation HTTP 403 (PASS).
+  - I02: submitted configuration reaches persisted result in PostgreSQL 16 (PASS).
+  - I04: concurrent claims have single owner via `FOR UPDATE SKIP LOCKED` (PASS).
+  - I04: expired/replaced owners cannot heartbeat or finish (PASS).
+  - I04: cancellation survives claim and recovery races (PASS).
+  - I04: HTTP submission completes through autonomous managed lifespan worker (PASS).
+  - I07: forward migration 0005 to 0008 preserves all rows and backfilled columns on PostgreSQL 16 (PASS).
+- **Candidate Verifier (`check_gate4_closure.py --candidate`)**:
+  - `status: TEST_EVIDENCE_READY` at `verification/gate4-closure/20260922T194759Z-cf5382b470bb`.
+  - 27 guards passed, 0 skipped, 0 failed, 0 errors.
+  - Full suite: 331 passed, 0 skipped, 0 failed, 0 errors, 2 warnings in 471.71s with live PostgreSQL 16 active.
+- **Gate 2 Reproduction (`verification/gate2/verification.json`)**:
+  - `status: passed`, experiment `c6678b6b4ddbc482c5bc4e81`.
+  - 3 distinct executions across 2 SQLite runs + 1 live PostgreSQL 16 run.
+  - All 8 artifact hashes identical; `sqlite_and_postgres_payloads_equal: true`.
+  - Clean provenance on candidate `d9d1f9d10fd366a1a8aa0047d3ab84aa5f8faba0`.
+- **Gate 3 Reproduction (`verification/gate3/verification.json`)**:
+  - `status: passed`, experiment `d8a18a371c8c88ee20ba1087`.
+  - 3 distinct executions across 2 SQLite runs + 1 live PostgreSQL 16 run.
+  - 400 conditions evaluated; 4 scientific payloads verified (`budget_curve`, `pattern_vs_rate`, `reliability`, `decision_loss`).
+  - All 11 artifact hashes identical; `sqlite_and_postgres_payloads_equal: true`.
+  - Clean provenance on candidate `d9d1f9d10fd366a1a8aa0047d3ab84aa5f8faba0`.
+- **Disposition**: All 8 contract obligations (I01 to I08) proven with live backend evidence. Ready for independent review by Astra High.
