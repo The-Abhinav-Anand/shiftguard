@@ -17,8 +17,35 @@
     "next": "Gate 3 contract and development stress-engine batches; see docs/next-execution.md"
   },
   "gate_3": {
-    "status": "CANDIDATE",
+    "status": "HARDENED_PENDING_REPRODUCTION",
     "verified_commit": null,
-    "next": "Run clean candidate three-way reproduction verification (2 SQLite, 1 PostgreSQL) and assemble Astra High review packet"
+    "active_packet": "../docs/aegis/reviews/2026-09-17-codebase-audit/EXECUTION_PLAN.md",
+    "fix_ledger": "docs/fix-ledger.md",
+    "subtask": "Codebase hardening (A01-A12) implemented; requires clean-source 3-way reproduction and live PostgreSQL 16 verification",
+    "next": "PostgreSQL 16 environment run and Astra High review closure"
+  },
+  "gate_4": {
+    "status": "BLOCKED_REQUIRED_EVIDENCE",
+    "verified_commit": null,
+    "review_packet": "docs/gate4-closure-review.md",
+    "review_verdict": "LOCAL_CORRECTIONS_VERIFIED",
+    "subtask": "All 27 guards pass with PostgreSQL16 restored; finish remaining backend obligations and clean-candidate verification",
+    "prerequisite": "Four R6 blockers closed; I01-I08 evidence complete; unchanged clean candidate; actual PostgreSQL16 tests and affected scientific reproduction; independent acceptance",
+    "active_packet": "docs/gate4-closure.md",
+    "acceptance_matrix": "docs/gate4-acceptance.json",
+    "open_findings": [],
+    "locally_verified_findings": [
+      "R6-01",
+      "R6-02",
+      "R6-03",
+      "R6-04"
+    ],
+    "latest_evidence": "../verification/gate4-closure/current_attempt.json",
+    "contract_evidence": "../verification/gate4-closure/20260921T195859Z-938cbc516d2c/contract-evidence.json",
+    "installed_wheel_sqlite_evidence": "../verification/gate4-closure/evidence-audit-20260921T114709Z-fa55b507/wheel-smoke.json",
+    "installed_wheel_scope": "Current uncommitted runtime; dependencies reused; not PostgreSQL or released candidate",
+    "postgres_service_evidence": "../verification/gate4-closure/20260921T195859Z-938cbc516d2c/postgres-service.json",
+    "guard_status": "GUARDS_PASSED",
+    "service_status": "AVAILABLE_VERIFIED"
   }
 }

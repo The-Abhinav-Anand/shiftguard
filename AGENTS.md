@@ -14,32 +14,31 @@
 - No staging or commit before parent verification and authorization.
 
 ## Authoritative paths
-- Workflow: C:/Users/Abhinav Anand/Downloads/SHIFTGUARD_Token_Efficiency_Workflow_v3_Codex_First.txt.
+- Workflow: ../SHIFTGUARD_Antigravity_Master_Workflow_With_Skills_MCP.txt.
+- Active closure workflow: docs/gate4-closure.md; fixed checklist: docs/gate4-acceptance.json.
+- Latest review: docs/gate4-closure-review.md (links current collected-node and package evidence).
+- Fix ledger: docs/fix-ledger.md.
 - Blueprint: ../SHIFTGUARD_Implementation_Blueprint_v2_2026-09-09.md.
 - Plan: ../docs/aegis/plans/2026-09-10-shiftguard-hackathon-execution-plan.md.
-- Gate2 packet: ../docs/aegis/work/2026-09-10-shiftguard-implementation/33-gate2-development-slice.md.
-- Canonical parent checkpoint: ../docs/aegis/work/2026-09-10-shiftguard-implementation/20-checkpoint.md.
-- Parent Gate2 evidence: ../docs/aegis/work/2026-09-10-shiftguard-implementation/34-gate2-review-verification.md.
+- Gate3 contract: docs/gate3-development-contract.md.
 - Parent owns outer evidence and independent verification.
 - Retrieve only relevant sections; no full-document reload.
 - Scientific protocol and operational controls are separate.
 - This file does not amend scientific choices.
 
 ## Ownership and escalation
-- Default writer: the cheapest capable Codex model.
+- Active bulk writer: Gemini / Antigravity (`gemini_antigravity`).
 - One agent writes the application branch at a time.
 - .agent/ownership.json is the canonical current writer assignment.
 - Parent verifies evidence and may maintain governance/checkpoint files under user authorization.
-- Astra is reviewer, never a concurrent application writer.
+- Terra High is an explicit escalation for a named difficult failure after two evidence-based attempts.
+- Astra High owns planning, scientific decisions, and gate-exit review; never a concurrent writer.
+- Sol High is optional for public claims or named independent review, not duplicate review of each edit.
 - Complete coherent atomic batches before seeking review.
 - Ordinary failures stay with the active writer.
 - Capture the exact failure and make evidence-based fixes.
-- Escalate difficult bugs after two evidence-based failed attempts.
 - Escalate protocol contradictions, leakage, or architecture decisions.
-- Terra High is reserved for complex authorized work.
-- Gemini transfer requires an explicit user/quota-triggered handoff.
-- Read .agent/handoff.json for current transfer status; do not infer it from historical assignments.
-- No agent may resume as a new writer while safe_to_resume is false.
+- Read .agent/handoff.json for current transfer status.
 - Model ownership is a workflow assignment, not an acceptance claim.
 
 ## Resume and checkpoint
@@ -166,22 +165,32 @@
 - Escalate narrowly when local executable ACLs block authorized commands.
 
 ## Current commands and protected boundaries
-- Working directory for author commands is the original app root.
-- Targeted tests: uv run --no-sync pytest tests/unit/test_history_block.py tests/unit/test_acquisition_prefix.py tests/integration/test_outage_recovery.py -q.
-- Development run: uv run --no-sync shiftguard run --config configs/bank-outage-50.yaml.
-- Gate1 command remains shiftguard run --config configs/bank-baseline.yaml.
-- Use per-command git -c safe.directory=C:/Users/Abhinav Anand/Downloads/nvidia/shiftguard.
+- Working directory for author commands is the application root (`shiftguard`).
+- Targeted tests: `$t = Join-Path $env:TEMP ('sg-t-' + [guid]::NewGuid()); & .\.venv\Scripts\python.exe -B -m pytest <test-paths> -q -p no:cacheprovider --basetemp "$t" --tb=short`.
+- Full suite: `$t = Join-Path $env:TEMP ('sg-t-' + [guid]::NewGuid()); & .\.venv\Scripts\python.exe -B -m pytest tests -q -p no:cacheprovider --basetemp "$t" --tb=short`.
+- Clean-commit verifier: `& .\.venv\Scripts\python.exe -B verification/verify_gate3_reproduction.py`.
+- Use per-command git `-c safe.directory="C:/Users/Abhinav Anand/Downloads/nvidia/shiftguard"`.
 - Quote the entire safe.directory argument in PowerShell.
 - Do not change global Git configuration.
-- Gate0 is frozen at a9d0aa0.
-- Gate1 is frozen at 6c4d682.
+- Gate 0 is frozen at a9d0aa0.
+- Gate 1 is frozen at 6c4d682.
+- Gate 2 is frozen at 937f33c (closure at c9cc001).
+- Gate 3 candidate is in active hardening (A01-A12) prior to clean reproduction and Gate 4.
+- Gate 4 implementation is under correction and remains unaccepted; Gate 3 reproduction/acceptance prerequisites are not waived.
 - Preserve research/*, including manuscript, builder, exports, and QA.
-- Preserve ../SHIFTGUARD_Deep_Research.md.
-- Preserve ../SHIFTGUARD_Deep_Research.pdf.
-- Preserve ../SHIFTGUARD_Implementation_Blueprint_v2_2026-09-09.md.
-- Preserve parent evidence, toolchain, daemon sessions, and verification clone.
-- Do not access paid APIs, cloud services, or publish.
-- Gate2 closure excludes Gate3 implementation, source remasking, broader sweeps and new UI.
+- Preserve ../SHIFTGUARD_Deep_Research.md, ../SHIFTGUARD_Deep_Research.pdf, ../SHIFTGUARD_Implementation_Blueprint_v2_2026-09-09.md.
+- Preserve parent evidence, toolchain, and frozen verification clone.
+- Do not access paid APIs, cloud services, or external publication.
 - Do not log secrets or expose raw/final labels through artifacts.
 - Do not bundle caches, secrets, or raw data in source control.
 - Stop at the completed candidate and parent-verification boundary.
+
+## Bounded Gate 4 closure
+- Close R6-01 through R6-04 together using docs/gate4-closure.md and fixed I01-I08 contracts.
+- Permanent guards: tests/acceptance/test_gate4_closure.py; do not xfail known defects.
+- Evidence command: .venv/Scripts/python.exe -B scripts/check_gate4_closure.py.
+- Run --candidate once guards, backend availability and clean-source prerequisites pass.
+- Reuse exact-candidate evidence; repeat checks only for changed relevant source or a concrete uncovered contract.
+- One compact handoff and acceptance review; do not restart broad codebase review for each patch.
+- Missing service evidence is BLOCKED; author pass counts alone never close a finding.
+- Optional cleanup, style and new features cannot expand this closure batch.

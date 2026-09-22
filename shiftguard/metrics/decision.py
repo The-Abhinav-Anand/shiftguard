@@ -3,6 +3,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 import numpy as np
 
+from shiftguard.metrics.validation import (
+    validate_cost_grid,
+    validate_decision_costs,
+    validate_metric_inputs,
+)
+
 
 # Predeclared cost ratios (FP_cost, FN_cost)
 PREDECLARED_COST_GRID = (
@@ -40,24 +46,23 @@ class DecisionLossItem:
         }
 
 
+
 def single_decision_loss(
     labels: list[int] | tuple[int, ...] | np.ndarray,
     probabilities: list[float] | tuple[float, ...] | np.ndarray,
     fp_cost: float,
     fn_cost: float,
 ) -> DecisionLossItem:
-    if fp_cost <= 0 or fn_cost <= 0:
-        raise ValueError(f"Costs must be positive, got fp_cost={fp_cost}, fn_cost={fn_cost}")
-
-    y_true = np.asarray(labels, dtype=int)
-    y_prob = np.asarray(probabilities, dtype=float)
+    fp_c, fn_c = validate_decision_costs(fp_cost, fn_cost)
+    y_true, y_prob = validate_metric_inputs(labels, probabilities, allow_empty=True)
     n = len(y_true)
+    threshold = fp_c / (fp_c + fn_c)
 
     if n == 0:
         return DecisionLossItem(
-            fp_cost=fp_cost,
-            fn_cost=fn_cost,
-            threshold=fp_cost / (fp_cost + fn_cost),
+            fp_cost=fp_c,
+            fn_cost=fn_c,
+            threshold=threshold,
             fp_count=0,
             fn_count=0,
             tp_count=0,
@@ -66,7 +71,6 @@ def single_decision_loss(
             loss=0.0,
         )
 
-    threshold = fp_cost / (fp_cost + fn_cost)
     y_pred = (y_prob >= threshold).astype(int)
 
     fp = int(np.sum((y_pred == 1) & (y_true == 0)))
@@ -74,11 +78,11 @@ def single_decision_loss(
     tp = int(np.sum((y_pred == 1) & (y_true == 1)))
     tn = int(np.sum((y_pred == 0) & (y_true == 0)))
 
-    loss = float((fp_cost * fp + fn_cost * fn) / n)
+    loss = float((fp_c * fp + fn_c * fn) / n)
 
     return DecisionLossItem(
-        fp_cost=fp_cost,
-        fn_cost=fn_cost,
+        fp_cost=fp_c,
+        fn_cost=fn_c,
         threshold=threshold,
         fp_count=fp,
         fn_count=fn,
@@ -95,7 +99,10 @@ def compute_decision_loss_grid(
     cost_grid: tuple[tuple[float, float], ...] = PREDECLARED_COST_GRID,
 ) -> list[dict[str, float | int]]:
     """Compute decision losses across the predeclared cost grid."""
+    validated_grid = validate_cost_grid(cost_grid)
+    y_true, y_prob = validate_metric_inputs(labels, probabilities, allow_empty=True)
     return [
-        single_decision_loss(labels, probabilities, fp_c, fn_c).to_dict()
-        for fp_c, fn_c in cost_grid
+        single_decision_loss(y_true, y_prob, fp_c, fn_c).to_dict()
+        for fp_c, fn_c in validated_grid
     ]
+

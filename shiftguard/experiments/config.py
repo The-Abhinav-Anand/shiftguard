@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 import json
 import math
 from pathlib import Path
+from types import MappingProxyType
 
 import yaml
 
@@ -29,15 +30,28 @@ class BaselineConfig:
     def __post_init__(self) -> None:
         if self.features != BANK_FEATURES:
             raise ValueError("Gate1 features must match the frozen Bank feature list")
-        if self.role_fractions != ROLE_FRACTIONS:
+        if dict(self.role_fractions) != ROLE_FRACTIONS:
             raise ValueError("Gate1 role fractions must match the frozen protocol")
+        object.__setattr__(self, "role_fractions", MappingProxyType(dict(self.role_fractions)))
         if self.evaluation_tier != "development":
             raise ValueError("confirmatory execution is forbidden until sg-protocol-1.0 is locked")
+        if type(self.master_seed) is not int or isinstance(self.master_seed, bool):
+            raise TypeError(f"master_seed must be an int, got {type(self.master_seed).__name__}")
         if self.master_seed not in DEVELOPMENT_SEEDS:
             raise ValueError("master_seed must belong to the declared development seed set")
+        if self.protocol_id not in ("sg-protocol-1.0-draft", "sg-protocol-1.0-draft-gate3"):
+            raise ValueError(f"protocol_id must match declared protocol identity, got {self.protocol_id}")
 
     def to_dict(self) -> dict[str, object]:
-        return {"master_seed": self.master_seed, "features": list(self.features), "role_fractions": self.role_fractions, "protocol_id": self.protocol_id, "evaluation_tier": self.evaluation_tier, "dataset_csv": str(self.dataset_csv), "dataset_manifest": str(self.dataset_manifest)}
+        return {
+            "master_seed": self.master_seed,
+            "features": list(self.features),
+            "role_fractions": dict(self.role_fractions),
+            "protocol_id": self.protocol_id,
+            "evaluation_tier": self.evaluation_tier,
+            "dataset_csv": str(self.dataset_csv),
+            "dataset_manifest": str(self.dataset_manifest),
+        }
 
 
 def load_baseline_config(path: Path) -> BaselineConfig:
@@ -71,6 +85,8 @@ class OutageConfig(BaselineConfig):
         super().__post_init__()
         if self.run_type != "outage_recovery":
             raise ValueError("Gate2 run_type must be outage_recovery")
+        if self.protocol_id != "sg-protocol-1.0-draft":
+            raise ValueError(f"Gate2 protocol_id must be sg-protocol-1.0-draft, got {self.protocol_id}")
         if self.history_row_probability != 0.5:
             raise ValueError("Gate2 history row probability is frozen at 0.5")
         if self.target_label_budget != 50:
@@ -117,20 +133,30 @@ class StressConfig(BaselineConfig):
         super().__post_init__()
         if self.run_type != "stress_engine":
             raise ValueError("Gate3 run_type must be stress_engine")
+        if self.protocol_id != "sg-protocol-1.0-draft-gate3":
+            raise ValueError(f"Gate3 protocol_id must be sg-protocol-1.0-draft-gate3, got {self.protocol_id}")
         if not self.predictors:
             raise ValueError("predictors must not be empty")
+        if len(self.predictors) != len(set(self.predictors)):
+            raise ValueError("predictors must not contain duplicates")
         for p in self.predictors:
             if p not in SUPPORTED_PREDICTORS:
                 raise ValueError(f"unsupported predictor: {p}")
         if not self.budgets:
             raise ValueError("budgets must not be empty")
+        if len(self.budgets) != len(set(self.budgets)):
+            raise ValueError("budgets must not contain duplicates")
         for b in self.budgets:
+            if type(b) is not int or isinstance(b, bool):
+                raise ValueError(f"budgets must be strict integers, got {type(b).__name__}: {b}")
             if b not in SUPPORTED_BUDGETS:
                 raise ValueError(f"unsupported budget: {b}")
         if 50 not in self.budgets:
             raise ValueError("budgets must include budget 50 required for pattern-vs-rate comparison")
         if not self.mcar_rates:
             raise ValueError("mcar_rates must not be empty")
+        if len(self.mcar_rates) != len(set(self.mcar_rates)):
+            raise ValueError("mcar_rates must not contain duplicates")
         formatted_names: set[str] = set()
         for r in self.mcar_rates:
             if not (math.isfinite(r) and 0.0 <= r < 1.0):
@@ -141,13 +167,19 @@ class StressConfig(BaselineConfig):
             if name in formatted_names or name in ("baseline", "history_block_0_50", "mcar_matched_history"):
                 raise ValueError(f"MCAR rate collision detected in configuration: {r} maps to '{name}'")
             formatted_names.add(name)
+        if not math.isfinite(self.history_row_probability) or self.history_row_probability != 0.50:
+            raise ValueError(f"Gate3 history_row_probability is frozen at 0.50, got {self.history_row_probability}")
         if not self.calibration_methods:
             raise ValueError("calibration_methods must not be empty")
+        if len(self.calibration_methods) != len(set(self.calibration_methods)):
+            raise ValueError("calibration_methods must not contain duplicates")
         for m in self.calibration_methods:
             if m not in SUPPORTED_CALIBRATION_METHODS:
                 raise ValueError(f"unsupported calibration method: {m}")
         if not self.cost_grid:
             raise ValueError("cost_grid must not be empty")
+        if len(self.cost_grid) != len(set(self.cost_grid)):
+            raise ValueError("cost_grid must not contain duplicates")
         has_0_5_thresh = False
         for item in self.cost_grid:
             if len(item) != 2:

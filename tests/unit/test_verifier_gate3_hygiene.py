@@ -444,3 +444,162 @@ def test_validate_scientific_payloads_rejects_decision_loss_copied_from_differen
 
     with pytest.raises(AssertionError, match="does not agree with referenced condition"):
         vg3.validate_scientific_payloads(art_root, pay_root, conditions)
+
+
+def test_gate3_current_attempt_pointer_records_failed_status_and_attempt_dir(monkeypatch, tmp_path):
+    monkeypatch.delenv("SHIFTGUARD_TEST_POSTGRES_URL", raising=False)
+    monkeypatch.setenv("SHIFTGUARD_VERIFICATION_OUTPUT", str(tmp_path))
+
+    with pytest.raises(RuntimeError, match="SHIFTGUARD_TEST_POSTGRES_URL is required"):
+        vg3.main()
+
+    pointer = tmp_path / "current_attempt.json"
+    assert pointer.is_file(), "current_attempt.json must exist"
+    pointer_data = json.loads(pointer.read_text(encoding="utf-8"))
+    assert pointer_data["status"] == "FAILED"
+    assert "SHIFTGUARD_TEST_POSTGRES_URL is required" in pointer_data["error"]
+    assert "attempt_id" in pointer_data
+    assert "failed_at" in pointer_data
+
+    attempt_dir = tmp_path / "attempts" / pointer_data["attempt_id"]
+    assert attempt_dir.is_dir(), f"Attempt directory {attempt_dir} must have been created"
+
+
+def test_validate_manifest_content_hashes_exact_keys_and_digests(tmp_path):
+    import hashlib
+    art_root = tmp_path / "art"
+    pay_root = art_root / "payloads"
+    art_root.mkdir(parents=True, exist_ok=True)
+    pay_root.mkdir(parents=True, exist_ok=True)
+
+    # Build valid files
+    content_hashes = {}
+    for key in vg3.REQUIRED_MANIFEST_KEYS:
+        if key == "logical_content":
+            content_hashes[key] = "dummy_logical_hash"
+            continue
+        content = f'{{"key": "{key}"}}\n'.encode("utf-8")
+        if key in vg3.REQUIRED_PAYLOADS:
+            f = pay_root / f"{key}.json"
+        else:
+            f = art_root / f"{key}.json"
+        f.write_bytes(content)
+        content_hashes[key] = hashlib.sha256(content).hexdigest()
+
+    # Valid manifest passes
+    vg3.validate_manifest_content_hashes(content_hashes, art_root, pay_root)
+
+    # Missing required key rejected
+    bad_missing = dict(content_hashes)
+    del bad_missing["acquisition"]
+    with pytest.raises(AssertionError, match="Exact manifest mismatch"):
+        vg3.validate_manifest_content_hashes(bad_missing, art_root, pay_root)
+
+    # Extra unexpected key rejected
+    bad_extra = dict(content_hashes)
+    bad_extra["unexpected_extra"] = "some_hash"
+    with pytest.raises(AssertionError, match="Exact manifest mismatch"):
+        vg3.validate_manifest_content_hashes(bad_extra, art_root, pay_root)
+
+    # Byte hash mismatch rejected
+    bad_hash = dict(content_hashes)
+    bad_hash["config"] = "0000000000000000000000000000000000000000000000000000000000000000"
+    with pytest.raises(AssertionError, match="Artifact hash mismatch for config"):
+        vg3.validate_manifest_content_hashes(bad_hash, art_root, pay_root)
+
+
+def test_validate_condition_ids_preimages_recomputation(tmp_path):
+    from shiftguard.experiments.ids import stable_hash
+
+    # Valid condition
+    c1 = {
+        "name": "lr_baseline",
+        "predictor": "logistic_regression",
+        "scenario": "baseline",
+        "budget": 50,
+    }
+    c1["condition_id"] = stable_hash(c1)[:24]
+    conditions_data = {"c1": c1}
+
+    # Should pass
+    vg3.validate_condition_ids_preimages(conditions_data)
+
+    # Tampered condition_id rejected
+    c1_tampered = dict(c1)
+    c1_tampered["condition_id"] = "bad_condition_id_123456"
+    with pytest.raises(AssertionError, match="ID mismatch"):
+        vg3.validate_condition_ids_preimages({"c1": c1_tampered})
+
+
+def test_validate_database_projections_all_ten_tables(tmp_path):
+    art_root = tmp_path / "art"
+    pay_root = art_root / "payloads"
+    art_root.mkdir(parents=True, exist_ok=True)
+    pay_root.mkdir(parents=True, exist_ok=True)
+
+    payload = {
+        "config": {"setting": 1},
+        "seeds": {"seed": 42},
+        "masks": {"mask": "m1"},
+        "acquisition": {"count": 50},
+        "conditions": {"cond": "c1"},
+        "comparisons": {"comp": "cmp1"},
+        "payloads": {
+            "budget_curve": {"curve": [1, 2]},
+            "pattern_vs_rate": {"pvr": True},
+            "reliability": {"rel": [0.1]},
+            "decision_loss": {"loss": 0.05},
+        },
+    }
+
+    # Write identical disk files
+    (art_root / "config.json").write_text(json.dumps(payload["config"]), encoding="utf-8")
+    (art_root / "seeds.json").write_text(json.dumps(payload["seeds"]), encoding="utf-8")
+    (art_root / "masks.json").write_text(json.dumps(payload["masks"]), encoding="utf-8")
+    (art_root / "acquisition.json").write_text(json.dumps(payload["acquisition"]), encoding="utf-8")
+    (art_root / "conditions.json").write_text(json.dumps(payload["conditions"]), encoding="utf-8")
+    (art_root / "comparisons.json").write_text(json.dumps(payload["comparisons"]), encoding="utf-8")
+    (pay_root / "budget_curve.json").write_text(json.dumps(payload["payloads"]["budget_curve"]), encoding="utf-8")
+    (pay_root / "pattern_vs_rate.json").write_text(json.dumps(payload["payloads"]["pattern_vs_rate"]), encoding="utf-8")
+    (pay_root / "reliability.json").write_text(json.dumps(payload["payloads"]["reliability"]), encoding="utf-8")
+    (pay_root / "decision_loss.json").write_text(json.dumps(payload["payloads"]["decision_loss"]), encoding="utf-8")
+
+    # Valid check passes
+    vg3.validate_database_projections(payload, art_root, pay_root)
+
+    # Disagreeing disk file rejected
+    (pay_root / "decision_loss.json").write_text(json.dumps({"loss": 999.0}), encoding="utf-8")
+    with pytest.raises(AssertionError, match="Database projection decision_loss does not match saved artifact"):
+        vg3.validate_database_projections(payload, art_root, pay_root)
+
+
+def test_validate_logical_content_and_experiment_id():
+    from shiftguard.experiments.ids import stable_hash
+
+    payload = {"foo": "bar", "data": [1, 2, 3]}
+    expected_logical = stable_hash(payload)
+    expected_exp_id = expected_logical[:24]
+
+    # Valid check passes
+    vg3.validate_logical_content_and_experiment_id(
+        payload,
+        {"logical_content": expected_logical},
+        expected_exp_id,
+    )
+
+    # Tampered logical content digest rejected
+    with pytest.raises(AssertionError, match="Logical content digest mismatch"):
+        vg3.validate_logical_content_and_experiment_id(
+            payload,
+            {"logical_content": "tampered_digest"},
+            expected_exp_id,
+        )
+
+    # Tampered experiment id rejected
+    with pytest.raises(AssertionError, match="Experiment ID mismatch"):
+        vg3.validate_logical_content_and_experiment_id(
+            payload,
+            {"logical_content": expected_logical},
+            "tampered_exp_id",
+        )
+

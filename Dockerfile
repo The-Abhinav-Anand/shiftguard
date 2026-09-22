@@ -41,7 +41,6 @@ ENV PATH="/app/.venv/bin:$PATH" \
 COPY pyproject.toml uv.lock README.md ./
 RUN uv sync --locked --no-install-project --no-dev
 COPY alembic.ini ./
-COPY alembic/ ./alembic/
 COPY shiftguard/ ./shiftguard/
 COPY --from=frontend /app/frontend/dist/ ./shiftguard/static/
 RUN uv sync --locked --no-dev

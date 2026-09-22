@@ -25,6 +25,10 @@ FROZEN_BANK_SOURCE = {
 }
 
 
+FROZEN_CLEAN_DIGEST = "0e685060ca6338f712c792ca0bb4e9366fb23808b96ac81886b06eab536bc329"
+FROZEN_ROW_COUNT = 41188
+
+
 @dataclass(frozen=True)
 class BankDataset:
     rows: list[dict[str, str | int]]
@@ -32,7 +36,13 @@ class BankDataset:
     clean_hash: str
 
     @classmethod
-    def from_clean_csv(cls, path: Path, manifest: dict[str, object]) -> BankDataset:
+    def from_clean_csv(
+        cls,
+        path: Path,
+        manifest: dict[str, object],
+        *,
+        allow_synthetic: bool = False,
+    ) -> BankDataset:
         for key, expected in FROZEN_BANK_SOURCE.items():
             if manifest.get(key) != expected:
                 raise ValueError(f"Bank manifest does not match the frozen source identity: {key}")
@@ -66,7 +76,24 @@ class BankDataset:
             raise ValueError("Bank clean CSV row count does not match the run manifest")
         if hash_clean_rows(normalized) != actual_hash:
             raise ValueError("Bank clean CSV is not canonical UTF-8 with LF newlines")
+
+        if not allow_synthetic:
+            if "synthetic" in manifest or "allow_synthetic" in manifest:
+                raise ValueError("Bank production clean CSV manifest cannot contain synthetic opt-out flags")
+            if actual_hash != FROZEN_CLEAN_DIGEST:
+                raise ValueError(f"Bank clean CSV digest {actual_hash} does not match frozen canonical digest {FROZEN_CLEAN_DIGEST}")
+            if manifest.get("clean_sha256") != FROZEN_CLEAN_DIGEST:
+                raise ValueError("Bank manifest clean_sha256 does not match frozen canonical digest")
+            if len(normalized) != FROZEN_ROW_COUNT:
+                raise ValueError(f"Bank clean CSV row count {len(normalized)} does not match frozen canonical count {FROZEN_ROW_COUNT}")
+            if manifest.get("rows") != FROZEN_ROW_COUNT:
+                raise ValueError("Bank manifest rows does not match frozen canonical count")
+
         return cls(normalized, raw_hash=str(manifest["raw_member_sha256"]), clean_hash=actual_hash)
+
+    @classmethod
+    def from_synthetic_csv(cls, path: Path, manifest: dict[str, object]) -> BankDataset:
+        return cls.from_clean_csv(path, manifest, allow_synthetic=True)
 
 
 def clean_bank_rows(raw_rows: Iterable[dict[str, str]]) -> list[dict[str, str | int]]:

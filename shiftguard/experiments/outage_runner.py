@@ -8,7 +8,6 @@ import numpy as np
 from shiftguard.calibration.base import CalibrationRecord
 from shiftguard.calibration.sklearn_maps import PredictionResolution, fit_temperature, frozen_pipeline, predict_with_fallback
 from shiftguard.datasets.bank import BankDataset
-from shiftguard.experiments.artifacts import write_json_artifact
 from shiftguard.experiments.config import OutageConfig
 from shiftguard.experiments.ids import stable_hash
 from shiftguard.experiments.runner import _seed_bundle, audit_provenance
@@ -18,7 +17,7 @@ from shiftguard.predictors.logistic import fit_initial_logistic_regression, pred
 from shiftguard.preprocessing.tabular import feature_rows, fit_train_preprocessor, preprocessing_config
 from shiftguard.protocol.acquisition import LabelBlindTargetProvider
 from shiftguard.protocol.splits import make_role_splits
-from shiftguard.storage.repositories import ExperimentRepository
+from shiftguard.experiments.publication import PublicationService
 
 
 @dataclass(frozen=True)
@@ -102,12 +101,25 @@ def _fitted_state(preprocessor, predictor) -> dict[str, object]:
     }
 
 
-def run_outage_recovery(handoff: OutageHandoff, config: OutageConfig, database_url: str) -> OutageResult:
+def run_outage_recovery(
+    handoff: OutageHandoff,
+    config: OutageConfig,
+    database_url: str,
+    **publish_kwargs,
+) -> OutageResult:
+    is_cancelled = publish_kwargs.get("is_cancelled")
+    if callable(is_cancelled) and is_cancelled():
+        raise RuntimeError("Operation cancelled before outage preparation")
+
     seeds = _seed_bundle(config.master_seed)
     stream_children = np.random.SeedSequence(seeds["mask"]).spawn(2)
     mask_seeds = {"pool": int(stream_children[0].generate_state(1)[0]), "test": int(stream_children[1].generate_state(1)[0])}
     preprocessor = fit_train_preprocessor(list(handoff.train_features))
     predictor = fit_initial_logistic_regression(preprocessor.transform(list(handoff.train_features)), list(handoff.train_labels), seeds["model"])
+
+    if callable(is_cancelled) and is_cancelled():
+        raise RuntimeError("Operation cancelled after initial model training")
+
     pipeline = frozen_pipeline(preprocessor, predictor)
     source_fit = fit_temperature(pipeline, handoff.source_features, handoff.source_labels, "source_temperature")
     raw_record = CalibrationRecord("raw", "raw", "not_applicable", None, 0, None)
@@ -134,6 +146,10 @@ def run_outage_recovery(handoff: OutageHandoff, config: OutageConfig, database_u
                                 "record": target_fit.record.__dict__})
     context = {"dataset_id": stable_hash(dataset_identity), "evaluation_rows_id": stable_hash(test_ids),
                "predictor_id": predictor_id, "source_map_id": source_map_id}
+
+    if callable(is_cancelled) and is_cancelled():
+        raise RuntimeError("Operation cancelled before predictions")
+
     # Predict each map once per regime. Reuse the source result within the target cascade.
     clean_predictions, clean_attempts = predict_with_fallback(pipeline, source_fit, None, handoff.final_features)
     outage_predictions, outage_attempts = predict_with_fallback(pipeline, source_fit, target_fit, final_outage)
@@ -176,13 +192,24 @@ def run_outage_recovery(handoff: OutageHandoff, config: OutageConfig, database_u
                 "target_map": {**target_fit.record.__dict__, "map_id": target_map_id},
                 "prediction_attempts": prediction_attempts, "fallback_counts": fallback_counts}
     deterministic = {"config": config.to_dict(), "seeds": {**seeds, "mask_streams": mask_seeds}, "dataset": {"raw_hash": handoff.raw_hash, "clean_hash": handoff.clean_hash}, "roles": handoff.roles, "history_features": HISTORY_FEATURES, "masks": masks, "acquisition": acquisition, "metadata": metadata, "conditions": conditions, "comparisons": comparisons, "protocol": {"final_labels_scope": "evaluator only", "target_order": "label blind nested prefix", "raw_masking": "before frozen transformation"}}
-    experiment_id = stable_hash(deterministic)[:24]
-    root = config.artifact_root / experiment_id
-    content_hashes = {"config": write_json_artifact(root, "config.json", config.to_dict()), "seeds": write_json_artifact(root, "seeds.json", deterministic["seeds"]), "masks": write_json_artifact(root, "masks.json", masks), "acquisition": write_json_artifact(root, "acquisition.json", acquisition), "metadata": write_json_artifact(root, "metadata.json", metadata), "conditions": write_json_artifact(root, "conditions.json", conditions), "comparisons": write_json_artifact(root, "comparisons.json", comparisons), "logical_content": stable_hash(deterministic)}
+    artifact_files = {
+        "config.json": config.to_dict(),
+        "seeds.json": deterministic["seeds"],
+        "masks.json": masks,
+        "acquisition.json": acquisition,
+        "metadata.json": metadata,
+        "conditions.json": conditions,
+        "comparisons.json": comparisons,
+    }
     execution_id = str(uuid4())
-    repository = ExperimentRepository.from_url(database_url)
-    try:
-        repository.put(experiment_id, deterministic, content_hashes, execution_id, {"execution_id": execution_id, "provenance": audit_provenance()})
-    finally:
-        repository.dispose()
+    audit_metadata = {"execution_id": execution_id, "provenance": audit_provenance()}
+    experiment_id, generation_id, content_hashes, target_dir = PublicationService.publish(
+        artifact_root=config.artifact_root,
+        deterministic_payload=deterministic,
+        artifact_files=artifact_files,
+        execution_id=execution_id,
+        audit_metadata=audit_metadata,
+        database_url=database_url,
+        **publish_kwargs,
+    )
     return OutageResult(experiment_id, execution_id, conditions, comparisons, content_hashes)

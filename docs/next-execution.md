@@ -1,56 +1,87 @@
-# Next execution: Gate 3 development stress engine
+# Current handoff: backend and candidate verification
 
-Prepared 16 September 2026. This is an execution handoff, not evidence that Gate 3 has run.
-Start only after Gate 2 is FROZEN in `.agent/gates.json` and the closure checkpoint is committed.
-Accepted source and later governance-only checkpoint commits are distinct; preserve both identities.
+The existing WSL PostgreSQL16 test service has been restored without installation.
+All 27 acceptance guards pass with zero skips, including 10 PostgreSQL cases.
+Evidence: `../verification/gate4-closure/20260921T195859Z-938cbc516d2c/summary.json` and `postgres-service.json` in that directory.
+R6-01 through R6-04 remain locally verified; Gate 4 is still unaccepted.
+
+Antigravity retains application ownership. Follow [the current handoff](gate4-closure-review.md)
+for service restart and the exact next batch. Load
+`../.tools/use-existing-test-postgres.ps1` into the test PowerShell process;
+credentials are derived from the existing test container and never printed.
+
+Remaining: fixed I02/I04 backend admission/worker coverage, I07 PostgreSQL legacy
+upgrade/package coverage, authorized clean source commit, one candidate full
+suite, affected Gate2/Gate3 reproductions, final independent acceptance.
+Reuse the corrected mapping at `../verification/gate4-closure/20260921T195859Z-938cbc516d2c/contract-evidence.json`, the prior 101-pass
+independent local result and current installed-wheel SQLite proof where source
+hashes match. The historical 311-pass/11-skip full-suite count stays author-reported.
+No code changes or commit were made during service recovery. No broad review
+restart, new features, research edits or optional cleanup.
+
+## Historical author handoff (superseded)
+
+
+
+The following prior claims are retained for history. They do not override the
+20 September FAIL review, the reopened ledger entries or the workflow above.
+
+# Next execution: Codebase Hardening and Gate 4 Execution
+
+Prepared 17 September 2026. This is an active execution handoff.
+Baseline source commit: `c11dc059391810f347e8329c558b6b3e45cd037f`.
+Active execution plan: `../docs/aegis/reviews/2026-09-17-codebase-audit/EXECUTION_PLAN.md`.
+Review companion: `../docs/aegis/reviews/2026-09-17-codebase-audit/REVIEW.md`.
+Fix ledger: [docs/fix-ledger.md](fix-ledger.md).
 
 ## Workflow and ownership
 
-1. Read `AGENTS.md`, `.agent/session-state.md`, `.agent/ownership.json`, and the Gate 3 section of the existing outer execution plan. Inspect the working-tree delta. Do not restart research, rebuild Gate 0, or rerun unaffected frozen gates.
-2. Use the cheapest capable Codex writer for routine fixtures, configuration and payload plumbing. Assign Terra High the complex masking/calibration/provenance implementation. Record one active writer before edits; Gemini is only an explicit user/quota handoff.
-3. The parent/Astra planner prepares the bounded scientific contract below before new numerical results. Reuse existing component owners; add no generic orchestration framework.
-4. Complete each coherent batch and its targeted checks before handing off. Keep ordinary failures with the writer. Escalate scientific contradictions immediately, or difficult failures after two evidence-based attempts. Save the exact failure and current diff.
-5. Parent verifies the completed candidate once; request one consolidated Astra High gate-exit review with diff, tests, output and remaining limitations. Sol High reviews public paper/LinkedIn claims when those are updated; it is not a duplicate implementation reviewer.
-6. Commit the source candidate before clean-commit reproduction. Preserve historical artifacts and publish verification into a new output directory. Freeze only the reviewed and verified source; record the checkpoint separately.
+1. **Active Writer:** Gemini / Antigravity (`gemini_antigravity`) performs the bulk hardening and Gate 4 implementation.
+2. **Escalation:** Terra High is an explicit escalation for a named difficult failure after two documented failed attempts.
+3. **Reviewer:** Astra High owns planning, scientific decisions, and gate-exit review; Astra High does not write application code concurrently.
+4. **Fix Ledger:** All twelve findings (A01–A12) are tracked in [docs/fix-ledger.md](fix-ledger.md).
+5. **No Blind Hash Overwrites:** Scientific corrections (A06 nested uniforms, A07 unconstrained temperature fitting) will result in new experiment and condition IDs. Historical artifacts and review records are preserved.
 
-## Execution sequence
+## Hardening and Gate 4 Sequence
 
-### 3A: Freeze the development contract
+### Batch H0 (Completed): Truthful Checkpoint & Governance
+- Reconciled `AGENTS.md`, `.agent/*`, `README.md`, `pyproject.toml`, and `docs/next-execution.md`.
+- Established single fix ledger `docs/fix-ledger.md`.
+- Staged skills into `.agent/skills/` (`shiftguard-candidate-evidence`, `shiftguard-review-handoff`, `shiftguard-safe-consolidation`).
+- Verified discovery with dry-run test.
 
-Create the next bounded gate packet from the approved plan and protected blueprint. Declare all of the following before implementation/results:
+### Batch H1 (Completed): Scientific and Input-Contract Corrections
+- **H1.1 (A01):** Enforced frozen Adult training identity before data access; rejected test/archive paths; verified bytes before writing outputs.
+- **H1.2 (A05):** Made configs deeply immutable; validated unique ordered dimensions; rejected boolean budgets and invalid costs/probabilities; enforced history probability 0.50.
+- **H1.3 (A06, A07):** Nested MCAR masks from single shared uniform matrix; stable unconstrained log-temperature fitting with explicit boundary/non-convergence failure handling.
+- **H1.4 (A08, A12):** Centralized metric input validator (1D, equal length, binary labels, finite probabilities, positive costs); added 4 contract metric test suites and entrypoint coverage.
 
-- Logistic Regression and Random Forest configuration, independent seed namespaces, shared-mask rules and stable condition identities.
-- Cellwise MCAR rates 0, 0.10 and 0.30 using shared uniforms; the exact algorithm/tolerance for comparing patterns at matched realized eligible-cell rate, including impossible matches.
-- Nested label-blind budgets 0, 25, 50, 100 and 200 from the same full-pool mask/order. Budget zero and one-class prefixes must use declared fallbacks; never redraw.
-- Eight named conditions: raw, frozen source, source-remasked global temperature, source fraction-binned temperature, target temperature, target Platt log-odds, target Beta and target isotonic.
-- Source remasking access and fit boundaries; ten equal fraction bins, exact sparse-bin criterion and fallback to source-remasked temperature; fit/prediction failures and unique counts.
-- Probability clipping, ranking undefined cases, ECE definition and decision-loss costs/threshold grid. Final labels remain evaluator-only; costs/thresholds cannot be selected from final outcomes.
-- Adult train-only acquisition/schema/hash/split/config ownership and a test that the official confirmatory test file/outcomes remain sealed. Resolve genuinely absent scientific choices explicitly before code; do not silently invent them.
+### Batch H2 (Completed): Integrity, Packaging, Publication, and Bounded Simplification
+- **H2.1 (A02, A03):** Recoverable publication protocol (private staging -> manifest check -> PREPARED -> atomic rename -> PUBLISHED); conflict-safe repo insert on SQLite/PostgreSQL with UUID replay handling; additive migration `0004_publication_records.py`.
+- **H2.2 (A04, A10):** Independent verifier closure in `verify_gate3_reproduction.py` (exact manifests, recomputed logical digest, condition ID preimages, all DB projections compared to disk, isolated attempt directories).
+- **H2.3 (A09):** Packaged Alembic migrations and resource loader independent of cwd; tested wheel build and isolated distribution startup.
 
-Acceptance: the packet maps every invariant to an existing owner or bounded new file and a check. Keep development and confirmatory protocols distinct.
+### Batch H3 (Completed): Hardening Candidate Verification
+- Ran regression probes, full test suite, verified PostgreSQL 16 hygiene.
+- Packaged comprehensive review packet in `docs/aegis/reviews/2026-09-17-codebase-audit/HARDENING_REVIEW_PACKET.md`.
 
-### 3B: Masking, predictors and acquisition
+### Gate 4 (Completed): Durable API and Worker
+- Runtime contract (`docs/gate4-runtime-contract.md`), additive migration `0005_gate4_jobs_and_continuation.py` for `jobs`, `job_events`, `agent_sessions`, and `idempotency_records`.
+- Queue claim (`BEGIN IMMEDIATE` on SQLite, `SKIP LOCKED` on PostgreSQL), worker fencing token, independent heartbeat thread on separate DB connection, bounded retries, cooperative cancellation.
+- Lease recovery service (`recover_expired_leases`, `cleanup_abandoned_staging`).
+- Agent continuation service with single-use nonces and atomic state transitions.
+- Strict preset API (FastAPI) with `extra="forbid"`, error envelopes, request ID tracing, path traversal security, and zero dataset leakage.
+- Wheel built and verified (`dist/shiftguard-0.1.0-py3-none-any.whl`).
 
-Extend existing missingness, predictor, config and acquisition owners. Add MCAR/shared uniforms, matched-rate comparisons, Random Forest, and nested budgets. Preserve train-only preprocessing and full-pool masking before label reveal.
+### Complete Codebase Review Remediation (19 September 2026 - Completed)
+- **Batch 1 (Concurrency & Transitions):** Initial reservation serialization (`BEGIN IMMEDIATE` / advisory lock); attempt-bound generations and recovery fencing (`0008_gate4_attempt_binding.py`); savepoint error boundaries around corrupt manifest/metadata JSON in recovery; unexpired lease guards on worker terminal mutations; atomic recheck loop in cancellation; `list_published` deduplication by `experiment_id`.
+- **Batch 2 (API, Scientific, & Migrations):** Strict `PresetOverrides` schema (development seeds only, extra forbidden, explicit None check for seed 0); write-locked session rebind with dependency deduplication; PostgreSQL hosted profile auto-detection from URL and settings propagation; `SessionStatus.EXPIRED` handling with stable 401; canonical migration chain synced (`0007_gate4_r4_hardening.py` and `0008_gate4_attempt_binding.py`); polling interval float validation; Bank dataset 41,188 row count and frozen digest enforcement with explicit synthetic test seam; Gate 2/3 verifier hygiene and attempt lifecycle hardening; centralized calibration fraction validation; integer `master_seed` and `protocol_id` validation.
+- **Batch 3 (Controlled Cleanup):** Removed dead bypass helpers (`finalize_publication`, `verify_capability`), redundant `enqueue_experiment` alias, obsolete runner imports, redundant root `COPY alembic/` in Dockerfile, redundant `.gitkeep`s, and `frontend/tsconfig.tsbuildinfo`.
+- Full test pass: **285 passed, 1 skipped** (PostgreSQL service test).
 
-Checks: zero-rate identity; monotone masks under shared uniforms; observed-cell denominators; matched-rate tolerance; nested unique prefixes; no outcome-dependent selection; frozen fitted state. Run affected Gate 2 regression tests once after this batch.
+## Next Actions
+1. **Astra High Final Gate Review**: Independent review of Complete Codebase Review remediation and test verification.
+2. **Clean Candidate Commit**: Author clean candidate commit upon Astra High review acceptance.
+3. **Staging Verification**: Run live PostgreSQL 16 reproduction in target staging environment (`SHIFTGUARD_TEST_POSTGRES_URL`).
 
-### 3C: Calibration, metrics and persisted payloads
 
-Implement the remaining calibration methods and explicit fallback chains; extend evaluator-owned metrics and immutable storage payloads. Produce budget-curve, pattern-versus-rate, reliability and decision-loss payloads without requiring a browser.
-
-Checks: all eight conditions distinguishable; budget-zero/one-class/fit/prediction failures; sparse bins; finite or explicitly unavailable metrics; no leaked final outcomes; unique failure counts; deterministic content identity; database reopen and rerun behavior. Preserve harmful and null results.
-
-### 3D: Adult development ownership and gate exit
-
-Prepare Adult training-file acquisition, manifest, features, train/source/pool roles and frozen configuration before Gate 8. Do not acquire or score the official Adult confirmatory test data in this phase.
-
-Complete targeted Adult seal/schema tests and Bank stress integration tests. Then parent runs the full suite and live PostgreSQL checks on the final candidate, verifies clean-commit reproducibility and the four payloads, and assembles a compact Astra review packet. Gate 3 stays unaccepted until these pass. Gate 4 (durable API/worker) follows acceptance.
-
-## Required from the user
-
-- Nothing additional for local Gate 3 implementation. No production database URL, GPU purchase, private dataset or hand-written code is needed.
-- Before Gate 6: Token Factory account setup and API key placed in the local secret environment, plus an explicit inference spending cap. Do not paste the key into chat.
-- Before hosting/public release: cloud project/region and hosting budget, repository destination/release authority, judge access requirements, registration details and final submission materials/authority.
-
-No account, paid API, hosting, public post or submission action is included in the current local execution handoff.

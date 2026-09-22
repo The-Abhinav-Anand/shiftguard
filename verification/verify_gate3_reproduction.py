@@ -1,6 +1,7 @@
 """Independent CLI, artifact, storage, and 4-payload verification for Gate 3 stress engine candidate."""
 from __future__ import annotations
 
+from datetime import datetime, timezone
 import hashlib
 import json
 import math
@@ -9,13 +10,17 @@ from pathlib import Path
 import sqlite3
 import subprocess
 import tempfile
+from uuid import uuid4
 
 import psycopg
+
+from shiftguard.experiments.ids import stable_hash
 
 
 APP = Path(__file__).resolve().parents[1]
 ROOT = APP.parent
 DEFAULT_OUTPUT = ROOT / "verification" / "gate3"
+
 
 REQUIRED_PAYLOADS = ("budget_curve", "pattern_vs_rate", "reliability", "decision_loss")
 REQUIRED_METHODS = (
@@ -420,6 +425,101 @@ def validate_scientific_payloads(
     }
 
 
+REQUIRED_MANIFEST_KEYS = {
+    "config",
+    "seeds",
+    "masks",
+    "acquisition",
+    "conditions",
+    "comparisons",
+    "budget_curve",
+    "pattern_vs_rate",
+    "reliability",
+    "decision_loss",
+    "logical_content",
+}
+
+
+def validate_manifest_content_hashes(
+    content_hashes: dict[str, str],
+    artifact_root: Path,
+    payload_root: Path,
+) -> None:
+    """Verify exact match against REQUIRED_MANIFEST_KEYS and byte digests of all artifacts."""
+    if set(content_hashes.keys()) != REQUIRED_MANIFEST_KEYS:
+        diff = set(content_hashes.keys()) ^ REQUIRED_MANIFEST_KEYS
+        raise AssertionError(f"Exact manifest mismatch: {diff}")
+
+    for key, digest in content_hashes.items():
+        if key == "logical_content":
+            continue
+        if key in REQUIRED_PAYLOADS:
+            target_file = payload_root / f"{key}.json"
+        else:
+            target_file = artifact_root / f"{key}.json"
+        if not target_file.is_file():
+            raise AssertionError(f"Artifact file missing: {target_file}")
+        actual_hash = hashlib.sha256(target_file.read_bytes()).hexdigest()
+        if actual_hash != digest:
+            raise AssertionError(f"Artifact hash mismatch for {key}: expected {digest}, got {actual_hash}")
+
+
+def validate_condition_ids_preimages(conditions_data: dict[str, dict[str, object]]) -> None:
+    """Independently recompute and verify condition IDs from their exact preimages."""
+    for cond_key, cond in conditions_data.items():
+        preimage = {k: v for k, v in cond.items() if k != "condition_id"}
+        expected_cid = stable_hash(preimage)[:24]
+        if cond.get("condition_id") != expected_cid:
+            raise AssertionError(
+                f"Condition {cond_key} ID mismatch: expected {expected_cid}, got {cond.get('condition_id')}"
+            )
+
+
+def validate_database_projections(
+    payload: dict[str, object],
+    artifact_root: Path,
+    payload_root: Path,
+) -> None:
+    """Compare all 10 stored database projections with on-disk artifacts."""
+    projections = {
+        "config": (artifact_root / "config.json", payload.get("config")),
+        "seeds": (artifact_root / "seeds.json", payload.get("seeds")),
+        "masks": (artifact_root / "masks.json", payload.get("masks")),
+        "acquisition": (artifact_root / "acquisition.json", payload.get("acquisition")),
+        "conditions": (artifact_root / "conditions.json", payload.get("conditions")),
+        "comparisons": (artifact_root / "comparisons.json", payload.get("comparisons")),
+        "budget_curve": (payload_root / "budget_curve.json", payload.get("payloads", {}).get("budget_curve")),
+        "pattern_vs_rate": (payload_root / "pattern_vs_rate.json", payload.get("payloads", {}).get("pattern_vs_rate")),
+        "reliability": (payload_root / "reliability.json", payload.get("payloads", {}).get("reliability")),
+        "decision_loss": (payload_root / "decision_loss.json", payload.get("payloads", {}).get("decision_loss")),
+    }
+    for proj_name, (proj_file, proj_db) in projections.items():
+        if not proj_file.is_file():
+            raise AssertionError(f"Projection file missing: {proj_file}")
+        file_content = json.loads(proj_file.read_text(encoding="utf-8"))
+        if file_content != proj_db:
+            raise AssertionError(f"Database projection {proj_name} does not match saved artifact")
+
+
+def validate_logical_content_and_experiment_id(
+    payload: dict[str, object],
+    content_hashes: dict[str, str],
+    experiment_id: str,
+) -> None:
+    """Recompute logical content digest and experiment ID from database payload."""
+    recomputed_logical = stable_hash(payload)
+    reported_logical = content_hashes.get("logical_content")
+    if reported_logical != recomputed_logical:
+        raise AssertionError(
+            f"Logical content digest mismatch: expected {recomputed_logical}, got {reported_logical}"
+        )
+    recomputed_exp_id = recomputed_logical[:24]
+    if experiment_id != recomputed_exp_id:
+        raise AssertionError(
+            f"Experiment ID mismatch: expected {recomputed_exp_id}, got {experiment_id}"
+        )
+
+
 def main() -> None:
     output_dir = get_output_dir()
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -427,130 +527,177 @@ def main() -> None:
     if canonical_verification.exists():
         canonical_verification.unlink()
 
-    if "SHIFTGUARD_TEST_POSTGRES_URL" not in os.environ:
-        raise RuntimeError("SHIFTGUARD_TEST_POSTGRES_URL is required for Gate 3 reproduction verification")
-    postgres_url = os.environ["SHIFTGUARD_TEST_POSTGRES_URL"]
-    expected_commit = get_expected_commit()
-    verifier_sha256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+    attempts_dir = output_dir / "attempts"
+    attempts_dir.mkdir(parents=True, exist_ok=True)
+    attempt_timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    attempt_id = f"attempt-{attempt_timestamp}-{uuid4().hex[:8]}"
+    attempt_dir = attempts_dir / attempt_id
+    attempt_dir.mkdir(parents=True, exist_ok=True)
+    current_attempt_pointer = output_dir / "current_attempt.json"
 
-    with tempfile.TemporaryDirectory() as temp_dir_str:
-        temp_dir = Path(temp_dir_str)
-        database = temp_dir / "reproduction.db"
-        sqlite_url = "sqlite:///" + database.as_posix()
-        temp_outputs: dict[str, Path] = {}
-        runs = []
+    def _write_current_attempt(record: dict[str, object]) -> None:
+        tmp = output_dir / f".tmp-current_attempt-{uuid4().hex[:6]}.json"
+        tmp.write_text(json.dumps(record, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        tmp.replace(current_attempt_pointer)
 
-        for name, url in (("sqlite-first", sqlite_url), ("sqlite-second", sqlite_url), ("postgres", postgres_url)):
-            env = os.environ.copy()
-            env["SHIFTGUARD_ENVIRONMENT"] = "hosted" if name == "postgres" else "local"
-            result = subprocess.run(
-                [
-                    str(APP / ".venv/Scripts/shiftguard.exe"),
-                    "--db-url", url,
-                    "run", "--config", "configs/bank-stress.yaml",
-                ],
-                cwd=APP, env=env, capture_output=True, text=True, encoding="utf-8",
-            )
-            if result.returncode != 0:
-                raise RuntimeError(f"{name} failed: {result.stderr}")
+    expected_commit = "unknown"
+    _write_current_attempt({
+        "candidate": expected_commit,
+        "attempt_id": attempt_id,
+        "status": "IN_PROGRESS",
+        "started_at": datetime.now(timezone.utc).isoformat(),
+    })
 
-            data = json.loads(result.stdout)
-            experiment_id = data["experiment_id"]
-            content_hashes = data["content_hashes"]
-            artifact_root = APP / "var/artifacts" / experiment_id
-            payload_root = artifact_root / "payloads"
+    try:
+        expected_commit = get_expected_commit()
+        _write_current_attempt({
+            "candidate": expected_commit,
+            "attempt_id": attempt_id,
+            "status": "IN_PROGRESS",
+            "started_at": datetime.now(timezone.utc).isoformat(),
+        })
+        if "SHIFTGUARD_TEST_POSTGRES_URL" not in os.environ:
+            raise RuntimeError("SHIFTGUARD_TEST_POSTGRES_URL is required for Gate 3 reproduction verification")
+        postgres_url = os.environ["SHIFTGUARD_TEST_POSTGRES_URL"]
+        verifier_sha256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 
-            # 1. Verify byte hashes of all generated artifacts
-            for key, digest in content_hashes.items():
-                if key == "logical_content":
-                    continue
-                if key in REQUIRED_PAYLOADS:
-                    target_file = payload_root / f"{key}.json"
-                else:
-                    target_file = artifact_root / f"{key}.json"
-                assert target_file.is_file(), f"Artifact file missing: {target_file}"
-                actual_hash = hashlib.sha256(target_file.read_bytes()).hexdigest()
-                assert actual_hash == digest, f"Artifact hash mismatch for {key}: expected {digest}, got {actual_hash}"
+        with tempfile.TemporaryDirectory() as temp_dir_str:
+            temp_dir = Path(temp_dir_str)
+            database = temp_dir / "reproduction.db"
+            sqlite_url = "sqlite:///" + database.as_posix()
+            temp_outputs: dict[str, Path] = {}
+            runs = []
 
-            # 2. Read and validate conditions.json and scientific payloads
-            conditions_file = artifact_root / "conditions.json"
-            assert conditions_file.is_file(), "conditions.json missing"
-            conditions_data = json.loads(conditions_file.read_text(encoding="utf-8"))
-            validate_scientific_payloads(artifact_root, payload_root, conditions_data)
+            for name, url in (("sqlite-first", sqlite_url), ("sqlite-second", sqlite_url), ("postgres", postgres_url)):
+                env = os.environ.copy()
+                env["SHIFTGUARD_ENVIRONMENT"] = "hosted" if name == "postgres" else "local"
+                result = subprocess.run(
+                    [
+                        str(APP / ".venv/Scripts/shiftguard.exe"),
+                        "--db-url", url,
+                        "run", "--config", "configs/bank-stress.yaml",
+                    ],
+                    cwd=APP, env=env, capture_output=True, text=True, encoding="utf-8",
+                )
+                if result.returncode != 0:
+                    raise RuntimeError(f"{name} failed: {result.stderr}")
 
-            temp_file = temp_dir / f"{name}.json"
-            temp_file.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-            temp_outputs[name] = temp_file
-            runs.append(data)
+                data = json.loads(result.stdout)
+                experiment_id = data["experiment_id"]
+                content_hashes = data["content_hashes"]
+                artifact_root = APP / "var/artifacts" / experiment_id
+                payload_root = artifact_root / "payloads"
 
-        # Parity checks across 3 runs
-        first = runs[0]
-        for run in runs[1:]:
-            for key in ("experiment_id", "content_hashes"):
-                assert run[key] == first[key], f"Run parity failure on {key}"
+                # 1. Exact manifest validation (A04) & 2. Verify byte hashes of all generated artifacts
+                validate_manifest_content_hashes(content_hashes, artifact_root, payload_root)
 
-        execution_ids = [run["execution_id"] for run in runs]
-        assert len(set(execution_ids)) == 3, f"Expected 3 distinct execution UUIDs, got {execution_ids}"
+                # 3. Read and validate conditions.json and scientific payloads
+                conditions_file = artifact_root / "conditions.json"
+                assert conditions_file.is_file(), "conditions.json missing"
+                conditions_data = json.loads(conditions_file.read_text(encoding="utf-8"))
+                validate_scientific_payloads(artifact_root, payload_root, conditions_data)
 
-        # Database parity check between SQLite and PostgreSQL
-        sqlite_conn = sqlite3.connect(database)
-        try:
-            sqlite_payload_raw = sqlite_conn.execute("SELECT payload_json FROM experiments WHERE id = ?", (first["experiment_id"],)).fetchone()[0]
-            sqlite_audits = sqlite_conn.execute("SELECT execution_id, audit_json FROM experiment_executions WHERE experiment_id = ?", (first["experiment_id"],)).fetchall()
-        finally:
-            sqlite_conn.close()
+                # 4. Recompute condition IDs independently from preimages (A04)
+                validate_condition_ids_preimages(conditions_data)
 
-        with psycopg.connect(postgres_url) as connection:
-            postgres_payload_raw = connection.execute("SELECT payload_json FROM experiments WHERE id = %s", (first["experiment_id"],)).fetchone()[0]
-            postgres_audits = connection.execute("SELECT execution_id, audit_json FROM experiment_executions WHERE experiment_id = %s", (first["experiment_id"],)).fetchall()
+                temp_file = temp_dir / f"{name}.json"
+                temp_file.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+                temp_outputs[name] = temp_file
+                runs.append(data)
 
-        sqlite_payload = json.loads(sqlite_payload_raw)
-        postgres_payload = json.loads(postgres_payload_raw)
-        assert sqlite_payload == postgres_payload, "SQLite and PostgreSQL experiments table payload mismatch"
+            # Parity checks across 3 runs
+            first = runs[0]
+            for run in runs[1:]:
+                for key in ("experiment_id", "content_hashes"):
+                    assert run[key] == first[key], f"Run parity failure on {key}"
 
-        # Database payload equality with saved artifacts
-        first_art_root = APP / "var/artifacts" / first["experiment_id"]
-        first_pay_root = first_art_root / "payloads"
-        first_conditions = json.loads((first_art_root / "conditions.json").read_text(encoding="utf-8"))
-        assert sqlite_payload["conditions"] == first_conditions, "Database conditions payload does not match conditions.json"
-        assert sqlite_payload["payloads"]["budget_curve"] == json.loads((first_pay_root / "budget_curve.json").read_text(encoding="utf-8")), "Database budget_curve does not match artifact"
-        assert sqlite_payload["payloads"]["pattern_vs_rate"] == json.loads((first_pay_root / "pattern_vs_rate.json").read_text(encoding="utf-8")), "Database pattern_vs_rate does not match artifact"
-        assert sqlite_payload["payloads"]["reliability"] == json.loads((first_pay_root / "reliability.json").read_text(encoding="utf-8")), "Database reliability does not match artifact"
-        assert sqlite_payload["payloads"]["decision_loss"] == json.loads((first_pay_root / "decision_loss.json").read_text(encoding="utf-8")), "Database decision_loss does not match artifact"
+            execution_ids = [run["execution_id"] for run in runs]
+            assert len(set(execution_ids)) == 3, f"Expected 3 distinct execution UUIDs, got {execution_ids}"
 
-        audits = {row[0]: json.loads(row[1]) for row in sqlite_audits + postgres_audits}
-        assert all(execution in audits for execution in execution_ids), "Missing audits for executions"
+            # Database parity check between SQLite and PostgreSQL
+            sqlite_conn = sqlite3.connect(database)
+            try:
+                sqlite_payload_raw = sqlite_conn.execute("SELECT payload_json FROM experiments WHERE id = ?", (first["experiment_id"],)).fetchone()[0]
+                sqlite_audits = sqlite_conn.execute("SELECT execution_id, audit_json FROM experiment_executions WHERE experiment_id = ?", (first["experiment_id"],)).fetchall()
+            finally:
+                sqlite_conn.close()
 
-        provenance_summary = validate_execution_provenance(execution_ids, audits, expected_commit)
-        provenance_summary["verifier_sha256"] = verifier_sha256
+            with psycopg.connect(postgres_url) as connection:
+                postgres_payload_raw = connection.execute("SELECT payload_json FROM experiments WHERE id = %s", (first["experiment_id"],)).fetchone()[0]
+                postgres_audits = connection.execute("SELECT execution_id, audit_json FROM experiment_executions WHERE experiment_id = %s", (first["experiment_id"],)).fetchall()
 
-        summary = {
-            "status": "passed",
-            "gate": 3,
-            "experiment_id": first["experiment_id"],
-            "execution_ids": execution_ids,
-            "identical_artifact_hashes": first["content_hashes"],
-            "payload_keys": list(REQUIRED_PAYLOADS),
-            "condition_count": len(first_conditions),
-            "sqlite_and_postgres_payloads_equal": True,
-            "execution_audits": {key: audits[key] for key in execution_ids},
-            "verified_provenance": provenance_summary,
-        }
+            sqlite_payload = json.loads(sqlite_payload_raw)
+            postgres_payload = json.loads(postgres_payload_raw)
+            assert sqlite_payload == postgres_payload, "SQLite and PostgreSQL experiments table payload mismatch"
 
-        for name, temp_file in temp_outputs.items():
-            target = output_dir / f"{name}.json"
-            temp_file.replace(target)
+            # 5. Compare ALL database projections with saved artifacts (A04)
+            first_art_root = APP / "var/artifacts" / first["experiment_id"]
+            first_pay_root = first_art_root / "payloads"
+            validate_database_projections(sqlite_payload, first_art_root, first_pay_root)
 
-        temp_verif = temp_dir / "verification.json"
-        temp_verif.write_text(json.dumps(summary, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-        temp_verif.replace(canonical_verification)
-        print(json.dumps({
-            "status": "passed",
-            "gate": 3,
-            "experiment_id": first["experiment_id"],
-            "executions": execution_ids,
-            "verified_commit": expected_commit,
-        }))
+            # 6. Recompute logical content digest and experiment ID independently (A04)
+            validate_logical_content_and_experiment_id(sqlite_payload, first["content_hashes"], first["experiment_id"])
+
+            audits = {row[0]: json.loads(row[1]) for row in sqlite_audits + postgres_audits}
+            assert all(execution in audits for execution in execution_ids), "Missing audits for executions"
+
+            provenance_summary = validate_execution_provenance(execution_ids, audits, expected_commit)
+            provenance_summary["verifier_sha256"] = verifier_sha256
+
+            first_conditions = sqlite_payload["conditions"]
+            summary = {
+                "status": "passed",
+                "gate": 3,
+                "attempt_id": attempt_id,
+                "experiment_id": first["experiment_id"],
+                "execution_ids": execution_ids,
+                "identical_artifact_hashes": first["content_hashes"],
+                "payload_keys": list(REQUIRED_PAYLOADS),
+                "condition_count": len(first_conditions),
+                "sqlite_and_postgres_payloads_equal": True,
+                "execution_audits": {key: audits[key] for key in execution_ids},
+                "verified_provenance": provenance_summary,
+            }
+
+            # Write outputs to both the immutable attempt directory and canonical output dir
+            for name, temp_file in temp_outputs.items():
+                attempt_target = attempt_dir / f"{name}.json"
+                temp_file.replace(attempt_target)
+                (output_dir / f"{name}.json").write_text(attempt_target.read_text(encoding="utf-8"), encoding="utf-8")
+
+            summary_json = json.dumps(summary, indent=2, ensure_ascii=False) + "\n"
+            (attempt_dir / "verification.json").write_text(summary_json, encoding="utf-8")
+            temp_verif = temp_dir / "verification.json"
+            temp_verif.write_text(summary_json, encoding="utf-8")
+            temp_verif.replace(canonical_verification)
+
+            _write_current_attempt({
+                "candidate": expected_commit,
+                "attempt_id": attempt_id,
+                "status": "PASS",
+                "completed_at": datetime.now(timezone.utc).isoformat(),
+                "experiment_id": first["experiment_id"],
+            })
+
+            print(json.dumps({
+                "status": "passed",
+                "gate": 3,
+                "attempt_id": attempt_id,
+                "experiment_id": first["experiment_id"],
+                "executions": execution_ids,
+                "verified_commit": expected_commit,
+            }))
+
+    except Exception as exc:
+        _write_current_attempt({
+            "candidate": expected_commit,
+            "attempt_id": attempt_id,
+            "status": "FAILED",
+            "failed_at": datetime.now(timezone.utc).isoformat(),
+            "error": str(exc),
+        })
+        raise
+
 
 
 if __name__ == "__main__":

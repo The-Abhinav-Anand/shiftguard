@@ -9,14 +9,13 @@ from uuid import uuid4
 import numpy as np
 
 from shiftguard.datasets.bank import BankDataset
-from shiftguard.experiments.artifacts import write_json_artifact
 from shiftguard.experiments.config import BaselineConfig
 from shiftguard.experiments.evaluator import FinalTestEvaluator
 from shiftguard.experiments.ids import stable_hash
 from shiftguard.predictors.logistic import fit_initial_logistic_regression, predictor_identity
 from shiftguard.preprocessing.tabular import feature_rows, fit_train_preprocessor, preprocessing_config
 from shiftguard.protocol.splits import make_role_splits
-from shiftguard.storage.repositories import ExperimentRepository
+from shiftguard.experiments.publication import PublicationService
 
 
 @dataclass(frozen=True)
@@ -74,25 +73,47 @@ def prepare_baseline_handoff(dataset: BankDataset, config: BaselineConfig) -> Pr
     return PreparedBaselineHandoff(train_features=tuple(feature_rows(train_rows)), train_labels=tuple(int(row["y"]) for row in train_rows), source_cal_features=tuple(feature_rows(source_rows)), target_pool_features=tuple(feature_rows(pool_rows)), final_features=tuple(feature_rows(final_rows)), evaluator=FinalTestEvaluator(tuple(int(row["y"]) for row in final_rows)), roles=roles, raw_hash=dataset.raw_hash, clean_hash=dataset.clean_hash)
 
 
-def run_baseline(handoff: PreparedBaselineHandoff, config: BaselineConfig, database_url: str) -> BaselineResult:
+def run_baseline(
+    handoff: PreparedBaselineHandoff,
+    config: BaselineConfig,
+    database_url: str,
+    **publish_kwargs,
+) -> BaselineResult:
+    is_cancelled = publish_kwargs.get("is_cancelled")
+    if callable(is_cancelled) and is_cancelled():
+        raise RuntimeError("Operation cancelled before model training")
+
     seeds = _seed_bundle(config.master_seed)
     train_features = list(handoff.train_features)
     final_features = list(handoff.final_features)
     preprocessor = fit_train_preprocessor(train_features)
     model = fit_initial_logistic_regression(preprocessor.transform(train_features), list(handoff.train_labels), seeds["model"])
+
+    if callable(is_cancelled) and is_cancelled():
+        raise RuntimeError("Operation cancelled after model training")
+
     probabilities = model.predict_proba(preprocessor.transform(final_features))[:, 1].tolist()
     metrics = handoff.evaluator.score(probabilities)
     split_hash = stable_hash(handoff.roles)
     metadata = {"preprocessing": preprocessing_config(), "predictor": predictor_identity(model)}
     deterministic_payload = {"config": config.to_dict(), "seeds": seeds, "dataset": {"raw_hash": handoff.raw_hash, "clean_hash": handoff.clean_hash}, "split_hash": split_hash, "metrics": metrics, "metadata": metadata, "protocol": {"duplicate_policy": "retain duplicate source rows and split by stable row_id", "final_labels_scope": "evaluator only", "lock_provenance": "unlocked-development"}}
-    experiment_id = stable_hash(deterministic_payload)[:24]
-    artifact_dir = config.artifact_root / experiment_id
-    content_hashes = {"config": write_json_artifact(artifact_dir, "config.json", config.to_dict()), "seeds": write_json_artifact(artifact_dir, "seeds.json", seeds), "splits": write_json_artifact(artifact_dir, "splits.json", handoff.roles), "metadata": write_json_artifact(artifact_dir, "metadata.json", metadata), "result": write_json_artifact(artifact_dir, "result.json", metrics), "logical_content": stable_hash(deterministic_payload)}
+    artifact_files = {
+        "config.json": config.to_dict(),
+        "seeds.json": seeds,
+        "splits.json": handoff.roles,
+        "metadata.json": metadata,
+        "result.json": metrics,
+    }
     execution_id = str(uuid4())
     audit_metadata = {"execution_id": execution_id, "provenance": audit_provenance()}
-    repository = ExperimentRepository.from_url(database_url)
-    try:
-        repository.put(experiment_id, deterministic_payload, content_hashes, execution_id, audit_metadata)
-    finally:
-        repository.dispose()
+    experiment_id, generation_id, content_hashes, artifact_dir = PublicationService.publish(
+        artifact_root=config.artifact_root,
+        deterministic_payload=deterministic_payload,
+        artifact_files=artifact_files,
+        execution_id=execution_id,
+        audit_metadata=audit_metadata,
+        database_url=database_url,
+        **publish_kwargs,
+    )
     return BaselineResult(experiment_id=experiment_id, execution_id=execution_id, metrics=metrics, content_hashes=content_hashes, artifact_dir=artifact_dir)
+

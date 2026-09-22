@@ -2,29 +2,43 @@ from __future__ import annotations
 
 import numpy as np
 
+from shiftguard.metrics.validation import validate_metric_inputs
 
-def reliability_bins(labels: list[int] | tuple[int, ...], probabilities: list[float] | tuple[float, ...], bins: int = 10) -> list[dict[str, float | int | None]]:
+
+def reliability_bins(
+    labels: list[int] | tuple[int, ...] | np.ndarray,
+    probabilities: list[float] | tuple[float, ...] | np.ndarray,
+    bins: int = 10,
+) -> list[dict[str, float | int | None]]:
+    if not (isinstance(bins, int) and not isinstance(bins, bool) and bins > 0):
+        raise ValueError(f"bins must be a positive integer, got {bins}")
+    y_true, y_prob = validate_metric_inputs(labels, probabilities, allow_empty=True)
     result = []
-    values = np.asarray(probabilities)
-    targets = np.asarray(labels)
     for index in range(bins):
         lower, upper = index / bins, (index + 1) / bins
-        mask = (values >= lower) & ((values < upper) if index < bins - 1 else (values <= upper))
-        selected_values, selected_targets = values[mask], targets[mask]
-        result.append({"lower": lower, "upper": upper, "count": int(mask.sum()), "mean_probability": float(selected_values.mean()) if len(selected_values) else None, "positive_fraction": float(selected_targets.mean()) if len(selected_targets) else None})
+        mask = (y_prob >= lower) & ((y_prob < upper) if index < bins - 1 else (y_prob <= upper))
+        selected_values, selected_targets = y_prob[mask], y_true[mask]
+        result.append({
+            "lower": lower,
+            "upper": upper,
+            "count": int(mask.sum()),
+            "mean_probability": float(selected_values.mean()) if len(selected_values) else None,
+            "positive_fraction": float(selected_targets.mean()) if len(selected_targets) else None,
+        })
     return result
 
 
 def expected_calibration_error(
-    labels: list[int] | tuple[int, ...],
-    probabilities: list[float] | tuple[float, ...],
+    labels: list[int] | tuple[int, ...] | np.ndarray,
+    probabilities: list[float] | tuple[float, ...] | np.ndarray,
     bins: int = 10,
 ) -> float:
-    """Compute Expected Calibration Error (ECE) with 10 equal-width bins."""
-    b_data = reliability_bins(labels, probabilities, bins=bins)
-    n_total = len(labels)
+    """Compute Expected Calibration Error (ECE) with equal-width bins."""
+    y_true, y_prob = validate_metric_inputs(labels, probabilities, allow_empty=True)
+    n_total = len(y_true)
     if n_total == 0:
         return 0.0
+    b_data = reliability_bins(y_true, y_prob, bins=bins)
     ece = 0.0
     for b in b_data:
         count = int(b["count"])
@@ -33,3 +47,4 @@ def expected_calibration_error(
             gap = abs(float(b["mean_probability"]) - float(b["positive_fraction"]))
             ece += weight * gap
     return float(ece)
+

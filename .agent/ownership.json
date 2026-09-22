@@ -1,11 +1,13 @@
 {
   "active_writer": "gemini_antigravity",
-  "state": "ANTIGRAVITY_GATE3_IMPLEMENTATION",
+  "state": "BACKEND_AND_CANDIDATE_VERIFICATION",
   "branch": "implementation/gate-0",
-  "current_gate": "3",
-  "current_subtask": "Gate 3 Candidate: Reproduction verification and review packet assembly",
-  "ownership_started_at": "2026-09-16",
-  "handoff_from": "codex_parent",
-  "handoff_commit": "c9cc001b3c76d24cbc1aecc0afb963b6ceb7ebbf",
-  "reason": "User explicitly authorized Antigravity to take active writer ownership and execute Gate 3 implementation, tests, verification tooling, documentation and review preparation from the accepted Gate 2 checkpoint."
+  "current_gate": "4",
+  "current_subtask": "Existing PostgreSQL16 restored; 27 guards pass; remaining fixed backend and clean-candidate checks",
+  "ownership_started_at": "2026-09-17",
+  "base_source_commit": "c11dc059391810f347e8329c558b6b3e45cd037f",
+  "active_packet": "docs/gate4-closure.md",
+  "fix_ledger": "docs/fix-ledger.md",
+  "reason": "User requested adapting the verification workflow to end repeated broad reviews. Antigravity retains application ownership; parent added tests, evidence tooling and governance only.",
+  "latest_review": "docs/gate4-closure-review.md"
 }

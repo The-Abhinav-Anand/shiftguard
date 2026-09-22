@@ -10,7 +10,6 @@ Use Python 3.13 and uv. From the repository root:
 $env:UV_PYTHON_INSTALL_DIR = "..\\.tools\\python"
 $env:UV_CACHE_DIR = "..\\.tools\\uv-cache"
 $uv = "..\\.tools\\uv-package\\bin\\uv.exe"
-& $uv lock
 & $uv sync --locked --extra test
 & $uv run pytest -q
 & $uv run alembic upgrade head

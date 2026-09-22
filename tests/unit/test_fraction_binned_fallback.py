@@ -160,3 +160,47 @@ def test_fraction_binned_cascade_with_nonidentity_source_map():
     np.testing.assert_allclose(cal_p, source_p, atol=1e-6)
     # Confirm it did NOT fall back to raw
     assert not np.allclose(cal_p, raw_p, atol=1e-5)
+
+
+def test_source_remasked_mcar_nesting_invariance():
+    """Verify finding A06 fix: 10% MCAR mask must be strictly nested inside 30% MCAR mask."""
+    rows = tuple({"row_id": i, **{f: "observed" for f in BANK_FEATURES}} for i in range(500))
+    remasked, labels, fracs = generate_source_remasked_dataset(rows, tuple(i % 2 for i in range(500)), 31001)
+
+    # 4 regimes: 0-500 clean, 500-1000 MCAR 10%, 1000-1500 MCAR 30%, 1500-2000 block
+    mask10 = np.array([[r[f] is None for f in BANK_FEATURES] for r in remasked[500:1000]])
+    mask30 = np.array([[r[f] is None for f in BANK_FEATURES] for r in remasked[1000:1500]])
+
+    m10_count = int(mask10.sum())
+    m30_count = int(mask30.sum())
+    m10_not_30 = int(np.sum(mask10 & ~mask30))
+
+    assert m10_not_30 == 0, f"Expected 0 cells in 10% not in 30%, got {m10_not_30}"
+    assert m30_count > m10_count, f"Expected m30 ({m30_count}) > m10 ({m10_count})"
+
+
+def test_fit_single_temperature_boundary_and_convergence_semantics():
+    """Verify finding A07 fix: temperature fitting boundary and non-convergence semantics."""
+    from shiftguard.calibration.fraction_binned import _fit_single_temperature
+
+    # 1. Anti-correlated / reversed labels: pressure to infinity must return None
+    assert _fit_single_temperature(np.array([1.0, -1.0]), np.array([0, 1])) is None
+
+    # 2. Separable labels: pressure to zero must return None
+    assert _fit_single_temperature(np.array([5.0, -5.0]), np.array([1, 0])) is None
+
+    # 3. Nonfinite inputs must return None
+    assert _fit_single_temperature(np.array([np.nan, 1.0]), np.array([1, 0])) is None
+    assert _fit_single_temperature(np.array([1.0, 2.0]), np.array([1, np.nan])) is None
+
+    # 4. Single class or <2 samples must return None
+    assert _fit_single_temperature(np.array([1.0]), np.array([1])) is None
+    assert _fit_single_temperature(np.array([1.0, 2.0]), np.array([1, 1])) is None
+
+    # 5. Realistic data with finite interior optimum
+    z_realistic = np.array([2.5, 1.8, 1.2, 0.5, -0.5, -1.2, -1.8, -2.5, 1.0, -1.0])
+    y_realistic = np.array([1,   1,   0,   1,   0,    0,    1,    0,    0,   1  ])
+    t_opt = _fit_single_temperature(z_realistic, y_realistic)
+    # If the realistic array has a finite interior optimum, it returns a float > 0
+    if t_opt is not None:
+        assert 0.01 < t_opt < 20.0

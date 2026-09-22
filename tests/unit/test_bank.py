@@ -73,13 +73,22 @@ def test_clean_csv_rejects_duplicate_ids_and_mismatched_frozen_source(tmp_path) 
     manifest = {**FROZEN_BANK_SOURCE, "clean_sha256": clean_hash, "rows": len(rows)}
 
     with pytest.raises(ValueError, match="unique"):
-        BankDataset.from_clean_csv(path, manifest)
+        BankDataset.from_clean_csv(path, manifest, allow_synthetic=True)
 
     valid_rows = [rows[0]]
     clean_hash = write_clean_csv(valid_rows, path)
     bad_manifest = {**FROZEN_BANK_SOURCE, "source_url": "https://invalid.example/bank.zip", "clean_sha256": clean_hash, "rows": len(valid_rows)}
     with pytest.raises(ValueError, match="frozen source identity"):
-        BankDataset.from_clean_csv(path, bad_manifest)
+        BankDataset.from_clean_csv(path, bad_manifest, allow_synthetic=True)
+
+
+def test_fabricated_clean_csv_rejected_by_production_loader(tmp_path) -> None:
+    valid_rows = [{"row_id": 1, "age": "30", "job": "admin.", "marital": "single", "education": "secondary", "default": "no", "housing": "yes", "loan": "no", "pdays": "999", "previous": "0", "poutcome": "nonexistent", "y": 0}]
+    path = tmp_path / "bank.csv"
+    clean_hash = write_clean_csv(valid_rows, path)
+    manifest = {**FROZEN_BANK_SOURCE, "clean_sha256": clean_hash, "rows": len(valid_rows)}
+    with pytest.raises(ValueError, match="does not match frozen canonical digest"):
+        BankDataset.from_clean_csv(path, manifest)
 
 
 def test_role_splits_are_stable_disjoint_and_cover_all_rows() -> None:

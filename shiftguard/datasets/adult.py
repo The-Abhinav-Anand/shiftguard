@@ -70,6 +70,11 @@ FROZEN_ADULT_SOURCE = {
     "raw_records": 32561,
 }
 
+APPROVED_ADULT_TRAIN_URLS = (
+    "https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data",
+    "https://archive.ics.uci.edu/static/public/2/adult.data",
+)
+
 ADULT_ROLE_FRACTIONS = {
     "train": 0.6875,
     "source_cal": 0.1875,
@@ -166,17 +171,54 @@ def acquire_adult_train_only(
     clean_output: Path,
     run_manifest_output: Path,
     cache: Path | None = None,
+    _authoritative_source: dict[str, object] | None = None,
 ) -> dict[str, object]:
     """Acquire ONLY the official training file adult.data. Rejects any request for adult.test."""
-    manifest_data = json.loads(source_manifest.read_text(encoding="utf-8"))
-    source_url = manifest_data["source_url"]
+    authoritative = _authoritative_source or FROZEN_ADULT_SOURCE
 
-    # Security check: must not request adult.test or combined archive
+    # Security check: reject forbidden test or archive in cache path before opening
+    if cache is not None:
+        cache_str = str(cache).replace("\\", "/").lower()
+        if "adult.test" in cache_str or cache_str.endswith(".test"):
+            raise ValueError("Confirmatory test file adult.test cache is strictly forbidden in Gate 3")
+        if cache_str.endswith(".zip") or cache_str.endswith(".tar.gz") or cache_str.endswith(".tgz"):
+            raise ValueError("Combined archive cache is forbidden; must acquire adult.data directly")
+
+    manifest_data = json.loads(source_manifest.read_text(encoding="utf-8"))
+
+    # Validate presence of required fields
+    required_fields = ("dataset_id", "source_url", "source_version", "raw_sha256", "raw_records")
+    for f in required_fields:
+        if f not in manifest_data:
+            raise ValueError(f"source manifest missing required field: {f}")
+
+    # Validate authoritative frozen identity fields before any network/file read
+    if manifest_data["dataset_id"] != authoritative["dataset_id"]:
+        raise ValueError(f"dataset_id mismatch: expected {authoritative['dataset_id']}, got {manifest_data['dataset_id']}")
+
+    if manifest_data["source_version"] != authoritative["source_version"]:
+        raise ValueError(f"source_version mismatch: expected {authoritative['source_version']}, got {manifest_data['source_version']}")
+
+    source_url = manifest_data["source_url"]
     if "adult.test" in source_url:
         raise ValueError("Confirmatory test file adult.test acquisition is forbidden in Gate 3")
-    if source_url.endswith(".zip"):
+    if source_url.endswith(".zip") or source_url.endswith(".tar.gz"):
         raise ValueError("Combined archive acquisition is forbidden; must acquire adult.data directly")
 
+    if _authoritative_source is None:
+        if source_url not in APPROVED_ADULT_TRAIN_URLS:
+            raise ValueError(f"Unapproved Adult training URL: {source_url}")
+    else:
+        if source_url != authoritative["source_url"]:
+            raise ValueError(f"source_url mismatch: expected {authoritative['source_url']}, got {source_url}")
+
+    if manifest_data["raw_sha256"] != authoritative["raw_sha256"]:
+        raise ValueError(f"raw_sha256 mismatch: expected {authoritative['raw_sha256']}, got {manifest_data['raw_sha256']}")
+
+    if manifest_data["raw_records"] != authoritative["raw_records"]:
+        raise ValueError(f"raw_records mismatch: expected {authoritative['raw_records']}, got {manifest_data['raw_records']}")
+
+    # Read bytes from cache or download
     if cache is not None and cache.is_file():
         raw_bytes = cache.read_bytes()
         retrieval = "verified-local-cache"
@@ -187,16 +229,17 @@ def acquire_adult_train_only(
         retrieval = "official-download"
 
     actual_hash = hashlib.sha256(raw_bytes).hexdigest()
-    if actual_hash != manifest_data["raw_sha256"]:
-        raise ValueError(f"adult.data SHA-256 mismatch: expected {manifest_data['raw_sha256']}, got {actual_hash}")
-
-    raw_output.parent.mkdir(parents=True, exist_ok=True)
-    raw_output.write_bytes(raw_bytes)
+    if actual_hash != authoritative["raw_sha256"]:
+        raise ValueError(f"adult.data SHA-256 mismatch: expected {authoritative['raw_sha256']}, got {actual_hash}")
 
     lines = raw_bytes.decode("utf-8", errors="replace").splitlines()
     cleaned_rows = clean_adult_rows(lines)
-    if len(cleaned_rows) != manifest_data["raw_records"]:
-        raise ValueError(f"Expected {manifest_data['raw_records']} records, got {len(cleaned_rows)}")
+    if len(cleaned_rows) != authoritative["raw_records"]:
+        raise ValueError(f"Expected {authoritative['raw_records']} records, got {len(cleaned_rows)}")
+
+    # Only write outputs after all validations pass
+    raw_output.parent.mkdir(parents=True, exist_ok=True)
+    raw_output.write_bytes(raw_bytes)
 
     clean_sha256 = write_clean_adult_csv(cleaned_rows, clean_output)
 

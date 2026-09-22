@@ -7,7 +7,7 @@ from shiftguard.calibration.base import CalibrationRecord
 from shiftguard.calibration.sklearn_maps import CalibrationFit, fit_temperature
 from shiftguard.datasets.bank import BANK_FEATURES
 from shiftguard.missingness.block import HISTORY_FEATURES, history_block_mask
-from shiftguard.missingness.mcar import generate_mcar_mask
+from shiftguard.missingness.mcar import generate_mcar_mask, generate_shared_uniforms
 
 
 def generate_source_remasked_dataset(
@@ -27,12 +27,13 @@ def generate_source_remasked_dataset(
     Returns remasked rows, replicated labels, and newly injected missing fraction per row.
     """
     rng = np.random.default_rng(seed)
-    sub_seeds = rng.integers(0, 1_000_000, size=3)
+    sub_seeds = rng.integers(0, 1_000_000, size=2)
     record_ids = tuple(int(r["row_id"]) for r in source_rows)
 
-    mask_mcar_10 = generate_mcar_mask(record_ids, features, rate=0.10, seed=int(sub_seeds[0]))
-    mask_mcar_30 = generate_mcar_mask(record_ids, features, rate=0.30, seed=int(sub_seeds[1]))
-    mask_block = history_block_mask(record_ids, seed=int(sub_seeds[2]), row_probability=0.50)
+    mcar_uniforms = generate_shared_uniforms(len(record_ids), len(features), seed=int(sub_seeds[0]))
+    mask_mcar_10 = generate_mcar_mask(record_ids, features, rate=0.10, shared_uniforms=mcar_uniforms)
+    mask_mcar_30 = generate_mcar_mask(record_ids, features, rate=0.30, shared_uniforms=mcar_uniforms)
+    mask_block = history_block_mask(record_ids, seed=int(sub_seeds[1]), row_probability=0.50)
 
     remasked_rows: list[dict[str, str | int | None]] = []
     remasked_labels: list[int] = []

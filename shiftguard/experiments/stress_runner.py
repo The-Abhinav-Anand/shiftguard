@@ -25,11 +25,12 @@ from shiftguard.calibration.source_remask import (
     generate_source_remasked_dataset,
 )
 from shiftguard.datasets.bank import BANK_FEATURES, BankDataset
-from shiftguard.experiments.artifacts import write_json_artifact
 from shiftguard.experiments.config import StressConfig
 from shiftguard.experiments.evaluator import FinalTestEvaluator
 from shiftguard.experiments.ids import stable_hash
+from shiftguard.experiments.publication import PublicationService
 from shiftguard.experiments.runner import _seed_bundle, audit_provenance
+
 from shiftguard.missingness.block import HISTORY_FEATURES, history_block_mask
 from shiftguard.missingness.mcar import (
     CellwiseFeatureMask,
@@ -47,7 +48,6 @@ from shiftguard.preprocessing.tabular import (
 )
 from shiftguard.protocol.acquisition import LabelBlindTargetProvider
 from shiftguard.protocol.splits import make_role_splits
-from shiftguard.storage.repositories import ExperimentRepository
 
 STRESS_FALLBACK_GRAPH = {
     "raw": None,
@@ -221,6 +221,7 @@ def execute_stress_engine(
     config: StressConfig,
     evaluator: FinalTestEvaluator,
     database_url: str,
+    **publish_kwargs,
 ) -> StressResult:
     """Execute the stress engine under strict boundary rules.
 
@@ -231,6 +232,9 @@ def execute_stress_engine(
     - unlabeled evaluation features
     Final evaluation scoring happens strictly after probability resolution is finalized.
     """
+    is_cancelled = publish_kwargs.get("is_cancelled")
+    if callable(is_cancelled) and is_cancelled():
+        raise RuntimeError("Operation cancelled before stress engine start")
     dataset_identity = partitions.dataset_identity
     seeds = partitions.seeds
     mask_seeds = partitions.mask_seeds
@@ -647,36 +651,31 @@ def execute_stress_engine(
         },
     }
 
-    experiment_id = stable_hash(deterministic)[:24]
-    root = config.artifact_root / experiment_id
-    payloads_dir = root / "payloads"
-
-    content_hashes = {
-        "config": write_json_artifact(root, "config.json", config.to_dict()),
-        "seeds": write_json_artifact(root, "seeds.json", deterministic["seeds"]),
-        "masks": write_json_artifact(root, "masks.json", masks_summary),
-        "acquisition": write_json_artifact(root, "acquisition.json", acquisition_summary),
-        "conditions": write_json_artifact(root, "conditions.json", all_conditions),
-        "comparisons": write_json_artifact(root, "comparisons.json", comparisons),
-        "budget_curve": write_json_artifact(payloads_dir, "budget_curve.json", payload_budget_curve),
-        "pattern_vs_rate": write_json_artifact(payloads_dir, "pattern_vs_rate.json", payload_pattern_vs_rate),
-        "reliability": write_json_artifact(payloads_dir, "reliability.json", payload_reliability),
-        "decision_loss": write_json_artifact(payloads_dir, "decision_loss.json", payload_decision_loss),
-        "logical_content": stable_hash(deterministic),
+    artifact_files = {
+        "config.json": config.to_dict(),
+        "seeds.json": deterministic["seeds"],
+        "masks.json": masks_summary,
+        "acquisition.json": acquisition_summary,
+        "conditions.json": all_conditions,
+        "comparisons.json": comparisons,
+        "payloads/budget_curve.json": payload_budget_curve,
+        "payloads/pattern_vs_rate.json": payload_pattern_vs_rate,
+        "payloads/reliability.json": payload_reliability,
+        "payloads/decision_loss.json": payload_decision_loss,
     }
 
     execution_id = str(uuid4())
-    repository = ExperimentRepository.from_url(database_url)
-    try:
-        repository.put(
-            experiment_id,
-            deterministic,
-            content_hashes,
-            execution_id,
-            {"execution_id": execution_id, "provenance": audit_provenance()},
-        )
-    finally:
-        repository.dispose()
+    audit_metadata = {"execution_id": execution_id, "provenance": audit_provenance()}
+    experiment_id, generation_id, content_hashes, target_dir = PublicationService.publish(
+        artifact_root=config.artifact_root,
+        deterministic_payload=deterministic,
+        artifact_files=artifact_files,
+        execution_id=execution_id,
+        audit_metadata=audit_metadata,
+        database_url=database_url,
+        **publish_kwargs,
+    )
+
 
     return StressResult(
         experiment_id=experiment_id,
@@ -688,7 +687,12 @@ def execute_stress_engine(
     )
 
 
-def run_stress_engine(dataset: BankDataset, config: StressConfig, database_url: str) -> StressResult:
+def run_stress_engine(
+    dataset: BankDataset,
+    config: StressConfig,
+    database_url: str,
+    **publish_kwargs,
+) -> StressResult:
     """Run stress engine: prepare partitions and execute under strict boundary rules."""
     partitions, evaluator = prepare_stress_partitions(dataset, config)
-    return execute_stress_engine(partitions, config, evaluator, database_url)
+    return execute_stress_engine(partitions, config, evaluator, database_url, **publish_kwargs)

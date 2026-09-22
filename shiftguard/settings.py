@@ -4,9 +4,10 @@ import ctypes
 import os
 import sqlite3
 from pathlib import Path
+import math
 from typing import Iterable, Literal
 
-from pydantic import AliasChoices, Field, model_validator
+from pydantic import AliasChoices, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import URL, make_url
 
@@ -70,6 +71,30 @@ class Settings(BaseSettings):
         default="local",
         validation_alias=AliasChoices("SHIFTGUARD_ENVIRONMENT", "environment"),
     )
+    artifact_root: Path = Field(
+        default=Path("./var/artifacts"),
+        validation_alias=AliasChoices("SHIFTGUARD_ARTIFACT_ROOT", "artifact_root"),
+    )
+    embedded_worker: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("SHIFTGUARD_EMBEDDED_WORKER", "embedded_worker"),
+    )
+    worker_poll_interval: float = Field(
+        default=0.5,
+        validation_alias=AliasChoices("SHIFTGUARD_WORKER_POLL_INTERVAL", "worker_poll_interval"),
+    )
+    recovery_interval: float = Field(
+        default=5.0,
+        validation_alias=AliasChoices("SHIFTGUARD_RECOVERY_INTERVAL", "recovery_interval"),
+    )
+
+    @field_validator("worker_poll_interval", "recovery_interval")
+    @classmethod
+    def validate_positive_finite_interval(cls, v: float) -> float:
+        if not math.isfinite(v) or v <= 0.0:
+            raise ValueError("interval must be a positive finite float")
+        return v
+
 
     @model_validator(mode="after")
     def validate_database_profile(self) -> Settings:
