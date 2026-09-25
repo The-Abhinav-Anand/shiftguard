@@ -21,7 +21,6 @@ from sqlalchemy import create_engine, text
 from starlette.testclient import TestClient
 
 from shiftguard.api.main import create_app
-from shiftguard.experiments.ids import stable_hash
 from shiftguard.jobs.models import JobStatus, utc_now_str
 from shiftguard.jobs.queue import IdempotencyConflictError, JobQueue, QuotaExceededError
 from shiftguard.jobs.recovery import recover_expired_leases
@@ -200,26 +199,36 @@ def test_i02_postgres_cross_session_cannot_inspect_or_cancel(pg_schema):
 def test_i02_postgres_submitted_configuration_reaches_persisted_result(pg_schema):
     """I02: Submitted configuration reaches the persisted experiment result on PostgreSQL 16."""
     settings, schema_url, engine, _ = pg_schema
-
     queue = JobQueue(engine)
-    session_id = "sess-cfg-" + uuid4().hex[:8]
-    submitted_params = {"preset_name": "bank-outage-50", "overrides": {"seed": 31001}}
-    job = queue.enqueue(
-        payload_hash=stable_hash(submitted_params),
-        request_params=submitted_params,
-        session_id=session_id,
-        idempotency_key="cfg-test-key",
-    )
+    app = create_app(settings)
+    submitted_params = {"preset_name": "bank-outage-50", "overrides": {"seed": 31002}}
+    with TestClient(app) as client:
+        session = client.post("/api/v1/agent/sessions", json={}).json()
+        headers = {
+            "X-Session-ID": session["session_id"],
+            "X-Session-Token": session["capability_token"],
+        }
+        response = client.post("/api/v1/experiments", json=submitted_params, headers=headers)
+        assert response.status_code == 202, response.text
+        job_id = response.json()["job_id"]
 
     # Worker processes the job
     worker = ExperimentWorker(settings=settings)
     executed = worker.run_once(queue)
     assert executed is not None
 
-    updated_job = queue.get_job(job.id)
+    updated_job = queue.get_job(job_id)
     assert updated_job.status == JobStatus.COMPLETED
     assert updated_job.experiment_id is not None
     assert updated_job.result is not None
+    with engine.connect() as conn:
+        persisted_request = conn.execute(
+            text("SELECT request_params_json FROM jobs WHERE id = :job_id"),
+            {"job_id": job_id},
+        ).scalar_one()
+    persisted_params = json.loads(persisted_request)
+    assert persisted_params["preset_name"] == submitted_params["preset_name"]
+    assert persisted_params["overrides"] == submitted_params["overrides"]
 
     # Verify persisted in experiments table
     repo = ExperimentRepository(engine)
@@ -229,7 +238,21 @@ def test_i02_postgres_submitted_configuration_reaches_persisted_result(pg_schema
     assert stored_exp.experiment_id == updated_job.experiment_id
     assert pub_rec.status == "PUBLISHED"
     assert "config" in stored_exp.deterministic_payload
-    assert stored_exp.deterministic_payload["config"]["master_seed"] == 31001
+    assert stored_exp.deterministic_payload["config"]["master_seed"] == 31002
+    with engine.connect() as conn:
+        publication_job_id = conn.execute(
+            text("SELECT job_id FROM experiment_publications WHERE experiment_id = :experiment_id"),
+            {"experiment_id": updated_job.experiment_id},
+        ).scalar_one()
+        execution = conn.execute(
+            text("SELECT execution_id, experiment_id FROM experiment_executions WHERE execution_id = :execution_id"),
+            {"execution_id": pub_rec.execution_id},
+        ).mappings().one()
+    assert publication_job_id == job_id
+    assert dict(execution) == {
+        "execution_id": pub_rec.execution_id,
+        "experiment_id": updated_job.experiment_id,
+    }
     assert "acquisition" in stored_exp.deterministic_payload
 
 
@@ -318,8 +341,8 @@ def test_i04_postgres_expired_or_replaced_owners_cannot_heartbeat_or_finish(pg_s
     assert fresh.completed_at is None
 
 
-def test_i04_postgres_cancellation_survives_claim_and_recovery_races(pg_schema):
-    """I04: Cancellation survives claim/completion races on PostgreSQL 16 with real barriers."""
+def test_i04_postgres_cancellation_survives_completion_race(pg_schema):
+    """I04: Cancellation and completion serialize safely on PostgreSQL 16."""
     settings, schema_url, engine, _ = pg_schema
 
     queue = JobQueue(engine)
@@ -366,6 +389,71 @@ def test_i04_postgres_cancellation_survives_claim_and_recovery_races(pg_schema):
         assert fresh.status == JobStatus.COMPLETED
     else:
         assert fresh.cancel_requested is True
+
+
+@pytest.mark.parametrize("exhausted", [False, True], ids=["retry-available", "attempts-exhausted"])
+def test_i04_postgres_recovery_observes_cancellation_after_expired_selection(pg_schema, exhausted):
+    """A cancellation committed after lease selection wins both recovery transitions."""
+    from sqlalchemy import event
+
+    _, schema_url, engine, _ = pg_schema
+    queue = JobQueue(engine)
+    job = queue.enqueue({"preset_name": "bank-outage-50"})
+    claimed = queue.claim_next_job("worker-race", lease_seconds=60)
+    assert claimed is not None
+
+    past_time = (datetime.now(timezone.utc) - timedelta(seconds=10)).isoformat()
+    with engine.begin() as conn:
+        conn.execute(
+            text("UPDATE jobs SET lease_expires_at = :past WHERE id = :job_id"),
+            {"past": past_time, "job_id": job.id},
+        )
+        if exhausted:
+            conn.execute(
+                text("UPDATE jobs SET max_attempts = attempt WHERE id = :job_id"),
+                {"job_id": job.id},
+            )
+
+    cancellation = {}
+    fired = False
+
+    def cancel_after_selection(conn, cursor, statement, parameters, context, executemany):
+        nonlocal fired
+        normalized = " ".join(statement.lower().split())
+        if not fired and normalized.startswith("select id, attempt, max_attempts, cancel_requested, fencing_token from jobs"):
+            fired = True
+            cancel_engine = create_engine(schema_url)
+            try:
+                cancellation["result"] = JobQueue(cancel_engine).request_cancellation(job.id)
+            finally:
+                cancel_engine.dispose()
+
+    event.listen(engine, "after_cursor_execute", cancel_after_selection)
+    try:
+        assert recover_expired_leases(queue) == 1
+    finally:
+        event.remove(engine, "after_cursor_execute", cancel_after_selection)
+
+    assert fired is True
+    assert cancellation["result"] == (True, "cancel_requested")
+    fresh = queue.get_job(job.id)
+    assert fresh.status == JobStatus.CANCELLED
+    assert fresh.cancel_requested is True
+    assert fresh.completed_at is not None
+    assert not (fresh.status == JobStatus.QUEUED and fresh.cancel_requested)
+
+    with engine.connect() as conn:
+        rows = conn.execute(
+            text("SELECT event_type, fencing_token FROM job_events WHERE job_id = :job_id ORDER BY created_at, id"),
+            {"job_id": job.id},
+        ).mappings().all()
+    event_types = [row["event_type"] for row in rows]
+    assert event_types.count("CANCEL_REQUESTED") == 1
+    assert event_types.count("CANCELLED") == 1
+    assert "REQUEUED" not in event_types
+    assert "FAILED" not in event_types
+    cancelled_event = next(row for row in rows if row["event_type"] == "CANCELLED")
+    assert cancelled_event["fencing_token"] == claimed.fencing_token
 
 
 def test_i04_postgres_http_submission_completes_through_managed_worker(pg_schema):
@@ -514,6 +602,30 @@ def test_i07_postgres_migration_upgrade_0005_to_0008_preserves_rows(pg_schema):
             assert idem_row is not None
             assert idem_row["scope"] == "sess-pg-001"
             assert idem_row["job_id"] == "job-pg-001"
+
+            preserved_jobs = conn.execute(text("SELECT * FROM jobs ORDER BY id")).mappings().all()
+            expected_job_fields = {
+                "experiment_id": None,
+                "idempotency_key": None,
+                "status": "queued",
+                "request_params_json": "{}",
+                "worker_id": None,
+                "fencing_token": None,
+                "attempt": 0,
+                "max_attempts": 3,
+                "lease_expires_at": None,
+                "heartbeat_at": None,
+                "cancel_requested": False,
+                "error_json": None,
+                "result_json": None,
+                "created_at": "2026-09-18T12:00:00Z",
+                "started_at": None,
+                "completed_at": None,
+            }
+            assert [dict(job) for job in preserved_jobs] == [
+                {**expected_job_fields, "id": "job-pg-001", "session_id": "sess-pg-001", "payload_hash": "hash-pg-001"},
+                {**expected_job_fields, "id": "job-pg-global", "session_id": None, "payload_hash": "hash-pg-global"},
+            ]
 
             # Check idempotency record for job without session has scope = 'global'
             idem_global = conn.execute(

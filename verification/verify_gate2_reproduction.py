@@ -31,6 +31,13 @@ GATE2_REQUIRED_HASH_KEYS = {
 RUN_NAMES = ("sqlite-first", "sqlite-second", "postgres")
 
 
+def connect_postgres(postgres_url: str):
+    """Connect with psycopg using canonical or SQLAlchemy psycopg URLs."""
+    if postgres_url.startswith("postgresql+psycopg://"):
+        postgres_url = "postgresql://" + postgres_url.removeprefix("postgresql+psycopg://")
+    return psycopg.connect(postgres_url)
+
+
 def get_output_dir() -> Path:
     if "SHIFTGUARD_VERIFICATION_OUTPUT" in os.environ:
         return Path(os.environ["SHIFTGUARD_VERIFICATION_OUTPUT"])
@@ -319,7 +326,7 @@ def main() -> None:
                 sqlite_audits = sqlite_conn.execute("SELECT execution_id, audit_json FROM experiment_executions WHERE experiment_id = ?", (first["experiment_id"],)).fetchall()
             finally:
                 sqlite_conn.close()
-            with psycopg.connect(postgres_url) as connection:
+            with connect_postgres(postgres_url) as connection:
                 postgres_payload = connection.execute("SELECT payload_json FROM experiments WHERE id = %s", (first["experiment_id"],)).fetchone()[0]
                 postgres_audits = connection.execute("SELECT execution_id, audit_json FROM experiment_executions WHERE experiment_id = %s", (first["experiment_id"],)).fetchall()
             assert json.loads(sqlite_payload) == json.loads(postgres_payload)

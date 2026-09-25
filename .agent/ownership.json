@@ -1,13 +1,13 @@
 {
-  "active_writer": "gemini_antigravity",
-  "state": "BACKEND_AND_CANDIDATE_VERIFICATION",
+  "active_writer": "none",
+  "state": "CANDIDATE_FROZEN_FOR_PARENT_VERIFICATION",
   "branch": "implementation/gate-0",
   "current_gate": "4",
-  "current_subtask": "Existing PostgreSQL16 restored; 27 guards pass; remaining fixed backend and clean-candidate checks",
+  "current_subtask": "Scoped GPT-6 Luna corrections complete; parent verifies candidate full suite, installed wheel and affected reproductions",
   "ownership_started_at": "2026-09-17",
   "base_source_commit": "c11dc059391810f347e8329c558b6b3e45cd037f",
   "active_packet": "docs/gate4-closure.md",
   "fix_ledger": "docs/fix-ledger.md",
-  "reason": "User requested adapting the verification workflow to end repeated broad reviews. Antigravity retains application ownership; parent added tests, evidence tooling and governance only.",
+  "reason": "User-requested Luna remediation completed in disjoint scopes. Focused PostgreSQL and SQLite tests pass; application writes paused for immutable candidate verification.",
   "latest_review": "docs/gate4-closure-review.md"
 }

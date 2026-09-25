@@ -41,106 +41,92 @@ def recover_expired_leases(queue_or_engine: Any) -> int:
             job_id = row["id"]
             attempt = int(row["attempt"])
             max_attempts = int(row["max_attempts"])
-            cancel_requested = bool(row["cancel_requested"])
             token = row["fencing_token"]
 
-            if cancel_requested:
-                res = conn.execute(
-                    text("""
-                        UPDATE jobs SET
-                            status = 'cancelled',
-                            completed_at = :now
-                        WHERE id = :job_id 
-                          AND status = 'running' 
-                          AND fencing_token = :token 
-                          AND lease_expires_at < :now
-                    """),
-                    {"job_id": job_id, "token": token, "now": now_str},
-                )
-                if res.rowcount > 0:
-                    conn.execute(
-                        text("""
-                            INSERT INTO job_events (job_id, event_type, fencing_token, details_json, created_at)
-                            VALUES (:job_id, :event_type, :fencing_token, :details_json, :created_at)
-                        """),
-                        {
-                            "job_id": job_id,
-                            "event_type": JobEventType.CANCELLED.value,
-                            "fencing_token": token,
-                            "details_json": json.dumps({"reason": "lease_expired_while_cancellation_requested"}),
-                            "created_at": now_str,
-                        },
-                    )
-                    recovered_count += 1
-            elif attempt < max_attempts:
-                res = conn.execute(
-                    text("""
-                        UPDATE jobs SET
-                            status = 'queued',
-                            worker_id = NULL,
-                            fencing_token = NULL,
-                            lease_expires_at = NULL,
-                            heartbeat_at = NULL
-                        WHERE id = :job_id 
-                          AND status = 'running' 
-                          AND fencing_token = :token 
-                          AND lease_expires_at < :now
-                    """),
-                    {"job_id": job_id, "token": token, "now": now_str},
-                )
-                if res.rowcount > 0:
-                    conn.execute(
-                        text("""
-                            INSERT INTO job_events (job_id, event_type, fencing_token, details_json, created_at)
-                            VALUES (:job_id, :event_type, :fencing_token, :details_json, :created_at)
-                        """),
-                        {
-                            "job_id": job_id,
-                            "event_type": JobEventType.REQUEUED.value,
-                            "fencing_token": token,
-                            "details_json": json.dumps({"reason": "lease_expired", "attempt": attempt}),
-                            "created_at": now_str,
-                        },
-                    )
-                    recovered_count += 1
+            # Evaluate cancellation and retry eligibility in the UPDATE itself.
+            # PostgreSQL rechecks these expressions after waiting on a concurrent
+            # row update, so a committed cancellation cannot be overwritten by a
+            # stale SELECT result. SQLite evaluates the same transition atomically.
+            recovered = conn.execute(
+                text("""
+                    UPDATE jobs SET
+                        status = CASE
+                            WHEN cancel_requested THEN 'cancelled'
+                            WHEN attempt < max_attempts THEN 'queued'
+                            ELSE 'failed'
+                        END,
+                        worker_id = CASE
+                            WHEN NOT cancel_requested AND attempt < max_attempts THEN NULL
+                            ELSE worker_id
+                        END,
+                        fencing_token = CASE
+                            WHEN NOT cancel_requested AND attempt < max_attempts THEN NULL
+                            ELSE fencing_token
+                        END,
+                        lease_expires_at = CASE
+                            WHEN NOT cancel_requested AND attempt < max_attempts THEN NULL
+                            ELSE lease_expires_at
+                        END,
+                        heartbeat_at = CASE
+                            WHEN NOT cancel_requested AND attempt < max_attempts THEN NULL
+                            ELSE heartbeat_at
+                        END,
+                        error_json = CASE
+                            WHEN NOT cancel_requested AND attempt >= max_attempts THEN :error_json
+                            ELSE error_json
+                        END,
+                        completed_at = CASE
+                            WHEN cancel_requested OR attempt >= max_attempts THEN :now
+                            ELSE completed_at
+                        END
+                    WHERE id = :job_id
+                      AND status = 'running'
+                      AND fencing_token = :token
+                      AND lease_expires_at < :now
+                    RETURNING status
+                """),
+                {
+                    "job_id": job_id,
+                    "token": token,
+                    "error_json": json.dumps({
+                        "code": "LEASE_EXPIRED_MAX_ATTEMPTS",
+                        "message": f"Worker lease expired and retry limit reached ({attempt}/{max_attempts})",
+                    }),
+                    "now": now_str,
+                },
+            ).fetchone()
+
+            if recovered is None:
+                continue
+
+            status = recovered[0]
+            if status == JobStatus.CANCELLED.value:
+                event_type = JobEventType.CANCELLED.value
+                details = {"reason": "lease_expired_while_cancellation_requested"}
+            elif status == JobStatus.QUEUED.value:
+                event_type = JobEventType.REQUEUED.value
+                details = {"reason": "lease_expired", "attempt": attempt}
             else:
-                err = {
+                event_type = JobEventType.FAILED.value
+                details = {
                     "code": "LEASE_EXPIRED_MAX_ATTEMPTS",
                     "message": f"Worker lease expired and retry limit reached ({attempt}/{max_attempts})",
                 }
-                res = conn.execute(
-                    text("""
-                        UPDATE jobs SET
-                            status = 'failed',
-                            error_json = :error_json,
-                            completed_at = :now
-                        WHERE id = :job_id 
-                          AND status = 'running' 
-                          AND fencing_token = :token 
-                          AND lease_expires_at < :now
-                    """),
-                    {
-                        "job_id": job_id,
-                        "token": token,
-                        "error_json": json.dumps(err),
-                        "now": now_str,
-                    },
-                )
-                if res.rowcount > 0:
-                    conn.execute(
-                        text("""
-                            INSERT INTO job_events (job_id, event_type, fencing_token, details_json, created_at)
-                            VALUES (:job_id, :event_type, :fencing_token, :details_json, :created_at)
-                        """),
-                        {
-                            "job_id": job_id,
-                            "event_type": JobEventType.FAILED.value,
-                            "fencing_token": token,
-                            "details_json": json.dumps(err),
-                            "created_at": now_str,
-                        },
-                    )
-                    recovered_count += 1
+
+            conn.execute(
+                text("""
+                    INSERT INTO job_events (job_id, event_type, fencing_token, details_json, created_at)
+                    VALUES (:job_id, :event_type, :fencing_token, :details_json, :created_at)
+                """),
+                {
+                    "job_id": job_id,
+                    "event_type": event_type,
+                    "fencing_token": token,
+                    "details_json": json.dumps(details),
+                    "created_at": now_str,
+                },
+            )
+            recovered_count += 1
 
     return recovered_count
 
