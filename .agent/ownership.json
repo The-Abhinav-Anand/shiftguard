@@ -1,13 +1,9 @@
 {
   "active_writer": "none",
-  "state": "CANDIDATE_FROZEN_FOR_PARENT_VERIFICATION",
-  "branch": "implementation/gate-0",
-  "current_gate": "4",
-  "current_subtask": "Scoped GPT-6 Luna corrections complete; parent verifies candidate full suite, installed wheel and affected reproductions",
-  "ownership_started_at": "2026-09-17",
-  "base_source_commit": "c11dc059391810f347e8329c558b6b3e45cd037f",
-  "active_packet": "docs/gate4-closure.md",
-  "fix_ledger": "docs/fix-ledger.md",
-  "reason": "User-requested Luna remediation completed in disjoint scopes. Focused PostgreSQL and SQLite tests pass; application writes paused for immutable candidate verification.",
-  "latest_review": "docs/gate4-closure-review.md"
+  "state": "GATE4_ACCEPTED_GATE5_NOT_STARTED",
+  "candidate_commit": "10170feab3c16c5eb61153d57d9e5879ba5a6fd6",
+  "reviewer": "parent",
+  "scoped_writers": [],
+  "next_writer": "assigned only when Gate 5 implementation starts",
+  "model_policy": "GPT-6 Sol High for bounded review/documentation; GPT-6 Luna High for named coding fixes; parent plans and accepts."
 }

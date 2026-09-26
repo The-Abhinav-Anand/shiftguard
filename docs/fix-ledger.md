@@ -185,3 +185,8 @@ Working tree clean at verification (`git status --porcelain` empty).
   - All 11 artifact hashes identical; `sqlite_and_postgres_payloads_equal: true`.
   - Clean provenance on candidate `d9d1f9d10fd366a1a8aa0047d3ab84aa5f8faba0`.
 - **Disposition**: All 8 contract obligations (I01 to I08) proven with live backend evidence. Ready for independent review by Astra High.
+
+
+## 26 September 2026 — independent bounded closure
+
+SG-SOL-01 (recovery cancellation race), SG-SOL-02 (nondefault HTTP configuration/audit assertion), SG-SOL-03 (both migration job rows), and SG-SOL-04 (direct-driver URL normalization) are RESOLVED on `10170feab3c16c5eb61153d57d9e5879ba5a6fd6`. Old-code race schedules failed; patched PostgreSQL and SQLite suites passed. Exact candidate: 339 passed, no skips, 2 warnings in 435.53s; 27 guards passed. Gate 2/3 reproduction and installed-wheel checks passed on both backends. Gate 4 is ACCEPTED; Gate 5 NOT_STARTED. See `docs/gate4-closure-review.md` and external FINAL_REVIEW.md. Historical 331-test pytest duration is 459.46s; prior prose 471.71s is superseded. No historical evidence was rewritten.

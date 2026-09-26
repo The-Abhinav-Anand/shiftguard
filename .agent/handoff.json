@@ -1,72 +1,70 @@
 {
-  "handoff_id": "gate4-bounded-closure-20260923",
-  "status": "ALL_EVIDENCE_READY_FOR_INDEPENDENT_REVIEW",
-  "from_agent": "gemini_antigravity",
-  "to_agent": "astra_high",
-  "timestamp": "2026-09-23",
+  "handoff_id": "gate4-accepted-20260926",
+  "status": "ACCEPTED",
+  "candidate_commit": "10170feab3c16c5eb61153d57d9e5879ba5a6fd6",
   "branch": "implementation/gate-0",
-  "current_gate": "4",
-  "current_subtask": "Candidate d9d1f9d10fd366a1a8aa0047d3ab84aa5f8faba0 verified: live PostgreSQL 16 backend contracts (9/9), full suite (331 pass / 0 skips), Gate 2 & Gate 3 reproductions proven",
-  "base_source_commit": "c11dc059391810f347e8329c558b6b3e45cd037f",
-  "candidate_commit": "d9d1f9d10fd366a1a8aa0047d3ab84aa5f8faba0",
-  "candidate_state": "ALL_EVIDENCE_READY",
-  "active_packet": "docs/gate4-closure.md",
-  "fix_ledger": "docs/fix-ledger.md",
-  "latest_review": "docs/gate4-closure-review.md",
-  "acceptance_matrix": "docs/gate4-acceptance.json",
-  "verification_command": ".venv/Scripts/python.exe -B scripts/check_gate4_closure.py --candidate",
-  "latest_attempt": "../verification/gate4-closure/current_attempt.json",
-  "frozen_gates_affected": [
-    "Gate2 reproduction proven on candidate d9d1f9d10fd366a1a8aa0047d3ab84aa5f8faba0",
-    "Gate3 reproduction proven on candidate d9d1f9d10fd366a1a8aa0047d3ab84aa5f8faba0"
-  ],
-  "blockers": [],
-  "do_not_redo": [
-    "Gate0 acceptance",
-    "Gate1 clean-clone verification",
-    "Gate2 accepted verification",
-    "Research exports",
-    "Hardening batches H0-H3"
-  ],
-  "next": {
-    "batch": "Independent review by Astra High",
-    "task": "Perform independent review of candidate commit d9d1f9d10fd366a1a8aa0047d3ab84aa5f8faba0 and verify all immutable evidence artifacts",
-    "acceptance": "Gate 4 final source acceptance and closure"
-  },
-  "safe_to_resume": true,
-  "worktree_clean_at_source_verification": true,
-  "open_findings": [],
-  "deferred": [
-    "SCI-03 pool qualification",
-    "SCI-04 numerical policy",
-    "Optional cleanup and new features"
-  ],
-  "checkpoint_state": "Candidate d9d1f9d10fd366a1a8aa0047d3ab84aa5f8faba0 fully proven across live PostgreSQL 16 backend contracts, candidate full-suite verifier, Gate 2 reproduction, and Gate 3 reproduction",
-  "contract_obligations_proven": {
-    "I01": "Deterministic logical digest and experiment ID recomputation verified in both verifiers and unit suites",
-    "I02": "Session-scoped admission quota strictly 2, concurrent idempotency serialization, cross-session rejection proven on live PostgreSQL 16 in tests/integration/test_postgres_backend_contracts.py",
-    "I03": "Preserved historical bank dataset (41,188 rows, frozen digest) and explicit synthetic test seam",
-    "I04": "Single worker claim ownership, expired worker rejection, cancellation survival, autonomous lifespan execution proven on live PostgreSQL 16 in tests/integration/test_postgres_backend_contracts.py",
-    "I05": "Complete worker reservation identity and payload recomputation verified on SQLite and PostgreSQL",
-    "I06": "Wheel packaging and offline installation verified: migrations 0001-0008, CLI entrypoint, API health",
-    "I07": "Forward migration 0005 to 0008 preserving all rows and backfilled columns proven on live PostgreSQL 16",
-    "I08": "Candidate verification and reproduction verifiers with clean provenance and atomic attempt tracking"
-  },
-  "current_evidence": {
-    "candidate_attempt": "../verification/gate4-closure/20260922T194759Z-cf5382b470bb",
-    "candidate_guards": {
-      "tests": 27,
-      "passed": 27,
-      "failed": 0,
+  "active_writer": "none",
+  "current_gate": 4,
+  "next_gate": 5,
+  "next_gate_status": "NOT_STARTED",
+  "review": "docs/gate4-closure-review.md",
+  "acceptance": "../verification/gate4-closure/independent-review-20260925/acceptance.json",
+  "evidence": {
+    "status": "PASS",
+    "candidate": "10170feab3c16c5eb61153d57d9e5879ba5a6fd6",
+    "clean_and_unchanged": true,
+    "full_suite": {
+      "exit_code": 0,
+      "tests": 339,
+      "failures": 0,
       "errors": 0,
       "skipped": 0
     },
-    "candidate_full_suite": "331 passed, 0 skipped, 2 warnings in 471.71s with live PostgreSQL 16 active",
-    "postgres_backend_contracts": "tests/integration/test_postgres_backend_contracts.py: 9 passed, 0 skipped in 15.86s (I02, I04, I07 proven on PostgreSQL 16.15)",
-    "gate2_reproduction": "../verification/gate2/verification.json (passed, 8 identical hashes across 2x SQLite + 1x PostgreSQL, clean provenance)",
-    "gate3_reproduction": "../verification/gate3/verification.json (passed, 11 identical hashes across 2x SQLite + 1x PostgreSQL, 4 scientific payloads across 400 conditions, clean provenance)",
-    "installed_wheel_smoke": "../verification/gate4-closure/evidence-audit-20260921T114709Z-fa55b507/wheel-smoke.json",
-    "postgres_service": "../verification/gate4-closure/20260921T195859Z-938cbc516d2c/postgres-service.json",
-    "status": "ALL_EVIDENCE_READY"
-  }
+    "guards": {
+      "exit_code": 0,
+      "tests": 27,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "full_suite_duration_seconds": 435.53,
+    "warnings": 2,
+    "reproductions": {
+      "gate2": {
+        "status": "PASS",
+        "evidence": "verification\\gate4-closure\\independent-review-20260925\\candidate-10170fe\\gate2\\verification.json",
+        "experiment_id": "c6678b6b4ddbc482c5bc4e81",
+        "execution_ids": [
+          "38a31d9d-091a-42c1-95de-9fc3de57ce5f",
+          "b3605a6b-1972-4218-8bca-043db19b90f1",
+          "873a62f0-280f-4797-a484-19acc87c4122"
+        ],
+        "hash_count": 8,
+        "identical_to_independently_audited_prior_science": true
+      },
+      "gate3": {
+        "status": "PASS",
+        "evidence": "verification\\gate4-closure\\independent-review-20260925\\candidate-10170fe\\gate3\\verification.json",
+        "experiment_id": "d8a18a371c8c88ee20ba1087",
+        "execution_ids": [
+          "7b50eb83-cee8-4283-9aae-53263aab31c8",
+          "d54675b6-2fd0-4814-8c59-4f5597cc447a",
+          "88a639a4-c87a-4a23-904d-5d10b2304f03"
+        ],
+        "hash_count": 11,
+        "identical_to_independently_audited_prior_science": true
+      }
+    },
+    "wheel_sha256": "bbbb730b6461bdfaed78be64abec39878f15fbdcf411f756481b652d6ce58c09",
+    "source_digest": "8fa58a42c94b30a820bf7beef85031fc0f9de5ad7e13befb4aca581177e768b1"
+  },
+  "blockers": [],
+  "deferred": [
+    "SCI-03",
+    "SCI-04",
+    "confirmatory research",
+    "optional cleanup",
+    "deployment"
+  ],
+  "next": "docs/next-execution.md"
 }
