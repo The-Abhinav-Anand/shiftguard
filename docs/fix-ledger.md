@@ -190,3 +190,7 @@ Working tree clean at verification (`git status --porcelain` empty).
 ## 26 September 2026 — independent bounded closure
 
 SG-SOL-01 (recovery cancellation race), SG-SOL-02 (nondefault HTTP configuration/audit assertion), SG-SOL-03 (both migration job rows), and SG-SOL-04 (direct-driver URL normalization) are RESOLVED on `10170feab3c16c5eb61153d57d9e5879ba5a6fd6`. Old-code race schedules failed; patched PostgreSQL and SQLite suites passed. Exact candidate: 339 passed, no skips, 2 warnings in 435.53s; 27 guards passed. Gate 2/3 reproduction and installed-wheel checks passed on both backends. Gate 4 is ACCEPTED; Gate 5 NOT_STARTED. See `docs/gate4-closure-review.md` and external FINAL_REVIEW.md. Historical 331-test pytest duration is 459.46s; prior prose 471.71s is superseded. No historical evidence was rewritten.
+
+## Gate 5 correction acceptance — 29 September 2026
+
+G5-R01 (persisted per-bin fallback/cache) and G5-R02 (submission-time authentication recovery) are RESOLVED on `f63116fedc2751493d79d44897ba913b6d28b0b5`. Astra Extra High verdict PASS, 8 independent probes. Parent typecheck/build, 3 affected browser and 5 static cases pass; 4 generated assets and 79 protected backend files match. Author full browser 9/9 is supporting evidence. Original docs/gate5-review.md remains unchanged. Source binding and separate acceptance checkpoint: docs/gate5-acceptance.md. No Gate 6 implementation or unrelated Gate 4 audit occurred.

@@ -1,9 +1,28 @@
 {
-  "active_writer": "none",
-  "state": "GATE4_ACCEPTED_GATE5_NOT_STARTED",
-  "candidate_commit": "10170feab3c16c5eb61153d57d9e5879ba5a6fd6",
-  "reviewer": "parent",
+  "active_writer": null,
+  "state": "GATE5_ACCEPTED_GATE6_READY",
+  "candidate_commit": "f63116fedc2751493d79d44897ba913b6d28b0b5",
+  "reviewer": "gpt-6-astra xhigh",
   "scoped_writers": [],
-  "next_writer": "assigned only when Gate 5 implementation starts",
-  "model_policy": "GPT-6 Sol High for bounded review/documentation; GPT-6 Luna High for named coding fixes; parent plans and accepts."
+  "next_writer": "antigravity",
+  "model_policy": "Antigravity codes complete batches and corrections; GPT-6 Astra Extra High independently reviews.",
+  "execution_policy": {
+    "implementer": {
+      "platform": "Antigravity",
+      "model": "user-configured; not specified by this workflow"
+    },
+    "planner_reviewer": {
+      "model": "gpt-6-astra",
+      "reasoning_effort": "xhigh"
+    },
+    "workflow": "docs/loop-engineering.md",
+    "execution_packet": "docs/gate6-batch.md",
+    "antigravity_allowed": true,
+    "batch_policy": "Complete vertical batches; consolidated review; correction-only re-review",
+    "effective_date": "2026-09-28"
+  },
+  "implementation_agent": null,
+  "assigned_writer": "antigravity",
+  "next_batch": "AG-G6-OFFLINE",
+  "scope_contract": "docs/gate6-batch.md; no writer active during this review"
 }

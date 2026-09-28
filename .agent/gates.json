@@ -40,8 +40,44 @@
     "next": "Gate 5 browser product; see docs/next-execution.md"
   },
   "gate_5": {
-    "status": "NOT_STARTED",
+    "status": "ACCEPTED",
     "prerequisite": "Gate 4 accepted on 10170feab3c16c5eb61153d57d9e5879ba5a6fd6",
-    "active_packet": "docs/next-execution.md"
+    "active_packet": "docs/gate5-acceptance.md",
+    "batch": "AG-G5-CLOSE",
+    "contract": "docs/gate5-batch.md",
+    "open_findings": [],
+    "review": "docs/gate5-correction-review.md",
+    "assigned_implementer": "antigravity",
+    "reviewer": "gpt-6-astra xhigh",
+    "latest_browser": {
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "collected": 9,
+      "owner": "author"
+    },
+    "next": "AG-G6-OFFLINE prepared; not started. See docs/gate6-batch.md.",
+    "verified_commit": "f63116fedc2751493d79d44897ba913b6d28b0b5",
+    "source_digest": "0e961a563ca38f02074b86a95c67fac8267b26f27182a8dab9a2f1256e28f492",
+    "review_verdict": "PASS",
+    "original_review": "docs/gate5-review.md",
+    "acceptance_record": "../verification/gate5/correction-review-20260929/acceptance.json",
+    "independent_browser": {
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    "reviewer_probes": {
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "gate_6": {
+    "status": "READY_NOT_STARTED",
+    "prerequisite": "Gate 5 accepted on f63116fedc2751493d79d44897ba913b6d28b0b5",
+    "active_packet": "docs/gate6-batch.md",
+    "assigned_implementer": "antigravity",
+    "reviewer": "gpt-6-astra xhigh"
   }
 }

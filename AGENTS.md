@@ -14,9 +14,10 @@
 - No staging or commit before parent verification and authorization.
 
 ## Authoritative paths
-- Workflow: ../SHIFTGUARD_Antigravity_Master_Workflow_With_Skills_MCP.txt.
-- Active closure workflow: docs/gate4-closure.md; fixed checklist: docs/gate4-acceptance.json.
-- Latest review: docs/gate4-closure-review.md (links current collected-node and package evidence).
+- Current workflow: docs/loop-engineering.md (user-directed Antigravity coding / Astra Extra High review workflow, effective 28 September 2026).
+- Next implementation packet: docs/next-execution.md (Gate 6; prepared, not started). Gate 4 closure records are historical accepted evidence.
+- The 26 September Luna coding assignment is superseded by the 28 September Antigravity instruction; preserve historical authorship.
+- Latest review: docs/gate5-correction-review.md; parent acceptance: docs/gate5-acceptance.md. Gate 4 evidence remains historical.
 - Fix ledger: docs/fix-ledger.md.
 - Blueprint: ../SHIFTGUARD_Implementation_Blueprint_v2_2026-09-09.md.
 - Plan: ../docs/aegis/plans/2026-09-10-shiftguard-hackathon-execution-plan.md.
@@ -27,13 +28,14 @@
 - This file does not amend scientific choices.
 
 ## Ownership and escalation
-- Active bulk writer: Gemini / Antigravity (`gemini_antigravity`).
+- Assigned bulk writer: Antigravity, using the user-configured coding model; do not invent its model setting.
 - One agent writes the application branch at a time.
 - .agent/ownership.json is the canonical current writer assignment.
 - Parent verifies evidence and may maintain governance/checkpoint files under user authorization.
-- Terra High is an explicit escalation for a named difficult failure after two evidence-based attempts.
-- Astra High owns planning, scientific decisions, and gate-exit review; never a concurrent writer.
-- Sol High is optional for public claims or named independent review, not duplicate review of each edit.
+- Independent planner/reviewer: GPT-6 Astra, reasoning effort `xhigh` (Extra High); never a concurrent application writer.
+- Do not dispatch Luna, Terra or Sol as application writers under this assignment.
+- Antigravity implements complete vertical batches and all ordinary corrections. Astra reviews one completed batch, then only correction deltas and affected invariants.
+- Two correction cycles without verified progress trigger Astra root-cause diagnosis and a revised Antigravity brief, not an endless repeat or automatic acceptance.
 - Complete coherent atomic batches before seeking review.
 - Ordinary failures stay with the active writer.
 - Capture the exact failure and make evidence-based fixes.
@@ -60,7 +62,7 @@
 - Finish the batch, then run local targeted tests.
 - Fix failures before handing the candidate to parent.
 - Parent performs independent verification.
-- One consolidated Astra review occurs at gate exit.
+- One consolidated Astra Extra High review occurs at batch/gate exit.
 - Do not repeatedly request ordinary code review.
 - Do not rerun frozen gates without an affected invariant.
 - Record affected frozen gates when shared behavior changes.
@@ -175,8 +177,8 @@
 - Gate 0 is frozen at a9d0aa0.
 - Gate 1 is frozen at 6c4d682.
 - Gate 2 is frozen at 937f33c (closure at c9cc001).
-- Gate 3 candidate is in active hardening (A01-A12) prior to clean reproduction and Gate 4.
-- Gate 4 implementation is under correction and remains unaccepted; Gate 3 reproduction/acceptance prerequisites are not waived.
+- Gate 3 hardened reproduction and Gate 4 acceptance are verified on 10170feab3c16c5eb61153d57d9e5879ba5a6fd6; see .agent/gates.json for evidence.
+- Gate 5 is accepted on f63116fedc2751493d79d44897ba913b6d28b0b5; next is the prepared Gate 6 offline batch.
 - Preserve research/*, including manuscript, builder, exports, and QA.
 - Preserve ../SHIFTGUARD_Deep_Research.md, ../SHIFTGUARD_Deep_Research.pdf, ../SHIFTGUARD_Implementation_Blueprint_v2_2026-09-09.md.
 - Preserve parent evidence, toolchain, and frozen verification clone.

@@ -1,18 +1,21 @@
 # Session state
 
-Updated: 26 September 2026.
-CURRENT_GATE=4 ACCEPTED; GATE_5=NOT_STARTED
-CANDIDATE_COMMIT=10170feab3c16c5eb61153d57d9e5879ba5a6fd6
-ACTIVE_WRITER=none
-GATE2_ACCEPTED_SOURCE=937f33c5c0f96ca18c9e7e0a82769c430d71bfa1
-LATEST_REVIEW=docs/gate4-closure-review.md
-ACCEPTANCE=../verification/gate4-closure/independent-review-20260925/acceptance.json
+Updated: 29 September 2026.
+CURRENT_GATE=5 ACCEPTED
+LAST_ACCEPTED_SOURCE=f63116fedc2751493d79d44897ba913b6d28b0b5
+SOURCE_DIGEST=0e961a563ca38f02074b86a95c67fac8267b26f27182a8dab9a2f1256e28f492
+GOVERNANCE_CHECKPOINT=See ../verification/gate5/correction-review-20260929/acceptance.json for the separate checkpoint SHA.
+ACTIVE_WRITER=NONE
+ASSIGNED_IMPLEMENTER=Antigravity (user-configured model)
+ASSIGNED_PLANNER_REVIEWER=gpt-6-astra xhigh
+WORKFLOW=docs/loop-engineering.md
+NEXT_BATCH=AG-G6-OFFLINE READY_NOT_STARTED
 NEXT=docs/next-execution.md
+LATEST_REVIEW=docs/gate5-correction-review.md PASS
+ACCEPTANCE=docs/gate5-acceptance.md
 
-Exact-source verification: 339 passed, 0 skipped, 0 failed, 2 dependency warnings in 435.53s; 27 guards passed. Gate 2/3 three-way reproductions passed with clean provenance, 8/11 matching hashes and 400 Gate 3 conditions. Installed-wheel SQLite/PostgreSQL head and legacy upgrades and API health passed. Source and package identities are bound in the acceptance evidence.
+G5-R01/R02 are resolved. Fresh parent evidence: typecheck/build exit 0, 3 affected browser tests, 5 static tests; reviewer: 8 independent probes; author full suite: 9 browser tests. No skips or failures in these final reports. Generated assets match 4/4; application manifest matches 36/36; protected backend matches 79/79. Original blocker review and prior failed/pending evidence remain immutable history.
 
-SG-SOL-01–04 resolved by scoped GPT-6 Luna High changes and independently checked. GPT-6 Sol High source review and parent acceptance are distinct from author test claims. The prior 331-case candidate and failed reviews remain historical. All prior canonical governance is archived byte-for-byte in `../verification/gate4-closure/independent-review-20260925/prior-governance/`.
+Parent committed exactly the reviewed browser source/tests/generated assets, then records governance separately. Tests ran before the source commit against the same frozen bytes; source-binding.json verifies the committed blobs. Gate 4 and unrelated backend/scientific audits were not rerun. Accepted Gate 4 evidence remains on 10170feab3c16c5eb61153d57d9e5879ba5a6fd6.
 
-Reuse the existing test service via `. '..\.tools\use-existing-test-postgres.ps1'`; it configures process-local database access and Python UTF-8. No installation or user connection string is needed. The full reproduction run had a nonfatal Windows stderr decoding diagnostic; artifacts and audit JSON were intact and independently checked, and the helper's UTF-8 fix passed a strict two-stream smoke. See FINAL_REVIEW.md.
-
-Frozen Gate 0/1/2 IDs are unchanged. SCI-03, SCI-04, confirmatory research and optional cleanup remain deferred. No deployment or remote push. Next gate: browser product; no Gate 5 code has been written in this batch.
+Next implementation packet is docs/gate6-batch.md. No Gate 6 code or live provider calls were executed in this review. Seed 31001, scientific deferrals, existing runtimes, and no deployment/publication/unsealing remain unchanged. Live Gate 6 proof requires account/model access and an explicitly allowed usage budget.

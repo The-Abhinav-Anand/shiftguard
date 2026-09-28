@@ -1,14 +1,14 @@
 {
-  "handoff_id": "gate4-accepted-20260926",
-  "status": "ACCEPTED",
-  "candidate_commit": "10170feab3c16c5eb61153d57d9e5879ba5a6fd6",
+  "handoff_id": "gate5-accepted-20260929",
+  "status": "GATE5_ACCEPTED_GATE6_READY",
+  "candidate_commit": "f63116fedc2751493d79d44897ba913b6d28b0b5",
   "branch": "implementation/gate-0",
-  "active_writer": "none",
-  "current_gate": 4,
-  "next_gate": 5,
-  "next_gate_status": "NOT_STARTED",
-  "review": "docs/gate4-closure-review.md",
-  "acceptance": "../verification/gate4-closure/independent-review-20260925/acceptance.json",
+  "active_writer": null,
+  "current_gate": 5,
+  "next_gate": 6,
+  "next_gate_status": "READY_NOT_STARTED",
+  "review": "docs/gate5-correction-review.md",
+  "acceptance": "../verification/gate5/correction-review-20260929/acceptance.json",
   "evidence": {
     "status": "PASS",
     "candidate": "10170feab3c16c5eb61153d57d9e5879ba5a6fd6",
@@ -66,5 +66,69 @@
     "optional cleanup",
     "deployment"
   ],
-  "next": "docs/next-execution.md"
+  "next": "docs/next-execution.md",
+  "execution_policy": {
+    "implementer": {
+      "platform": "Antigravity",
+      "model": "user-configured; not specified by this workflow"
+    },
+    "planner_reviewer": {
+      "model": "gpt-6-astra",
+      "reasoning_effort": "xhigh"
+    },
+    "workflow": "docs/loop-engineering.md",
+    "execution_packet": "docs/gate6-batch.md",
+    "antigravity_allowed": true,
+    "batch_policy": "Complete vertical batches; consolidated review; correction-only re-review",
+    "effective_date": "2026-09-28"
+  },
+  "next_batch": "AG-G6-OFFLINE",
+  "next_batch_status": "READY_NOT_STARTED",
+  "implementation_agent": null,
+  "reviewer_agent": null,
+  "evidence_scope": "Top-level evidence object preserves accepted Gate 4 history; gate5 records current accepted browser evidence.",
+  "gate5": {
+    "source_commit": "f63116fedc2751493d79d44897ba913b6d28b0b5",
+    "source_digest": "0e961a563ca38f02074b86a95c67fac8267b26f27182a8dab9a2f1256e28f492",
+    "review_verdict": "PASS",
+    "review": "docs/gate5-correction-review.md",
+    "initial_review": "docs/gate5-review.md",
+    "initial_verdict": "BLOCKERS",
+    "resolved_findings": [
+      "G5-R01",
+      "G5-R02"
+    ],
+    "open_findings": [],
+    "source_manifest": "../verification/gate5/correction-review-20260929/source-manifest.json",
+    "source_binding": "../verification/gate5/correction-review-20260929/source-binding.json",
+    "parent_verification": "../verification/gate5/correction-review-20260929/validation.json",
+    "reviewer_evidence": "../verification/gate5/correction-review-20260929/reviewer-evidence.json",
+    "acceptance_record": "../verification/gate5/correction-review-20260929/acceptance.json",
+    "independent_browser": {
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    "independent_static": {
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    "reviewer_probes": {
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    "author_full_browser": {
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    "generated_asset_matches": 4,
+    "protected_backend_matches": 79,
+    "acceptance": "ACCEPTED",
+    "binding_note": "Tests ran against frozen working bytes before commit; all 36 reviewed files bind to committed blobs. Original review and pre-acceptance evidence retain their historical pending states. Separate governance checkpoint is recorded in acceptance.json."
+  },
+  "assigned_writer": "antigravity",
+  "prior_reviewer_agent": "01a0e9fa-24b7-7651-8a14-e1c669322abf"
 }

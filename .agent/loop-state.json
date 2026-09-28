@@ -1,0 +1,144 @@
+{
+  "schema_version": 1,
+  "status": "ACCEPTED",
+  "batch_id": "AG-G5-CLOSE",
+  "gate": 5,
+  "contract": "docs/gate5-batch.md",
+  "policy": {
+    "implementer": {
+      "platform": "Antigravity",
+      "model": "user-configured; not specified by this workflow"
+    },
+    "planner_reviewer": {
+      "model": "gpt-6-astra",
+      "reasoning_effort": "xhigh"
+    },
+    "workflow": "docs/loop-engineering.md",
+    "execution_packet": "docs/antigravity-execution-prompt.md",
+    "antigravity_allowed": true,
+    "batch_policy": "Complete vertical batches; consolidated review; correction-only re-review",
+    "effective_date": "2026-09-28"
+  },
+  "base_source_candidate": "10170feab3c16c5eb61153d57d9e5879ba5a6fd6",
+  "base_governance_checkpoint": "475b4b7fc7a3c5fb87396aac7e75d035343628df",
+  "attempts": [
+    {
+      "round": 0,
+      "source_digest": "3943dc28ed294c052d35724df4369ccdea686f829f0152ea4a46e575da2599eb",
+      "review": "docs/gate5-review.md",
+      "verdict": "BLOCKERS",
+      "open_findings": [
+        "G5-R01",
+        "G5-R02"
+      ],
+      "parent_browser": 8,
+      "parent_static": 5,
+      "next": "correction batch1"
+    },
+    {
+      "round": 1,
+      "source_digest": "0e961a563ca38f02074b86a95c67fac8267b26f27182a8dab9a2f1256e28f492",
+      "source_commit": "f63116fedc2751493d79d44897ba913b6d28b0b5",
+      "review": "docs/gate5-correction-review.md",
+      "verdict": "PASS",
+      "open_findings": [],
+      "parent_browser": 3,
+      "parent_static": 5,
+      "reviewer_probes": 8,
+      "author_browser": 9,
+      "evidence": "../verification/gate5/correction-review-20260929/acceptance.json"
+    }
+  ],
+  "consecutive_no_progress_cycles": 0,
+  "diagnose_after_no_progress_cycles": 2,
+  "agent_ids": {},
+  "acceptance": "ACCEPTED",
+  "note": "User explicitly authorized implementation; parent owns governance and verification setup.",
+  "baseline_evidence": "../verification/gate5/baseline.json",
+  "last_resumed_at": "2026-09-26T19:23:40.244692+00:00",
+  "interruption": {
+    "reason": "Implementer usage limit on 26 September",
+    "resolved": "User resumed 27 September; usage available; same Luna agent resumed"
+  },
+  "interruptions": [
+    {
+      "reason": "Second implementer usage interruption; reset time reported 05:52 local",
+      "resumed_at": "2026-09-27T06:48:16.182879+00:00",
+      "agent": "01a0dd60-4f0d-7241-910a-3e1e7b0b728e",
+      "retained_state": "Typecheck/build passed; eight E2E tests collected; browser attempt failed in setup; no accepted browser result"
+    }
+  ],
+  "previous_implementers": [
+    {
+      "agent_id": "01a0dd60-4f0d-7241-910a-3e1e7b0b728e",
+      "reason": "Quota interruptions; replaced with fresh compact continuation context",
+      "retained_result": "Typecheck/build pass; static5/5; browser7/8, one selector timeout"
+    },
+    {
+      "agent_id": "01a0e317-35d5-7203-a79b-9d4ace1f744c",
+      "reason": "Correction context stalled after oversized artifact search; closed with no correction edits",
+      "retained_result": "Initial complete batch8/8pass; correctionbatch1 reassigned without discardingwork"
+    },
+    {
+      "agent_id": "01a0e475-d354-71f2-98f5-e0c84a7e7785",
+      "reason": "Usage interruption followed by user switch to Antigravity; closed",
+      "retained_result": "Production R01/R02 fixes, typecheck/build author pass, browser8passed/1failed cache expectation"
+    }
+  ],
+  "next_action": "AG-G6-OFFLINE under docs/gate6-batch.md; not started in this review",
+  "source_manifest": "../verification/gate5/correction-review-20260929/source-manifest.json",
+  "author_verification": {
+    "browser_passed": 8,
+    "skipped": 0,
+    "typecheck": "PASS",
+    "build": "PASS",
+    "static_passed": 5,
+    "evidence": "../verification/gate5/attempt-20260927-g5-resume-all8/"
+  },
+  "handoff_checkpoint": "../verification/gate5/antigravity-handoff-20260928/checkpoint.json",
+  "current_verification": {
+    "source_commit": "f63116fedc2751493d79d44897ba913b6d28b0b5",
+    "source_digest": "0e961a563ca38f02074b86a95c67fac8267b26f27182a8dab9a2f1256e28f492",
+    "review_verdict": "PASS",
+    "review": "docs/gate5-correction-review.md",
+    "initial_review": "docs/gate5-review.md",
+    "initial_verdict": "BLOCKERS",
+    "resolved_findings": [
+      "G5-R01",
+      "G5-R02"
+    ],
+    "open_findings": [],
+    "source_manifest": "../verification/gate5/correction-review-20260929/source-manifest.json",
+    "source_binding": "../verification/gate5/correction-review-20260929/source-binding.json",
+    "parent_verification": "../verification/gate5/correction-review-20260929/validation.json",
+    "reviewer_evidence": "../verification/gate5/correction-review-20260929/reviewer-evidence.json",
+    "acceptance_record": "../verification/gate5/correction-review-20260929/acceptance.json",
+    "independent_browser": {
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    "independent_static": {
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    "reviewer_probes": {
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    "author_full_browser": {
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    "generated_asset_matches": 4,
+    "protected_backend_matches": 79,
+    "acceptance": "ACCEPTED",
+    "binding_note": "Tests ran against frozen working bytes before commit; all 36 reviewed files bind to committed blobs. Original review and pre-acceptance evidence retain their historical pending states. Separate governance checkpoint is recorded in acceptance.json."
+  },
+  "source_commit": "f63116fedc2751493d79d44897ba913b6d28b0b5",
+  "next_batch": "AG-G6-OFFLINE",
+  "next_batch_status": "READY_NOT_STARTED"
+}

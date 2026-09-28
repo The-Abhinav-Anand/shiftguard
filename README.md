@@ -1,6 +1,8 @@
 # SHIFTGUARD
 
-SHIFTGUARD is a calibration-shift research engine. The CLI provides the Gate1 deterministic UCI Bank Marketing baseline and the Gate2 development outage/temperature-calibration slice. Browser experiments, jobs, and agent tools remain pending.
+SHIFTGUARD is a calibration-shift research engine. Gates 0–4 provide the deterministic Bank baseline, outage/recalibration slice, 400-condition development stress engine, and verified API/durable-worker backend. The Gate 5 browser candidate adds approved runs, durable job controls, four persisted scientific views, provenance and cached results; Gate 5 is accepted; see [the acceptance packet](docs/gate5-acceptance.md). Live agent integration, confirmatory research, full Adult replication, hosted deployment and submission remain unfinished. See [blueprint progress](docs/blueprint-progress.md).
+
+Future implementation follows [loop engineering](docs/loop-engineering.md): Antigravity codes complete batches; GPT-6 Astra Extra High reviews them. The next [execution packet](docs/gate6-batch.md) is AG-G6-OFFLINE; implementation has not started.
 
 ## Local setup
 
