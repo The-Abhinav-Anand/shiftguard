@@ -5,15 +5,23 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build"
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.e2e.json --noEmit",
+    "build": "tsc -b && vite build --configLoader native && node scripts/copy-static.mjs",
+    "test:e2e": "playwright test --config playwright.config.ts"
   },
   "dependencies": {
+    "plotly.js": "^4.1.1",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "react-plotly.js": "^4.1.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^26.6.3",
+    "@types/plotly.js": "^3.0.14",
     "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
+    "@types/react-plotly.js": "^2.6.4",
     "@vitejs/plugin-react": "^5.0.2",
     "typescript": "^5.9.2",
     "vite": "^7.1.3"
