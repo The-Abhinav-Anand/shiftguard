@@ -59,9 +59,7 @@
     "source_digest": "8fa58a42c94b30a820bf7beef85031fc0f9de5ad7e13befb4aca581177e768b1"
   },
   "blockers": [
-    "CLEAN_SOURCE_CHECKPOINT",
-    "GENUINE_LIVE_WORKFLOW_AND_NEGATIVE_CHALLENGE",
-    "SEPARATE_GOVERNANCE_CHECKPOINT"
+    "GATE7_LIVE_CHALLENGE_TERMINAL_BUDGET_EXCEEDED"
   ],
   "deferred": [
     "SCI-03",
@@ -666,7 +664,7 @@
       "residual-review/review.json": "0026ddbff0cb0906eb4241b9ad80b2e12ed3cb09d9e1c5ceeafcb03482cd3984"
     }
   },
-  "state": "GATE7_AND_RESEARCH_CANDIDATE_IMPLEMENTING",
+  "state": "GATE6_ACCEPTED_GATE7_LIVE_CONTAINMENT_BLOCKED",
   "current_task": "Gate7 corrected frozen candidate verification; manuscript0.3 delivered",
   "latest_frontend_checkpoint": {
     "status": "VERIFIED",
@@ -785,46 +783,30 @@
     "externally_shared": false
   },
   "current_acceptance_attempt": {
-    "timestamp_utc": "2026-10-07T21:55:30.041285+00:00",
-    "state": "OFFLINE_VERIFIED_READY_FOR_SOURCE_CHECKPOINT",
-    "active_writer": "NONE",
-    "source_digest": "29b51ddbcb2ffa9870db2c18b8c40bd30d52e4026f7418675c46bcee47b8d48a",
-    "source_files": 202,
-    "backend_review": "PASS",
-    "surface_review": "PASS",
-    "parent_full_suite": {
-      "status": "PASS",
-      "passed": 782,
-      "failures": 0,
-      "errors": 0,
-      "skipped": 0,
-      "source_unchanged": true,
-      "source_digest": "29b51ddbcb2ffa9870db2c18b8c40bd30d52e4026f7418675c46bcee47b8d48a"
+    "gate6": "ACCEPTED",
+    "gate7": "PENDING_REQUIRED_LIVE_CONTAINMENT",
+    "source_commit": "950d5cd2d363247d20e7ab5b9a54faa5a4dbcf61",
+    "evidence": "../verification/gate67-acceptance-20261007-b3a81c57/acceptance.json",
+    "paid_usage": {
+      "provider": "nebius",
+      "model": "nvidia/Nemotron-3_5-Lightning",
+      "calls": 7,
+      "max_calls": 10,
+      "tokens": 34609,
+      "max_tokens": 50000,
+      "sdk_retries": 0,
+      "remaining_call_slots": 3,
+      "remaining_tokens": 15391,
+      "minimal_full_registry_reservation": 16044,
+      "next_normal_dispatch_allowed": false,
+      "ledger_id": "live-2cb609be84124adb91e662b7aadf934d",
+      "previous_three_call_preflight_excluded": true
     },
-    "browser": {
-      "passed": 16,
-      "failed": 0,
-      "skipped": 0,
-      "provider": "SCRIPTED"
-    },
-    "wheel_runtime": "PASS_9_PROBES_SQLITE_POSTGRES16_92_IMPORTS_OUTSIDE_CHECKOUT",
-    "wheel_sha256": "70098e3efeebcbac6209c555802132493173fca8536f1819addd2b367d5df85f",
-    "frontend_scope": "Two browser fixtures use exact approved preset commands; AgentPanel placeholder only; 150 assertions retained; generated assets rebuilt and separately bound",
-    "scientific_backend_and_migrations": "UNCHANGED",
-    "source_commit": null,
-    "new_provider_calls": 0,
-    "max_calls": 10,
-    "max_tokens": 50000,
-    "sdk_retries": 0,
-    "gate6_acceptance": "PENDING",
-    "gate7_acceptance": "PENDING",
+    "full_suite": "782 PASS no failures/errors/skips",
+    "browser": "16 PASS scripted provider",
+    "reviews": "Astra backend/live-positive PASS;Sol frontend PASS",
     "ordinary_assistant_enabled": false,
-    "next": "Finish Sol review, parent source checkpoint, genuine isolated run/read/compare; then same-ledger observed negative challenge and separate governance checkpoint",
-    "historical_failures": [
-      "astra-review/",
-      "astra-review-corrections-01/",
-      "browser-final/",
-      "../gate7-20261005/acceptance-full-20261007-b3a81c57/"
-    ]
-  }
+    "source_writer": "NONE"
+  },
+  "source_commit": "950d5cd2d363247d20e7ab5b9a54faa5a4dbcf61"
 }

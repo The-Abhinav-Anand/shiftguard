@@ -1,7 +1,7 @@
 {
   "active_writer": "NONE",
-  "state": "OFFLINE_VERIFIED_READY_FOR_SOURCE_CHECKPOINT",
-  "candidate_commit": null,
+  "state": "GATE6_ACCEPTED_GATE7_LIVE_CONTAINMENT_BLOCKED",
+  "candidate_commit": "950d5cd2d363247d20e7ab5b9a54faa5a4dbcf61",
   "reviewer": "gpt-6.1-sol xhigh",
   "scoped_writers": [
     {
@@ -553,11 +553,11 @@
     "reviewer_model": "gpt-6-astra xhigh",
     "parent_evidence": "../verification/gate67-acceptance-20261007-b3a81c57",
     "paid_calls_by_agents": false,
-    "writer_status": "SOURCE_FROZEN_NO_APPLICATION_WRITER",
+    "writer_status": "CLOSED_SOURCE_FROZEN",
     "source_digest": "29b51ddbcb2ffa9870db2c18b8c40bd30d52e4026f7418675c46bcee47b8d48a",
     "parent_full_suite_directory": "../verification/gate7-20261005/acceptance-full-final-20261007-b3a81c57",
     "parent_focused": "112 PASS; zero failures/errors/skips; exact source29b51d",
-    "new_provider_calls": 0,
+    "new_provider_calls": 7,
     "independent_review": "PASS",
     "review_packet": "../verification/gate67-acceptance-20261007-b3a81c57/astra-review-corrections-02/review.json",
     "parent_full_suite_status": "PASS_782_ZERO_FAILURE_ERROR_SKIP",
@@ -568,6 +568,11 @@
     "product_copy_review": "PASS",
     "runtime_source_unchanged": true,
     "browser_corrected": "PASS_16_ZERO_FAILURE_SKIP_FLAKY",
-    "wheel_runtime": "PASS_FRESH_WHEEL_02"
+    "wheel_runtime": "PASS_FRESH_WHEEL_02",
+    "provider_tokens": 34609,
+    "live_output_review": "PASS",
+    "source_commit": "950d5cd2d363247d20e7ab5b9a54faa5a4dbcf61",
+    "gate6_acceptance": "ACCEPTED",
+    "gate7_acceptance": "PENDING"
   }
 }

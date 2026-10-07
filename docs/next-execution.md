@@ -1,3 +1,29 @@
+# Next execution — 8 October 2026
+
+**Gate6 accepted; Gate7 pending completed live containment.** Source commit `950d5cd2d363247d20e7ab5b9a54faa5a4dbcf61`; actual separate governance commit is recorded in `../verification/gate67-acceptance-20261007-b3a81c57/acceptance.json`. No active writer/reviewer. Original failures and earlier reviews remain history.
+
+## Completed
+
+- Real Nebius `nvidia/Nemotron-3_5-Lightning` run → durable WAITING/resume → published read → qualified eight-method comparison: **PASS**, six calls,30,375 reported tokens. Clean-source audit,400-condition Bank seed31001 development publication and all original request/tool/claim bindings independently verified. Astra output review PASS.
+- Full782 Python tests, including PostgreSQL16: no failure/error/skip. Current browser16/16 PASS under scripted provider;150 assertions retained. Typecheck/build and fresh wheel nine runtime probes/92 external import origins PASS. Backend digest29b51d and separately bound59 product/browser files preserved. This full-suite run predates the source commit; its working bytes and filtered Git blobs were verified equal.
+- Clean-source public containment campaign49 executions/44 distinct cases PASS. Scientific39 files, applied migrations11 and accepted Gates0–5 unchanged; ordinary13 tables/156 saved files unchanged. Ordinary assistant remains disabled.
+
+## Next bounded Gate7 closure
+
+1. Read `live-attempts/positive-01/parent-negative-audit.json` under the current outer attempt. One real hostile request attempted an ungranted run, which was denied; its next turn was blocked before dispatch by token reservation. Terminal FAILED/BUDGET_EXCEEDED is **not** live containment PASS. Retain this counterexample unchanged; do not repeat the unrelated codebase/full/browser audit.
+2. Current allowance used **7 of10 calls and34,609 of50,000 tokens**, retries0, one persisted ledger. Three call slots remain nominally, but15,391 remaining tokens cannot fit the minimal16,044 normal request or17,711 rejected continuation reservation. Stop paid execution under this allowance. Never create a replacement ledger, reset counts or silently increase tokens. Further paid verification requires an explicit new bounded usage authorization and a reviewed concrete budget allocation; include all authorized calls and conservative continuation reservations.
+3. Prepare any later authorized challenge offline first. Cover unsupported numbers/fake experiment/Python/final labels through the retained normal controller→registry→handler→renderer. Bind expected failures and absence of jobs/rows/artifacts to source, model, original session/request/tool IDs and known usage. Do not make the challenge easier merely to get a PASS; do not count provider, transport, unknown-usage or budget failures as evidence of completed containment. Public examples remain regression inputs, not held-out quality estimates.
+4. GPT-6 Luna xhigh owns any demonstrated application correction as one coherent batch; Astra xhigh reviews backend/source/output and Sol6.1 xhigh reviews only changed frontend/content. If no source defect exists, make no application change and repeat no full suite. Parent owns genuine calls, independent evidence audit and the separate Gate7 acceptance checkpoint.
+5. Gate7 accepts only when required live containment and its exact-source checkpoint are recorded. Ordinary assistant/public deployment remain disabled until separately authorized with runtime/provider budget controls.
+
+## Following product and research work
+
+Business CSV/model intake follows `product-refresh-20260930/MASTER_PLAN.md` and its ingestion packet, with typed schema/target mapping, validation preview, isolated storage, safe model formats, resource limits and controlled deletion. It remains unimplemented beyond documented design; do not advertise upload support.
+
+Working paper v0.3 and defense brief are delivered. Next free scientific batch resolves protocol decisions and audits untouched evaluation exposure, then implements/reviews the declared paired-seed interface and locks primary outcomes/comparators/budgets/aggregation/uncertainty before any new scoring. Exposed Bank seed31001 supports development only; Adult replication and confirmatory/unsealed outcomes stay deferred. A sealed20–30 task model-quality benchmark is separate future work and has no inference authorization here. No efficacy/significance/ROI or task-success-rate claims from these acceptance observations.
+
+Parent owns source/Git/evidence/governance; no Antigravity, new runtime/service installations, scientific-policy changes, push or deployment. Earlier execution instructions below are retained history and cannot revive exhausted allowances.
+
 # Authorized acceptance execution — 8 October 2026
 
 Current source-specific offline evidence is complete: Astra backend PASS, 782 Python tests with no failures/errors/skips, 16 current browser checks PASS, typecheck/build PASS and fresh installed-wheel SQLite/PostgreSQL16 verification PASS. Backend 202-file digest `29b51ddbcb2ffa9870db2c18b8c40bd30d52e4026f7418675c46bcee47b8d48a` is unchanged. The separately bound frontend delta contains only two preset-prompt fixture corrections and the AgentPanel placeholder plus regenerated assets; all 150 assertions remain. Older failed reports are retained.

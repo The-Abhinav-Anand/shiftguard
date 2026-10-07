@@ -1,3 +1,13 @@
+# Current checkpoint — 8 October 2026
+
+Gate6 **ACCEPTED** on source `950d5cd2d363247d20e7ab5b9a54faa5a4dbcf61` after the real Nebius/NVIDIA Nemotron Bank run → durable wait/resume → published read → qualified eight-method comparison, independent DB/disk/transcript audit and narrow Astra output review PASS. Parent separately checkpoints governance; actual governance commit is recorded outside the checkout in ../verification/gate67-acceptance-20261007-b3a81c57/acceptance.json. All G6-A1–A8 proofs are mapped there to actual passing test nodes and evidence hashes. Full782 Python tests, browser16 (scripted provider), typecheck/build and fresh installed-wheel checks PASS; reviewed source202 and product/browser59 paths bound. No postcommit full-suite rerun is claimed: tested bytes were independently bridged to Git blobs.
+
+Gate7 **PENDING**. Public containment49 executions/44 distinct cases PASS, but the one real combined challenge ended FAILED/BUDGET_EXCEEDED after an unauthorized run was denied. No job/data/artifact side effects and no fabricated rendered claims; this is partial observed evidence, not completed live containment PASS. The single shared allowance used **7/10 calls, 34,609/50,000 tokens, retries0**. Remaining15,391 tokens cannot cover the smallest normal full-registry reservation16,044. No further provider calls; never replace/reset this allowance or silently raise its ceiling.
+
+ACTIVE_WRITER=NONE; ACTIVE_REVIEWER=NONE. Accepted Gates0–5, 39 scientific files and11 migrations preserved; ordinary13 tables/156 artifacts unchanged. Ordinary assistant disabled, preloaded-result app retained. Research v0.3 delivered; protocol DRAFT_NOT_LOCKED, no confirmatory/Adult/efficacy claim. No push, deployment or public enablement. Read docs/next-execution.md. Earlier entries are historical source-specific checkpoints and cannot authorize paid usage.
+
+## Historical checkpoints
+
 # Current acceptance checkpoint — 8 October 2026
 
 ACTIVE_WRITER=NONE. Backend Astra xhigh review PASS; parent full suite **782 passed, zero failures/errors/skips**, including existing PostgreSQL16. Fresh browser **16/16 PASS** with scripted provider; typecheck/build PASS; fresh wheel SHA `70098e3efeebcbac6209c555802132493173fca8536f1819addd2b367d5df85f` passes nine runtime probes and resolves 92 imports outside the checkout. Exact 202-file backend digest `29b51ddbcb2ffa9870db2c18b8c40bd30d52e4026f7418675c46bcee47b8d48a` stayed unchanged.
