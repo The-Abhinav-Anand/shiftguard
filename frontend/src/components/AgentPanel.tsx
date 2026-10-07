@@ -107,7 +107,7 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({
             className={`agent-status-badge ${isConfigured ? "badge-online" : "badge-offline"}`}
             aria-live="polite"
           >
-            {isConfigured ? (agentStatus?.provider_kind === "scripted" ? "Scripted Test Harness" : "Nemotron-3_5-Lightning Active") : "Provider Offline / Unconfigured"}
+            {!agentStatus?.enabled ? "Assistant paused" : !agentStatus.available ? "Provider unavailable" : (agentStatus.provider_kind === "scripted" ? "Scripted Test Harness" : "Nemotron-3_5-Lightning Active")}
           </span>
           {agentStatus?.provider_kind === "scripted" && (
             <span
@@ -156,9 +156,11 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({
         <div className="agent-notice notice-offline" role="status">
           <span className="notice-icon">ℹ</span>
           <div>
-            <strong>Provider Inactive:</strong> The Nemotron LLM provider is currently disabled or awaiting local
-            credentials. Manual workbench presets, cached views, and all Gate 5 diagnostic charts remain fully
-            operational.
+            {!agentStatus?.enabled ? (
+              <><strong>Assistant paused:</strong> Paid inference is paused. Manual presets and saved results are available.</>
+            ) : (
+              <><strong>Provider unavailable:</strong> The assistant is enabled, but its provider is unavailable. Paid inference cannot run. Manual presets and saved results are available.</>
+            )}
           </div>
         </div>
       )}

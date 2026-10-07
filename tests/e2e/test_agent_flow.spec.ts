@@ -1,6 +1,6 @@
 import { test, expect } from "../../frontend/e2e/fixtures";
 
-test("[simulated] disabled/unconfigured provider displays offline banner while manual workbench controls remain functional", async ({ page }) => {
+test("[simulated] paused assistant displays inference notice while manual workbench controls remain functional", async ({ page }) => {
   await page.route("**/api/v1/agent/status", async (route) => {
     return route.fulfill({
       status: 200,
@@ -21,9 +21,9 @@ test("[simulated] disabled/unconfigured provider displays offline banner while m
   // Agent panel shows offline banner
   const agentPanel = page.locator(".agent-panel");
   await expect(agentPanel).toBeVisible();
-  await expect(agentPanel.locator(".agent-status-badge")).toHaveText("Provider Offline / Unconfigured");
+  await expect(agentPanel.locator(".agent-status-badge")).toHaveText("Assistant paused");
   await expect(agentPanel.locator(".agent-notice.notice-offline")).toBeVisible();
-  await expect(agentPanel.locator(".agent-notice.notice-offline")).toContainText("Provider Inactive");
+  await expect(agentPanel.locator(".agent-notice.notice-offline")).toContainText("Paid inference is paused.");
 
   // Workbench manual controls remain completely enabled and functional
   await expect(page.getByRole("combobox", { name: "Approved preset", exact: true })).toBeEnabled();
