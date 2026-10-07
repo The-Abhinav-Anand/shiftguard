@@ -3,13 +3,52 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#f4f6f2" />
-    <meta name="description" content="SHIFTGUARD calibration workbench for persisted, auditable stress results." />
-    <title>SHIFTGUARD · Calibration workbench</title>
-    <script type="module" crossorigin src="/assets/index-Bx0K08zW.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-CD2mB8p6.css">
+    <meta name="theme-color" content="#F4F1E9" />
+    <meta name="description" content="Inspect how missing inputs affect probability quality and decision loss in reproducible Bank benchmark runs." />
+    <title>When inputs shift, know what still holds · SHIFTGUARD</title>
+    <style>
+      :root { color-scheme: light; background: #F4F1E9; color: #182922; font-family: "Segoe UI", sans-serif; }
+      body { margin: 0; }
+      .route-boot { min-height: 100vh; display: grid; place-content: center; justify-items: start; gap: 18px; padding: 32px; box-sizing: border-box; }
+      .route-boot__brand { display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 700; letter-spacing: .08em; }
+      .route-boot__mark { width: 32px; height: 32px; }
+      .route-boot p { margin: 0; color: #56635B; }
+      .route-boot__reload { min-height: 44px; padding: 0 14px; color: #FFFEFA; background: #11271F; border: 1px solid #11271F; border-radius: 3px; font-weight: 700; }
+    </style>
+    <script type="module" crossorigin src="/assets/index-BZfDKmsf.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-DGPSwa5B.css">
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="route-boot" role="status" aria-live="polite">
+        <div class="route-boot__brand">
+          <svg class="route-boot__mark" viewBox="0 0 64 64" aria-hidden="true">
+            <path d="M13 17h38v7H20v9h31v7H13zM13 47h38v7H13z" fill="#182922" />
+            <path d="M20 33h24v7H20z" fill="#B84224" />
+            <path d="M8 12v12h5M56 40v12h-5" fill="none" stroke="#182922" stroke-width="3" />
+          </svg>
+          <span>SHIFTGUARD</span>
+        </div>
+        <p class="route-boot__message">When inputs shift, know what still holds.</p>
+        <button class="route-boot__reload" type="button" hidden onclick="window.location.reload()">Reload page</button>
+      </div>
+    </div>
+    <noscript>
+      <main style="max-width: 42rem; margin: 4rem auto; padding: 0 1.5rem; color: #182922; font: 16px/1.6 'Segoe UI', sans-serif">
+        <p style="font-weight: 700; letter-spacing: .08em">SHIFTGUARD</p>
+        <h1>When inputs shift, know what still holds.</h1>
+        <p>Inspect how missing inputs affect probability quality and recorded decision loss.</p>
+        <p>Enable JavaScript to use the interactive benchmark workbench.</p>
+      </main>
+    </noscript>
+    <script>
+      window.setTimeout(function () {
+        var message = document.querySelector('.route-boot__message');
+        var reload = document.querySelector('.route-boot__reload');
+        if (!message || !reload) return;
+        message.textContent = 'This is taking longer than expected.';
+        reload.hidden = false;
+      }, 10000);
+    </script>
   </body>
 </html>

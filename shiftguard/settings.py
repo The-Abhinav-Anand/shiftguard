@@ -61,7 +61,7 @@ def _deepest_mount_filesystem(path: Path, mounts: Iterable[tuple[Path, str]]) ->
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore", validate_assignment=True)
 
     db_url: str = Field(
         default="sqlite:///./var/shiftguard.db",
@@ -86,6 +86,65 @@ class Settings(BaseSettings):
     recovery_interval: float = Field(
         default=5.0,
         validation_alias=AliasChoices("SHIFTGUARD_RECOVERY_INTERVAL", "recovery_interval"),
+    )
+    nebius_api_key: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("NEBIUS_API_KEY", "nebius_api_key"),
+        repr=False,
+    )
+    nebius_base_url: str = Field(
+        default="https://api.tokenfactory.nebius.com/v1",
+        validation_alias=AliasChoices("NEBIUS_BASE_URL", "nebius_base_url"),
+    )
+    nebius_model: str = Field(
+        default="nvidia/Nemotron-3_5-Lightning",
+        validation_alias=AliasChoices("NEBIUS_MODEL", "nebius_model"),
+    )
+    nebius_timeout: float = Field(
+        default=25.0,
+        gt=0.0,
+        le=55.0,
+        allow_inf_nan=False,
+        validation_alias=AliasChoices("NEBIUS_TIMEOUT", "nebius_timeout"),
+    )
+    nebius_max_retries: int = Field(
+        default=0,
+        ge=0,
+        le=0,
+        validation_alias=AliasChoices("NEBIUS_MAX_RETRIES", "nebius_max_retries"),
+    )
+    nebius_max_output_tokens: int = Field(
+        default=1024,
+        ge=1,
+        le=4096,
+        validation_alias=AliasChoices("NEBIUS_MAX_OUTPUT_TOKENS", "nebius_max_output_tokens"),
+    )
+    nebius_enable_thinking: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("NEBIUS_ENABLE_THINKING", "nebius_enable_thinking"),
+    )
+    agent_enabled: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("SHIFTGUARD_AGENT_ENABLED", "agent_enabled"),
+    )
+    agent_max_turns: int = Field(
+        default=6,
+        validation_alias=AliasChoices("SHIFTGUARD_AGENT_MAX_TURNS", "agent_max_turns"),
+    )
+    agent_max_calls: int = Field(
+        default=8,
+        validation_alias=AliasChoices("SHIFTGUARD_AGENT_MAX_CALLS", "agent_max_calls"),
+    )
+    agent_max_repairs: int = Field(
+        default=1,
+        validation_alias=AliasChoices("SHIFTGUARD_AGENT_MAX_REPAIRS", "agent_max_repairs"),
+    )
+    agent_timeout_seconds: float = Field(
+        default=50.0,
+        gt=0.0,
+        le=55.0,
+        allow_inf_nan=False,
+        validation_alias=AliasChoices("SHIFTGUARD_AGENT_TIMEOUT_SECONDS", "agent_timeout_seconds"),
     )
 
     @field_validator("worker_poll_interval", "recovery_interval")
@@ -122,6 +181,11 @@ class Settings(BaseSettings):
     @property
     def database_backend(self) -> Literal["sqlite", "postgresql"]:
         return "sqlite" if self.sqlalchemy_url.drivername == "sqlite" else "postgresql"
+
+    @property
+    def nebius_chat_template_kwargs(self) -> dict[str, bool]:
+        return {"enable_thinking": self.nebius_enable_thinking}
+
 
     @property
     def sqlalchemy_url(self) -> URL:

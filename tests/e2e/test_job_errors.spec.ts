@@ -73,6 +73,8 @@ test("[simulated] expired session, network loss and storage failure recover expl
   await page.addInitScript(() => { Storage.prototype.setItem = () => { throw new DOMException("Storage disabled", "QuotaExceededError"); }; });
   await page.reload();
   // Loading another persisted record exercises a write without changing scientific state.
+  const history = page.locator("details.job-history");
+  if (!(await history.evaluate((element) => (element as HTMLDetailsElement).open))) await history.locator(":scope > summary").click();
   await page.locator(".published-list button").first().click();
   await expect(page.getByText(/Browser storage is unavailable or full/)).toBeVisible();
 });

@@ -4,10 +4,10 @@ import {
   AccessibleTable,
   ChartPanel,
   PersistedPlot,
-  chartColors,
   chartLayout,
   formatNumber,
   methodLabel,
+  methodStyle,
   scenarioKey,
 } from "./shared";
 
@@ -32,14 +32,17 @@ export function DecisionLoss(props: {
     return rows.length ? [{ method, rows }] : [];
   });
   const categories = Array.from(new Set(selected.flatMap(({ rows }) => rows.map((row) => `FP ${row.fp_cost} · FN ${row.fn_cost}`))));
-  const traces: Data[] = selected.map(({ method, rows }, index) => ({
-    type: "bar",
-    name: methodLabel(method),
-    x: rows.map((row) => `FP ${row.fp_cost} · FN ${row.fn_cost}`),
-    y: rows.map((row) => row.loss),
-    marker: { color: chartColors[index % chartColors.length] },
-    hovertemplate: `${methodLabel(method)}<br>%{x}<br>Persisted loss: %{y:.4f}<extra></extra>`,
-  }));
+  const traces: Data[] = selected.map(({ method, rows }) => {
+    const style = methodStyle(method);
+    return {
+      type: "bar",
+      name: methodLabel(method),
+      x: rows.map((row) => `FP ${row.fp_cost} · FN ${row.fn_cost}`),
+      y: rows.map((row) => row.loss),
+      marker: { color: style.color },
+      hovertemplate: `${methodLabel(method)}<br>%{x}<br>Persisted loss: %{y:.4f}<extra></extra>`,
+    };
+  });
 
   return (
     <ChartPanel

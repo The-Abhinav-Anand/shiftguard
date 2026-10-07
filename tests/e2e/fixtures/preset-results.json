@@ -1,0 +1,656 @@
+{
+  "e90c4adbda3d53664a823f84": {
+    "experiment_id": "e90c4adbda3d53664a823f84",
+    "created_at": "2026-10-02T16:55:27.970233+00:00",
+    "payload": {
+      "conditions": {
+        "no_outage_raw": {
+          "calibration": {
+            "fallback_reason": null,
+            "fit_status": "not_applicable",
+            "fitted_temperature": null,
+            "labels_consumed": 0,
+            "requested_method": "raw",
+            "resolved_method": "raw"
+          },
+          "condition_id": "0e2fd493e513383ba23af5a5",
+          "context": {
+            "dataset_id": "6d624d7a445ec17f1b172864154d4e80ab4250ad0946f61c6237d6c4e4350e65",
+            "evaluation_rows_id": "671cd613fc111c7c082dfb224989542f557fd4ed7c17c22cff7cc5793d70a3fa",
+            "predictor_id": "ae7f44ea9e5b6c2ed4f8fa4cc10c48dced02aa02501314ac43140071a65d3934",
+            "source_map_id": "bae63120da5e9bf4b4c8d85b2364fc4e10be1c5f805b67a3ad212be72a5978fb"
+          },
+          "mask_id": null,
+          "metrics": {
+            "brier_score": 0.08820837511458743,
+            "log_loss": 0.3131764240810899,
+            "reliability": [
+              {
+                "count": 5078,
+                "lower": 0.0,
+                "mean_probability": 0.07092797078487964,
+                "positive_fraction": 0.07286333202048051,
+                "upper": 0.1
+              },
+              {
+                "count": 2605,
+                "lower": 0.1,
+                "mean_probability": 0.12075212481139473,
+                "positive_fraction": 0.11362763915547025,
+                "upper": 0.2
+              },
+              {
+                "count": 233,
+                "lower": 0.2,
+                "mean_probability": 0.2354478120877906,
+                "positive_fraction": 0.3090128755364807,
+                "upper": 0.3
+              },
+              {
+                "count": 25,
+                "lower": 0.3,
+                "mean_probability": 0.3305596601260622,
+                "positive_fraction": 0.36,
+                "upper": 0.4
+              },
+              {
+                "count": 16,
+                "lower": 0.4,
+                "mean_probability": 0.4646995732685275,
+                "positive_fraction": 0.375,
+                "upper": 0.5
+              },
+              {
+                "count": 74,
+                "lower": 0.5,
+                "mean_probability": 0.5584303047722448,
+                "positive_fraction": 0.5675675675675675,
+                "upper": 0.6
+              },
+              {
+                "count": 121,
+                "lower": 0.6,
+                "mean_probability": 0.6470503445393924,
+                "positive_fraction": 0.5702479338842975,
+                "upper": 0.7
+              },
+              {
+                "count": 54,
+                "lower": 0.7,
+                "mean_probability": 0.7496321957722033,
+                "positive_fraction": 0.6851851851851852,
+                "upper": 0.8
+              },
+              {
+                "count": 32,
+                "lower": 0.8,
+                "mean_probability": 0.8352547041116744,
+                "positive_fraction": 0.84375,
+                "upper": 0.9
+              },
+              {
+                "count": 0,
+                "lower": 0.9,
+                "mean_probability": null,
+                "positive_fraction": null,
+                "upper": 1.0
+              }
+            ]
+          },
+          "name": "no_outage_raw",
+          "requested_map_id": "ae7f44ea9e5b6c2ed4f8fa4cc10c48dced02aa02501314ac43140071a65d3934",
+          "resolved_map_id": "ae7f44ea9e5b6c2ed4f8fa4cc10c48dced02aa02501314ac43140071a65d3934",
+          "status": "scored"
+        },
+        "no_outage_source_temperature": {
+          "calibration": {
+            "fallback_reason": null,
+            "fit_status": "fitted",
+            "fitted_temperature": 1.9955383604242363,
+            "labels_consumed": 6178,
+            "requested_method": "source_temperature",
+            "resolved_method": "source_temperature"
+          },
+          "condition_id": "f9e63dcc4f56e791f8325109",
+          "context": {
+            "dataset_id": "6d624d7a445ec17f1b172864154d4e80ab4250ad0946f61c6237d6c4e4350e65",
+            "evaluation_rows_id": "671cd613fc111c7c082dfb224989542f557fd4ed7c17c22cff7cc5793d70a3fa",
+            "predictor_id": "ae7f44ea9e5b6c2ed4f8fa4cc10c48dced02aa02501314ac43140071a65d3934",
+            "source_map_id": "bae63120da5e9bf4b4c8d85b2364fc4e10be1c5f805b67a3ad212be72a5978fb"
+          },
+          "mask_id": null,
+          "metrics": {
+            "brier_score": 0.08821056684165197,
+            "log_loss": 0.313181210371017,
+            "reliability": [
+              {
+                "count": 5117,
+                "lower": 0.0,
+                "mean_probability": 0.07078075033558154,
+                "positive_fraction": 0.07289427398866523,
+                "upper": 0.1
+              },
+              {
+                "count": 2568,
+                "lower": 0.1,
+                "mean_probability": 0.12066020036726098,
+                "positive_fraction": 0.11409657320872274,
+                "upper": 0.2
+              },
+              {
+                "count": 232,
+                "lower": 0.2,
+                "mean_probability": 0.23556242768797658,
+                "positive_fraction": 0.3103448275862069,
+                "upper": 0.3
+              },
+              {
+                "count": 24,
+                "lower": 0.3,
+                "mean_probability": 0.3314832343410867,
+                "positive_fraction": 0.375,
+                "upper": 0.4
+              },
+              {
+                "count": 16,
+                "lower": 0.4,
+                "mean_probability": 0.4646214147518466,
+                "positive_fraction": 0.375,
+                "upper": 0.5
+              },
+              {
+                "count": 74,
+                "lower": 0.5,
+                "mean_probability": 0.5585588280007685,
+                "positive_fraction": 0.5675675675675675,
+                "upper": 0.6
+              },
+              {
+                "count": 121,
+                "lower": 0.6,
+                "mean_probability": 0.6473577180964032,
+                "positive_fraction": 0.5702479338842975,
+                "upper": 0.7
+              },
+              {
+                "count": 54,
+                "lower": 0.7,
+                "mean_probability": 0.7500867863528106,
+                "positive_fraction": 0.6851851851851852,
+                "upper": 0.8
+              },
+              {
+                "count": 32,
+                "lower": 0.8,
+                "mean_probability": 0.8357476561300973,
+                "positive_fraction": 0.84375,
+                "upper": 0.9
+              },
+              {
+                "count": 0,
+                "lower": 0.9,
+                "mean_probability": null,
+                "positive_fraction": null,
+                "upper": 1.0
+              }
+            ]
+          },
+          "name": "no_outage_source_temperature",
+          "requested_map_id": "bae63120da5e9bf4b4c8d85b2364fc4e10be1c5f805b67a3ad212be72a5978fb",
+          "resolved_map_id": "bae63120da5e9bf4b4c8d85b2364fc4e10be1c5f805b67a3ad212be72a5978fb",
+          "status": "scored"
+        },
+        "outage_raw": {
+          "calibration": {
+            "fallback_reason": null,
+            "fit_status": "not_applicable",
+            "fitted_temperature": null,
+            "labels_consumed": 0,
+            "requested_method": "raw",
+            "resolved_method": "raw"
+          },
+          "condition_id": "eb56d89482b4432e0c0f3c3d",
+          "context": {
+            "dataset_id": "6d624d7a445ec17f1b172864154d4e80ab4250ad0946f61c6237d6c4e4350e65",
+            "evaluation_rows_id": "671cd613fc111c7c082dfb224989542f557fd4ed7c17c22cff7cc5793d70a3fa",
+            "predictor_id": "ae7f44ea9e5b6c2ed4f8fa4cc10c48dced02aa02501314ac43140071a65d3934",
+            "source_map_id": "bae63120da5e9bf4b4c8d85b2364fc4e10be1c5f805b67a3ad212be72a5978fb"
+          },
+          "mask_id": "ccf584d1efed03e1ebbce9e120c1749c4bc74b183494238560163d55867e535f",
+          "metrics": {
+            "brier_score": 0.09311145822463628,
+            "log_loss": 0.3282679429367695,
+            "reliability": [
+              {
+                "count": 3282,
+                "lower": 0.0,
+                "mean_probability": 0.07128859094242193,
+                "positive_fraction": 0.06703229737964655,
+                "upper": 0.1
+              },
+              {
+                "count": 4275,
+                "lower": 0.1,
+                "mean_probability": 0.14096068280338916,
+                "positive_fraction": 0.1111111111111111,
+                "upper": 0.2
+              },
+              {
+                "count": 362,
+                "lower": 0.2,
+                "mean_probability": 0.22931383833256455,
+                "positive_fraction": 0.20994475138121546,
+                "upper": 0.3
+              },
+              {
+                "count": 165,
+                "lower": 0.3,
+                "mean_probability": 0.33084217808010985,
+                "positive_fraction": 0.42424242424242425,
+                "upper": 0.4
+              },
+              {
+                "count": 13,
+                "lower": 0.4,
+                "mean_probability": 0.4263064750091064,
+                "positive_fraction": 0.3076923076923077,
+                "upper": 0.5
+              },
+              {
+                "count": 35,
+                "lower": 0.5,
+                "mean_probability": 0.5613676111242929,
+                "positive_fraction": 0.42857142857142855,
+                "upper": 0.6
+              },
+              {
+                "count": 63,
+                "lower": 0.6,
+                "mean_probability": 0.6435282996635576,
+                "positive_fraction": 0.5238095238095238,
+                "upper": 0.7
+              },
+              {
+                "count": 25,
+                "lower": 0.7,
+                "mean_probability": 0.7540506159781647,
+                "positive_fraction": 0.8,
+                "upper": 0.8
+              },
+              {
+                "count": 18,
+                "lower": 0.8,
+                "mean_probability": 0.8325960560436797,
+                "positive_fraction": 0.8333333333333334,
+                "upper": 0.9
+              },
+              {
+                "count": 0,
+                "lower": 0.9,
+                "mean_probability": null,
+                "positive_fraction": null,
+                "upper": 1.0
+              }
+            ]
+          },
+          "name": "outage_raw",
+          "requested_map_id": "ae7f44ea9e5b6c2ed4f8fa4cc10c48dced02aa02501314ac43140071a65d3934",
+          "resolved_map_id": "ae7f44ea9e5b6c2ed4f8fa4cc10c48dced02aa02501314ac43140071a65d3934",
+          "status": "scored"
+        },
+        "outage_source_temperature": {
+          "calibration": {
+            "fallback_reason": null,
+            "fit_status": "fitted",
+            "fitted_temperature": 1.9955383604242363,
+            "labels_consumed": 6178,
+            "requested_method": "source_temperature",
+            "resolved_method": "source_temperature"
+          },
+          "condition_id": "b5d5c62d5846cea453f20fcd",
+          "context": {
+            "dataset_id": "6d624d7a445ec17f1b172864154d4e80ab4250ad0946f61c6237d6c4e4350e65",
+            "evaluation_rows_id": "671cd613fc111c7c082dfb224989542f557fd4ed7c17c22cff7cc5793d70a3fa",
+            "predictor_id": "ae7f44ea9e5b6c2ed4f8fa4cc10c48dced02aa02501314ac43140071a65d3934",
+            "source_map_id": "bae63120da5e9bf4b4c8d85b2364fc4e10be1c5f805b67a3ad212be72a5978fb"
+          },
+          "mask_id": "ccf584d1efed03e1ebbce9e120c1749c4bc74b183494238560163d55867e535f",
+          "metrics": {
+            "brier_score": 0.09309628301193772,
+            "log_loss": 0.3282011093182061,
+            "reliability": [
+              {
+                "count": 3312,
+                "lower": 0.0,
+                "mean_probability": 0.07117791974526597,
+                "positive_fraction": 0.06733091787439613,
+                "upper": 0.1
+              },
+              {
+                "count": 4246,
+                "lower": 0.1,
+                "mean_probability": 0.14078183042737968,
+                "positive_fraction": 0.11116344795101271,
+                "upper": 0.2
+              },
+              {
+                "count": 362,
+                "lower": 0.2,
+                "mean_probability": 0.22911638587003505,
+                "positive_fraction": 0.20994475138121546,
+                "upper": 0.3
+              },
+              {
+                "count": 164,
+                "lower": 0.3,
+                "mean_probability": 0.3306829064538065,
+                "positive_fraction": 0.4268292682926829,
+                "upper": 0.4
+              },
+              {
+                "count": 13,
+                "lower": 0.4,
+                "mean_probability": 0.4261447479213778,
+                "positive_fraction": 0.3076923076923077,
+                "upper": 0.5
+              },
+              {
+                "count": 35,
+                "lower": 0.5,
+                "mean_probability": 0.5615024074000136,
+                "positive_fraction": 0.42857142857142855,
+                "upper": 0.6
+              },
+              {
+                "count": 63,
+                "lower": 0.6,
+                "mean_probability": 0.6438292031793371,
+                "positive_fraction": 0.5238095238095238,
+                "upper": 0.7
+              },
+              {
+                "count": 25,
+                "lower": 0.7,
+                "mean_probability": 0.7545097298348504,
+                "positive_fraction": 0.8,
+                "upper": 0.8
+              },
+              {
+                "count": 18,
+                "lower": 0.8,
+                "mean_probability": 0.8330909638055979,
+                "positive_fraction": 0.8333333333333334,
+                "upper": 0.9
+              },
+              {
+                "count": 0,
+                "lower": 0.9,
+                "mean_probability": null,
+                "positive_fraction": null,
+                "upper": 1.0
+              }
+            ]
+          },
+          "name": "outage_source_temperature",
+          "requested_map_id": "bae63120da5e9bf4b4c8d85b2364fc4e10be1c5f805b67a3ad212be72a5978fb",
+          "resolved_map_id": "bae63120da5e9bf4b4c8d85b2364fc4e10be1c5f805b67a3ad212be72a5978fb",
+          "status": "scored"
+        },
+        "outage_target_temperature": {
+          "calibration": {
+            "fallback_reason": null,
+            "fit_status": "fitted",
+            "fitted_temperature": 1.1749746012897315,
+            "labels_consumed": 50,
+            "requested_method": "target_temperature",
+            "resolved_method": "target_temperature"
+          },
+          "condition_id": "75a44774d2370c4cdefc921f",
+          "context": {
+            "acquisition_order_id": "7e8771d396a5141534253eed787bda1965af28f0a07f3e2f9eb4212fc17cf5f7",
+            "dataset_id": "6d624d7a445ec17f1b172864154d4e80ab4250ad0946f61c6237d6c4e4350e65",
+            "evaluation_rows_id": "671cd613fc111c7c082dfb224989542f557fd4ed7c17c22cff7cc5793d70a3fa",
+            "predictor_id": "ae7f44ea9e5b6c2ed4f8fa4cc10c48dced02aa02501314ac43140071a65d3934",
+            "source_map_id": "bae63120da5e9bf4b4c8d85b2364fc4e10be1c5f805b67a3ad212be72a5978fb"
+          },
+          "mask_id": "ccf584d1efed03e1ebbce9e120c1749c4bc74b183494238560163d55867e535f",
+          "metrics": {
+            "brier_score": 0.09723315692518403,
+            "log_loss": 0.3731652381999871,
+            "reliability": [
+              {
+                "count": 7733,
+                "lower": 0.0,
+                "mean_probability": 0.032917919994737525,
+                "positive_fraction": 0.09427130479762058,
+                "upper": 0.1
+              },
+              {
+                "count": 207,
+                "lower": 0.1,
+                "mean_probability": 0.14131235345331217,
+                "positive_fraction": 0.2463768115942029,
+                "upper": 0.2
+              },
+              {
+                "count": 136,
+                "lower": 0.2,
+                "mean_probability": 0.23357406786751977,
+                "positive_fraction": 0.4338235294117647,
+                "upper": 0.3
+              },
+              {
+                "count": 18,
+                "lower": 0.3,
+                "mean_probability": 0.33898261480506237,
+                "positive_fraction": 0.3333333333333333,
+                "upper": 0.4
+              },
+              {
+                "count": 3,
+                "lower": 0.4,
+                "mean_probability": 0.43405473653006865,
+                "positive_fraction": 0.0,
+                "upper": 0.5
+              },
+              {
+                "count": 14,
+                "lower": 0.5,
+                "mean_probability": 0.5455615220197765,
+                "positive_fraction": 0.2857142857142857,
+                "upper": 0.6
+              },
+              {
+                "count": 35,
+                "lower": 0.6,
+                "mean_probability": 0.6578874382170874,
+                "positive_fraction": 0.5714285714285714,
+                "upper": 0.7
+              },
+              {
+                "count": 45,
+                "lower": 0.7,
+                "mean_probability": 0.7391385053877089,
+                "positive_fraction": 0.5111111111111111,
+                "upper": 0.8
+              },
+              {
+                "count": 24,
+                "lower": 0.8,
+                "mean_probability": 0.8505328929409549,
+                "positive_fraction": 0.7083333333333334,
+                "upper": 0.9
+              },
+              {
+                "count": 23,
+                "lower": 0.9,
+                "mean_probability": 0.9308485171267501,
+                "positive_fraction": 0.8260869565217391,
+                "upper": 1.0
+              }
+            ]
+          },
+          "name": "outage_target_temperature",
+          "requested_map_id": "0ceb75d3671c38fe00f3082a2fdd5518680e0c6fbe458b4841fea3af5a6e32e2",
+          "resolved_map_id": "0ceb75d3671c38fe00f3082a2fdd5518680e0c6fbe458b4841fea3af5a6e32e2",
+          "status": "scored"
+        }
+      },
+      "config": {
+        "dataset_csv": "var\\datasets\\bank-additional-full.csv",
+        "dataset_manifest": "var\\datasets\\bank-marketing.manifest.json",
+        "evaluation_tier": "development",
+        "features": [
+          "age",
+          "job",
+          "marital",
+          "education",
+          "default",
+          "housing",
+          "loan",
+          "pdays",
+          "previous",
+          "poutcome"
+        ],
+        "history_row_probability": 0.5,
+        "master_seed": 31001,
+        "protocol_id": "sg-protocol-1.0-draft",
+        "role_fractions": {
+          "final_test": 0.2,
+          "source_cal": 0.15,
+          "target_pool": 0.1,
+          "train": 0.55
+        },
+        "run_type": "outage_recovery",
+        "source_calibrator": "source_temperature",
+        "target_calibrator": "target_temperature",
+        "target_label_budget": 50
+      }
+    },
+    "content_hashes": {
+      "acquisition": "fcd2c75e271f3ccdea59e19f5cdb372d4f9f7b9090a735b22f4af1cbfa953b90",
+      "comparisons": "fb579886ef92d0ce175d24ee8b1ea0a5d52a71b42962a293bd85d7e9b0772eca",
+      "conditions": "d2af801501ebff7f5b55be911b5a1546f89e80bc9ef9acdae9dfc6cf128ec613",
+      "config": "75a05a34d862459ddb4fdadd1dbf09b1d785e9a3b5954034d9f15028d8891b13",
+      "logical_content": "e90c4adbda3d53664a823f84a1f8e64f6da6646b21fbb0739086fe609b75854f",
+      "masks": "072d04fb7ca41e59d70f78aca14b9982a9bbba3e05aa29062b1bada52adedf15",
+      "metadata": "be5079018b3cd16794d5f270f45ef6d42d2ce7697e939ce6c80496899b299d87",
+      "seeds": "238ad97d7728ad789ddc60e6a7181a7b175c4258d0047fe18d659528df24f27e"
+    }
+  },
+  "dd4c68fc6c73b128e23cfd97": {
+    "experiment_id": "dd4c68fc6c73b128e23cfd97",
+    "created_at": "2026-10-02T16:56:19.090506+00:00",
+    "payload": {
+      "config": {
+        "dataset_csv": "var\\datasets\\bank-additional-full.csv",
+        "dataset_manifest": "var\\datasets\\bank-marketing.manifest.json",
+        "evaluation_tier": "development",
+        "features": [
+          "age",
+          "job",
+          "marital",
+          "education",
+          "default",
+          "housing",
+          "loan",
+          "pdays",
+          "previous",
+          "poutcome"
+        ],
+        "master_seed": 31001,
+        "protocol_id": "sg-protocol-1.0-draft",
+        "role_fractions": {
+          "final_test": 0.2,
+          "source_cal": 0.15,
+          "target_pool": 0.1,
+          "train": 0.55
+        }
+      },
+      "metrics": {
+        "brier_score": 0.08820837511458743,
+        "log_loss": 0.3131764240810899,
+        "reliability": [
+          {
+            "count": 5078,
+            "lower": 0.0,
+            "mean_probability": 0.07092797078487964,
+            "positive_fraction": 0.07286333202048051,
+            "upper": 0.1
+          },
+          {
+            "count": 2605,
+            "lower": 0.1,
+            "mean_probability": 0.12075212481139473,
+            "positive_fraction": 0.11362763915547025,
+            "upper": 0.2
+          },
+          {
+            "count": 233,
+            "lower": 0.2,
+            "mean_probability": 0.2354478120877906,
+            "positive_fraction": 0.3090128755364807,
+            "upper": 0.3
+          },
+          {
+            "count": 25,
+            "lower": 0.3,
+            "mean_probability": 0.3305596601260622,
+            "positive_fraction": 0.36,
+            "upper": 0.4
+          },
+          {
+            "count": 16,
+            "lower": 0.4,
+            "mean_probability": 0.4646995732685275,
+            "positive_fraction": 0.375,
+            "upper": 0.5
+          },
+          {
+            "count": 74,
+            "lower": 0.5,
+            "mean_probability": 0.5584303047722448,
+            "positive_fraction": 0.5675675675675675,
+            "upper": 0.6
+          },
+          {
+            "count": 121,
+            "lower": 0.6,
+            "mean_probability": 0.6470503445393924,
+            "positive_fraction": 0.5702479338842975,
+            "upper": 0.7
+          },
+          {
+            "count": 54,
+            "lower": 0.7,
+            "mean_probability": 0.7496321957722033,
+            "positive_fraction": 0.6851851851851852,
+            "upper": 0.8
+          },
+          {
+            "count": 32,
+            "lower": 0.8,
+            "mean_probability": 0.8352547041116744,
+            "positive_fraction": 0.84375,
+            "upper": 0.9
+          },
+          {
+            "count": 0,
+            "lower": 0.9,
+            "mean_probability": null,
+            "positive_fraction": null,
+            "upper": 1.0
+          }
+        ]
+      }
+    },
+    "content_hashes": {
+      "config": "309a252cefc6156543aca218c78c76d29729bd2259440850e391225726268715",
+      "logical_content": "dd4c68fc6c73b128e23cfd9744975647763b6d3ca33a80bd33788e6d7471fd85",
+      "metadata": "4c37d63cb01e030ca0d7a93bed2ae539a77f45e836a13ce681c67f86b086b748",
+      "result": "d8ea59271109e1301fda24b41a8845564789dc6b24e359b70331d4efc06c15f4",
+      "seeds": "049eb851d5a4c43a6103529aa5bc444f30b8bfc9a5a7914e1d934dbe64c39091",
+      "splits": "9f1c285eea1fb02d6d634799190bafbc56bef9f9b5d5ee42e18b189c5ec63a32"
+    }
+  }
+}

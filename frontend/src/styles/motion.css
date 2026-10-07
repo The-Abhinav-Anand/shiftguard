@@ -1,0 +1,14 @@
+.overview-button,
+.overview-nav a,
+.overview-text-link,
+.sg-scene__chapter-controls button,
+.sg-scene__pause,
+.sg-scene__activate,
+.sg-scene__status button { transition-duration: 140ms; }
+
+.overview-chapter[data-reveal] { will-change: transform; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  .overview-chapter[data-reveal] { will-change: auto; }
+}

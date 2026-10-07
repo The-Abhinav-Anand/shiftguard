@@ -1,12 +1,12 @@
 {
   "handoff_id": "gate5-accepted-20260929",
-  "status": "GATE5_ACCEPTED_GATE6_READY",
+  "status": "GATE6_PENDING_RUNTIME_GATE7_CORRECTION_REVIEW",
   "candidate_commit": "f63116fedc2751493d79d44897ba913b6d28b0b5",
   "branch": "implementation/gate-0",
-  "active_writer": null,
-  "current_gate": 5,
-  "next_gate": 6,
-  "next_gate_status": "READY_NOT_STARTED",
+  "active_writer": "NONE",
+  "current_gate": 6,
+  "next_gate": 7,
+  "next_gate_status": "PENDING",
   "review": "docs/gate5-correction-review.md",
   "acceptance": "../verification/gate5/correction-review-20260929/acceptance.json",
   "evidence": {
@@ -58,7 +58,11 @@
     "wheel_sha256": "bbbb730b6461bdfaed78be64abec39878f15fbdcf411f756481b652d6ce58c09",
     "source_digest": "8fa58a42c94b30a820bf7beef85031fc0f9de5ad7e13befb4aca581177e768b1"
   },
-  "blockers": [],
+  "blockers": [
+    "CLEAN_SOURCE_CHECKPOINT",
+    "GENUINE_LIVE_WORKFLOW_AND_NEGATIVE_CHALLENGE",
+    "SEPARATE_GOVERNANCE_CHECKPOINT"
+  ],
   "deferred": [
     "SCI-03",
     "SCI-04",
@@ -69,23 +73,24 @@
   "next": "docs/next-execution.md",
   "execution_policy": {
     "implementer": {
-      "platform": "Antigravity",
-      "model": "user-configured; not specified by this workflow"
-    },
-    "planner_reviewer": {
-      "model": "gpt-6-astra",
+      "platform": "Codex subagents",
+      "model": "gpt-6-luna",
+      "count": 4,
       "reasoning_effort": "xhigh"
     },
+    "planner_reviewer": {
+      "model": "gpt-6.1-sol"
+    },
     "workflow": "docs/loop-engineering.md",
-    "execution_packet": "docs/gate6-batch.md",
-    "antigravity_allowed": true,
+    "execution_packet": "docs/product-refresh-20260930/luna-major-batch-01.md",
+    "antigravity_allowed": false,
     "batch_policy": "Complete vertical batches; consolidated review; correction-only re-review",
-    "effective_date": "2026-09-28"
+    "effective_date": "2026-10-01"
   },
-  "next_batch": "AG-G6-OFFLINE",
-  "next_batch_status": "READY_NOT_STARTED",
+  "next_batch": "G7_CORRECTION_EXIT",
+  "next_batch_status": "LIVE_PREFLIGHT_VERIFIED_RUNTIME_WORKFLOW_NOT_RUN",
   "implementation_agent": null,
-  "reviewer_agent": null,
+  "reviewer_agent": "gpt-6.1-sol xhigh (not launched)",
   "evidence_scope": "Top-level evidence object preserves accepted Gate 4 history; gate5 records current accepted browser evidence.",
   "gate5": {
     "source_commit": "f63116fedc2751493d79d44897ba913b6d28b0b5",
@@ -129,6 +134,697 @@
     "acceptance": "ACCEPTED",
     "binding_note": "Tests ran against frozen working bytes before commit; all 36 reviewed files bind to committed blobs. Original review and pre-acceptance evidence retain their historical pending states. Separate governance checkpoint is recorded in acceptance.json."
   },
-  "assigned_writer": "antigravity",
-  "prior_reviewer_agent": "01a0e9fa-24b7-7651-8a14-e1c669322abf"
+  "assigned_writer": "NONE",
+  "prior_reviewer_agent": "01a0e9fa-24b7-7651-8a14-e1c669322abf",
+  "gate6": {
+    "status": "PENDING_REQUIRED_EVIDENCE",
+    "prerequisite": "Gate 5 accepted on f63116fedc2751493d79d44897ba913b6d28b0b5",
+    "active_packet": "docs/product-refresh-20260930/PRODUCT_RECOVERY_20261002.md",
+    "assigned_implementer": "four_scoped_gpt6_luna_agents",
+    "reviewer": "gpt-6.1-sol xhigh",
+    "review": "../verification/product-recovery-20261002/sol-backend-review/corrections-review/review.json",
+    "application_review": "docs/gate6-correction-sol-review-20261001.md",
+    "review_verdict": "PASS_CORRECTION_SCOPE",
+    "reviewed_source_digest": "0a9c0637629a4a9512800b9e1f33da33e8286de9dcd43d207f9f266957e09e28",
+    "open_findings": [],
+    "acceptance": "PENDING",
+    "next_batch": "G6-REQUIRED-EVIDENCE-AND-ACCEPTANCE",
+    "evidence": "../verification/gate6/correction-review-20261001/review-record.json",
+    "live_status": "AUTHENTICATED_MODEL_ACCESS_CONFIRMED_CANARY_FAILED",
+    "batch": "AG-G6-CORRECTIONS-01",
+    "resolved_findings": [
+      "G6-S04",
+      "G6-S06",
+      "G6-S13"
+    ],
+    "corrections": "docs/gate6-corrections-02.md",
+    "parent_evidence": "../verification/gate6/correction-review-20261001/review-record.json",
+    "working_head": "83037b0f02eef62203c3f565a063d824af2722d7",
+    "dirty": true,
+    "author_declared_digest": "fd84e1ff09bffc67a24d6d6f26aa6ffc8d4b4dcfca2c2ad96ab5a3a8926cbf1a",
+    "source_packet_mismatches": [
+      "docs/gate6-implementation.md"
+    ],
+    "source_commit": "NOT_CREATED",
+    "initial_review": "docs/gate6-review.md",
+    "initial_verdict": "BLOCKERS",
+    "original_application_review": "docs/gate6-sol-review.md",
+    "original_corrections": "docs/gate6-corrections.md",
+    "author_attempt": "../verification/gate6/corrections-954b80fb-d425-48d3-b157-d93a7a91b906",
+    "author_claim": "All 25 resolved; historical producer claim, not independent acceptance",
+    "execution_status": "OFFLINE_CORRECTIONS_VERIFIED",
+    "review_trigger": "Integrated major batch tested and frozen",
+    "luna_major_offline_review": {
+      "status": "OFFLINE_VERIFIED_INDEPENDENT_REVIEW_INCOMPLETE_BUDGET",
+      "report": "C:\\Users\\Abhinav Anand\\Downloads\\nvidia\\shiftguard\\docs\\product-refresh-20260930\\LUNA_MAJOR_BATCH_01_REVIEW.md",
+      "source_digest": "6d734dc0b7573dffbcf13e155f0e1f0590c4fa25de98c632742cb95cf1b3c6fd",
+      "source_commit": null,
+      "gate_acceptance": "PENDING",
+      "full_suite_passed": 504,
+      "browser_passed": 25,
+      "hygiene_passed": 16,
+      "unique_collected_with_passing_execution": 505,
+      "reviewer": "gpt-6.1-sol xhigh",
+      "reviewer_agent": "01a0f813-bb83-7090-ab28-25f9a68c9bb9",
+      "usage_ceiling_reached": true,
+      "live_A7": "BLOCKED_NOT_RUN",
+      "checkpoint_type": "Separate parent governance after frozen-source verification; no code changes"
+    },
+    "renewed_review": {
+      "live_A7": "BLOCKED_NOT_RUN",
+      "material_blockers": 10,
+      "status": "BLOCKERS",
+      "corrections": "IN_PROGRESS",
+      "gate_acceptance": "PENDING",
+      "source_digest": "6d734dc0b7573dffbcf13e155f0e1f0590c4fa25de98c632742cb95cf1b3c6fd",
+      "report": "verification/product-execution-20261001/frontend-cleanup-major-01/gate6-renewed-review/review.json"
+    },
+    "latest_execution_checkpoint": {
+      "updated_utc": "2026-10-02T14:47:45.262473+00:00",
+      "state": "PRODUCT_RECOVERED_OFFLINE_CORRECTIONS_VERIFIED_GATE6_PENDING",
+      "head": "83037b0f02eef62203c3f565a063d824af2722d7",
+      "dirty": true,
+      "commit_created": false,
+      "deployment": false,
+      "live_provider_calls": false,
+      "active_writer": "NONE",
+      "gate6_acceptance": "PENDING",
+      "open_material_blockers_in_reviewed_scope": [],
+      "closed_findings": [
+        "C01_QUOTED_SELECTION_AUTHORITY",
+        "C02_RESERVED_REPAIR_RECOVERY",
+        "C02_MULTISIGNATURE_RESERVATION",
+        "AFR-01",
+        "AFR-02"
+      ],
+      "backend_review": "../verification/product-recovery-20261002/sol-backend-review/corrections-review/review.json",
+      "frontend_review": "../verification/product-recovery-20261002/astra-frontend-review/corrections-review/review.json",
+      "review_verdicts": {
+        "backend": "PASS_CORRECTION_SCOPE",
+        "frontend": "PASS_CORRECTION_SCOPE"
+      },
+      "full_suite": {
+        "tests": 562,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 562,
+        "seconds": 945.107,
+        "evidence": "full-final-junit.xml",
+        "sha256": "679c4684b4fcd9bd9ad350fb589a2689e91ebc183f9fd11ea5e526b6cb6170fc"
+      },
+      "focused_correction": {
+        "tests": 52,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 52,
+        "seconds": 19.151,
+        "evidence": "c02-parent-correction/after-junit.xml",
+        "sha256": "155d474422ec69552fcaec1f776e727fb93420035b42e1ad86dc4806851f07c4"
+      },
+      "browser": {
+        "final_normal": 3,
+        "workbench_closure": 10,
+        "refresh": 17,
+        "all_skips": 0
+      },
+      "source_binding": "../verification/product-recovery-20261002/final-source-binding.json",
+      "backend_digest": "0a9c0637629a4a9512800b9e1f33da33e8286de9dcd43d207f9f266957e09e28",
+      "frontend_digest": "7c1266133755ca384840260e155716d0450f14ba521bc93ad826b81921916947",
+      "wheel": {
+        "sha256": "8b70437f5fcd3b64aa6f4f2050194a14e26790718ca8bb26804b4d01a86833d9",
+        "python_files": 90,
+        "static_files": 13,
+        "migrations": 10,
+        "runtime_probes": 7,
+        "import_origins": 89,
+        "historical_sqlite_preserved": true
+      },
+      "normal_engine": {
+        "status": "PASS",
+        "ordinary_app": true,
+        "test_harness": false,
+        "scripted_provider": false,
+        "live_provider_calls": false,
+        "origin": "http://127.0.0.1:8000",
+        "job_id": "3f2ec249-50c7-4dcc-8b6d-9cfd93d66326",
+        "experiment_id": "d8a18a371c8c88ee20ba1087",
+        "conditions": 400,
+        "events": [
+          {
+            "status": "queued",
+            "elapsed_seconds": 0.015
+          },
+          {
+            "status": "running",
+            "elapsed_seconds": 1.021
+          },
+          {
+            "status": "completed",
+            "elapsed_seconds": 112.619
+          }
+        ],
+        "elapsed_seconds": 112.833,
+        "credentials_retained": false,
+        "source_dirty": true,
+        "evaluation_tier": "development"
+      },
+      "normal_default_postrestart": {
+        "status": "PASS",
+        "origin": "http://127.0.0.1:8000",
+        "preset": "bank-outage-50",
+        "job_id": "34a02f95-5668-4c97-971c-45b1766eafd4",
+        "experiment_id": "e90c4adbda3d53664a823f84",
+        "conditions": 5,
+        "events": [
+          {
+            "status": "queued",
+            "elapsed_seconds": 0.004
+          },
+          {
+            "status": "running",
+            "elapsed_seconds": 0.581
+          },
+          {
+            "status": "completed",
+            "elapsed_seconds": 2.114
+          }
+        ],
+        "elapsed_seconds": 2.154,
+        "ordinary_app": true,
+        "test_harness": false,
+        "live_provider_calls": false,
+        "credentials_retained": false,
+        "evaluation_tier": "development"
+      },
+      "local_url": "http://127.0.0.1:8000/",
+      "research_pdf": "../research/SHIFTGUARD_Working_Paper_v0.2.pdf",
+      "research_pages": 7,
+      "remaining_prerequisites": [
+        "Authorized live A7 provider proof",
+        "Parent-owned source/acceptance checkpoint when authorized"
+      ],
+      "live_A7": "NOT_RUN",
+      "public_assistant": "BLOCKED",
+      "report": "docs/product-refresh-20260930/PRODUCT_RECOVERY_20261002.md"
+    },
+    "history_before_product_recovery": {
+      "status": "PENDING_CORRECTIONS_REQUIRED",
+      "prerequisite": "Gate 5 accepted on f63116fedc2751493d79d44897ba913b6d28b0b5",
+      "active_packet": "docs/product-refresh-20260930/luna-major-batch-01.md",
+      "assigned_implementer": "four_scoped_gpt6_luna_agents",
+      "reviewer": "gpt-6.1-sol xhigh",
+      "review": "docs/gate6-correction-review-20261001.md",
+      "application_review": "docs/gate6-correction-sol-review-20261001.md",
+      "review_verdict": "BLOCKERS",
+      "reviewed_source_digest": "28731222f12c4237e8e55d7a986a50868c82d6ae153b48a1394ca4d109409ffa",
+      "open_findings": [
+        "G6-S01",
+        "G6-S02",
+        "G6-S03",
+        "G6-S05",
+        "G6-S07",
+        "G6-S08",
+        "G6-S09",
+        "G6-S10",
+        "G6-S11",
+        "G6-S12",
+        "G6-S14",
+        "G6-S15",
+        "G6-S16",
+        "G6-S17",
+        "G6-S18",
+        "G6-P01",
+        "G6-P02",
+        "G6-P03",
+        "G6-P04",
+        "G6-P05",
+        "G6-P06",
+        "G6-P07"
+      ],
+      "acceptance": "PENDING",
+      "next_batch": "LUNA6-G6-MAJOR-01",
+      "evidence": "../verification/gate6/correction-review-20261001/review-record.json",
+      "live_status": "BLOCKED_REQUIRED_LIVE_EVIDENCE",
+      "batch": "AG-G6-CORRECTIONS-01",
+      "resolved_findings": [
+        "G6-S04",
+        "G6-S06",
+        "G6-S13"
+      ],
+      "corrections": "docs/gate6-corrections-02.md",
+      "parent_evidence": "../verification/gate6/correction-review-20261001/review-record.json",
+      "working_head": "83037b0f02eef62203c3f565a063d824af2722d7",
+      "dirty": true,
+      "author_declared_digest": "fd84e1ff09bffc67a24d6d6f26aa6ffc8d4b4dcfca2c2ad96ab5a3a8926cbf1a",
+      "source_packet_mismatches": [
+        "docs/gate6-implementation.md"
+      ],
+      "source_commit": "NOT_CREATED",
+      "initial_review": "docs/gate6-review.md",
+      "initial_verdict": "BLOCKERS",
+      "original_application_review": "docs/gate6-sol-review.md",
+      "original_corrections": "docs/gate6-corrections.md",
+      "author_attempt": "../verification/gate6/corrections-954b80fb-d425-48d3-b157-d93a7a91b906",
+      "author_claim": "All 25 resolved; historical producer claim, not independent acceptance",
+      "execution_status": "IMPLEMENTING",
+      "review_trigger": "Integrated major batch tested and frozen",
+      "luna_major_offline_review": {
+        "status": "OFFLINE_VERIFIED_INDEPENDENT_REVIEW_INCOMPLETE_BUDGET",
+        "report": "C:\\Users\\Abhinav Anand\\Downloads\\nvidia\\shiftguard\\docs\\product-refresh-20260930\\LUNA_MAJOR_BATCH_01_REVIEW.md",
+        "source_digest": "6d734dc0b7573dffbcf13e155f0e1f0590c4fa25de98c632742cb95cf1b3c6fd",
+        "source_commit": null,
+        "gate_acceptance": "PENDING",
+        "full_suite_passed": 504,
+        "browser_passed": 25,
+        "hygiene_passed": 16,
+        "unique_collected_with_passing_execution": 505,
+        "reviewer": "gpt-6.1-sol xhigh",
+        "reviewer_agent": "01a0f813-bb83-7090-ab28-25f9a68c9bb9",
+        "usage_ceiling_reached": true,
+        "live_A7": "BLOCKED_NOT_RUN",
+        "checkpoint_type": "Separate parent governance after frozen-source verification; no code changes"
+      },
+      "renewed_review": {
+        "live_A7": "BLOCKED_NOT_RUN",
+        "material_blockers": 10,
+        "status": "BLOCKERS",
+        "corrections": "IN_PROGRESS",
+        "gate_acceptance": "PENDING",
+        "source_digest": "6d734dc0b7573dffbcf13e155f0e1f0590c4fa25de98c632742cb95cf1b3c6fd",
+        "report": "verification/product-execution-20261001/frontend-cleanup-major-01/gate6-renewed-review/review.json"
+      },
+      "latest_execution_checkpoint": {
+        "updated_utc": "2026-10-01T19:32:22.195314+00:00",
+        "state": "FRONTEND_IMPLEMENTED_CLEANUP_EXECUTED_GATE6_BLOCKERS",
+        "head": "83037b0f02eef62203c3f565a063d824af2722d7",
+        "dirty": true,
+        "commit_created": false,
+        "deployment": false,
+        "live_provider_calls": false,
+        "gate6_acceptance": "PENDING",
+        "open_material_blockers": [
+          "C01_QUOTED_SELECTION_AUTHORITY",
+          "C02_RESERVED_REPAIR_RECOVERY"
+        ],
+        "frontend_fr01": "AUTHOR_CORRECTED_PARENT_4_PROBES_PASS_NO_INDEPENDENT_POSTFIX_PASS",
+        "refresh_browser_03": {
+          "passed": 17,
+          "skipped": 0
+        },
+        "real_workbench_browser_03": {
+          "passed": 10,
+          "skipped": 0,
+          "mode": "offline real API/queue/worker plus fault injection"
+        },
+        "final_static_hygiene_preflight": {
+          "passed": 34,
+          "warnings": 2
+        },
+        "full_python_suite": "INCOMPLETE_TERMINATED_LONG_RUNTIME; stale catalog failure corrected and targeted checks pass",
+        "new_wheel": "NOT_RUN",
+        "deleted_files": 187,
+        "deleted_bytes": 3017929,
+        "inventory_already_absent": 2,
+        "protected_files": 50,
+        "protected_mismatches": [],
+        "binding": "final-installed-source-binding.json",
+        "report": "shiftguard/docs/product-refresh-20260930/FRONTEND_CLEANUP_EXECUTION_20261002.md"
+      }
+    },
+    "current_frontend_correction": {
+      "status": "VERIFIED",
+      "source_digest": "7928447b18b9c9d5e2b68014450d6b58292647ba17a2b017caea5b2f0bec96b3",
+      "checkpoint": "../verification/frontend-results-20261004/checkpoint.json",
+      "source_manifest": "../verification/frontend-results-20261004/final-source.json",
+      "report": "docs/frontend-results-fix-20261005.md",
+      "browser_passed": 6,
+      "static_passed": 5,
+      "typecheck": "PASS",
+      "build": "PASS",
+      "astra_review": "PASS_CODE_READ",
+      "updated_utc": "2026-10-04T22:00:52.037040+00:00",
+      "runtime": "../verification/frontend-results-20261004/runtime-20261005.json"
+    },
+    "current_live_attempt": {
+      "status": "AUTHENTICATED_CHAT_CANARY_FAILED",
+      "failure": "PING_CONTENT_INVALID",
+      "provider": "Nebius Token Factory",
+      "model": "nvidia/Nemotron-3_5-Lightning",
+      "requests": 1,
+      "reported_tokens": 38,
+      "automatic_retries": 0,
+      "evidence": "../verification/gate6-live-20261005-corrected-33e7a07c/preflight.json",
+      "remaining_corrected_key_attempt_allowance": {
+        "requests": 2,
+        "token_allowance": 7842
+      },
+      "full_runtime_proof": "NOT_RUN"
+    },
+    "live_provider_preflight": {
+      "status": "PASS",
+      "provider": "nebius",
+      "model": "nvidia/Nemotron-3_5-Lightning",
+      "requests": 3,
+      "remaining_requests_this_batch": 0,
+      "reported_tokens": 524,
+      "reserved_tokens": 2419,
+      "sdk_retries": 0,
+      "evidence": "../verification/gate6-live-20261007-ad2102e158ab/preflight.json"
+    }
+  },
+  "active_execution": {
+    "batch": "FRONTEND-RESULTS-20261004",
+    "status": "FROZEN_VERIFIED",
+    "review_status": "PASS_CORRECTION_SCOPE",
+    "evidence": "../verification/frontend-results-20261004/checkpoint.json"
+  },
+  "luna_major_review": {
+    "status": "OFFLINE_VERIFIED_INDEPENDENT_REVIEW_INCOMPLETE_BUDGET",
+    "report": "C:\\Users\\Abhinav Anand\\Downloads\\nvidia\\shiftguard\\docs\\product-refresh-20260930\\LUNA_MAJOR_BATCH_01_REVIEW.md",
+    "source_digest": "6d734dc0b7573dffbcf13e155f0e1f0590c4fa25de98c632742cb95cf1b3c6fd",
+    "source_commit": null,
+    "gate_acceptance": "PENDING",
+    "full_suite_passed": 504,
+    "browser_passed": 25,
+    "hygiene_passed": 16,
+    "unique_collected_with_passing_execution": 505,
+    "reviewer": "gpt-6.1-sol xhigh",
+    "reviewer_agent": "01a0f813-bb83-7090-ab28-25f9a68c9bb9",
+    "usage_ceiling_reached": true,
+    "live_A7": "BLOCKED_NOT_RUN",
+    "checkpoint_type": "Separate parent governance after frozen-source verification; no code changes"
+  },
+  "historical_blockers_before_20261002": [
+    "G6-S01",
+    "G6-S02",
+    "G6-S03",
+    "G6-S05",
+    "G6-S07",
+    "G6-S08",
+    "G6-S09",
+    "G6-S10",
+    "G6-S11",
+    "G6-S12",
+    "G6-S14",
+    "G6-S15",
+    "G6-S16",
+    "G6-S17",
+    "G6-S18",
+    "G6-P01",
+    "G6-P02",
+    "G6-P03",
+    "G6-P04",
+    "G6-P05",
+    "G6-P06",
+    "G6-P07"
+  ],
+  "latest_execution_checkpoint": {
+    "updated_utc": "2026-10-04T07:28:26.830746+00:00",
+    "state": "OFFLINE_CORRECTIONS_VERIFIED_GATE6_PENDING_LIVE_EVIDENCE",
+    "source_digest": "8bb8cb4c68e813dc44781acc236b0d63de6bd3b7c2077dd58e897cda47c260af",
+    "source_manifest": "final-source.json",
+    "final_residual_delta": [
+      "shiftguard/agent/controller.py",
+      "shiftguard/agent/policy.py",
+      "tests/agent/test_g6_call_id_boundary.py",
+      "tests/agent/test_g6_nul_id.py"
+    ],
+    "source_commit": null,
+    "commit_created": false,
+    "deployment": false,
+    "live_provider_calls": false,
+    "active_writer": "NONE",
+    "gate6_acceptance": "PENDING",
+    "closed_findings": [
+      "C03",
+      "C04",
+      "C05",
+      "C06",
+      "C07",
+      "PR01",
+      "PR02",
+      "PR03",
+      "SR01",
+      "SR02",
+      "SR03",
+      "INT01",
+      "PR03-R1"
+    ],
+    "open_material_blockers_in_reviewed_correction_scope": [],
+    "full_suite": {
+      "tests": 611,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 611,
+      "postgresql_cases": 108,
+      "duration_seconds": 983.338,
+      "sha256": "74db0ee7bc3ee99f4dab43b56da71c7bcbc605fbd817a1b5cadf519714324008",
+      "exit_code": 0,
+      "warnings": 2,
+      "exit_code_evidence": "Parent retrieved completed exec session 87576 on 4 October 2026: exit_code=0."
+    },
+    "browser": {
+      "startTime": "2026-10-03T08:35:22.660Z",
+      "duration": 125206.22,
+      "expected": 17,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "wheel": {
+      "status": "PASS",
+      "sha256": "4d8db45cedeb2226e0f2c443d95aa5772a2ab90045283e5578a74c5837a49d4c",
+      "runtime_probes": 9,
+      "module_origins": 90,
+      "historical_database_unchanged": true
+    },
+    "reviews": {
+      "surface": "PASS",
+      "backend_original": "BLOCKERS_PRESERVED",
+      "backend_residual": "PASS",
+      "residual_source_binding": {
+        "verdict": "PASS",
+        "scope": "Residual-only PR03-R1 input-guard review; no Gate 6 acceptance claim",
+        "root": "C:/Users/Abhinav Anand/Downloads/nvidia/shiftguard",
+        "contract": "IDs are nonempty strings, valid UTF-8, at most 256 encoded bytes, exclude U+0000; accepted IDs preserved exactly.",
+        "source": {
+          "head": "83037b0f02eef62203c3f565a063d824af2722d7",
+          "checkout_clean": false,
+          "manifest": "../final-source.json",
+          "declared_digest": "8bb8cb4c68e813dc44781acc236b0d63de6bd3b7c2077dd58e897cda47c260af",
+          "manifest_sha256": "451ab550669ffeca87467ed8465a4a44acb90034fdd52a7e2c421705deb0249c",
+          "verification": "All five reviewed file hashes independently computed and matched manifest.files; aggregate digest not independently recomputed; no post-review hash pass.",
+          "sha256": {
+            "shiftguard/agent/policy.py": "3c1b57eca5de8f92d37e1a79222d2591ba618243685b21e1bb05066b18a419e7",
+            "shiftguard/agent/controller.py": "776812f34099650a656ae39c42bba8620848246691888a7071211355766064dc",
+            "shiftguard/agent/registry.py": "ca764d79cc960e342848a7f7ada56bf211e1dcc12135bb62f1152adb2191a498",
+            "tests/agent/test_g6_nul_id.py": "36ee55bf3198259d41bafb591e6be195824b56623814b096a6e1a9aab7ffa635",
+            "tests/agent/test_g6_call_id_boundary.py": "0599dbd5862f55166730f789031cec81e27b5997182f65a1f3c838ab5cbebc11"
+          }
+        },
+        "closed_residual": {
+          "id": "PR03-R1",
+          "basis": [
+            "policy.py:8-15 rejects nonstrings, empty strings and NUL before UTF-8 encoding; strict encoding rejects surrogates; encoded length is bounded to 256; accepted value returned unchanged.",
+            "controller.py:353 rejects invalid IDs inside _normalize_decision before checkpoint_decision at line 507; accepted decision and assistant message retain original ID.",
+            "registry.py:305-309 uses the same helper before argument preparation or handler dispatch, preserving accepted ID unchanged.",
+            "NUL regressions inspect direct registry plus synchronous/job controller rejection, with no accepted checkpoint, execution or job; fixture parametrizes SQLite/PostgreSQL in isolated schemas.",
+            "Boundary tests cover exact ASCII/multibyte 256-byte acceptance and empty, NUL, oversized, surrogate and nonstring rejection."
+          ]
+        },
+        "material_residual_blockers": [],
+        "runtime": {
+          "independent_tests": "NOT_RUN; user stopped extra probes before any runtime command was started",
+          "parent_reported": "All six NUL SQLite/PostgreSQL cases passed; full suite at 50% with no failures; final wheel nine probes passed.",
+          "parent_results_independently_verified": false,
+          "full_suite_final_result": "Not established by this review"
+        },
+        "history": "Original backend-correction-review/REPORT.md BLOCKERS verdict and evidence preserved; this PASS applies only to the revised contract on the identified residual source.",
+        "changes": "Only residual-review/review.json and residual-review/report.md written; application source/tests/governance/history not modified."
+      }
+    },
+    "protected_backend_count": 49,
+    "unchanged_applied_migrations": 10,
+    "accepted_gate_objects_unchanged": 6,
+    "live_A7": "NOT_RUN_REQUIRES_LOCAL_ACCESS_AND_EXPLICIT_CALL_TOKEN_BUDGET",
+    "next_steps": [
+      "Configure Nebius credentials locally without pasting secrets into chat; authorize a bounded live-call and token budget.",
+      "Run exact-model live chat, tool and structured-output canaries plus flagship run/read/compare; keep evidence separate from offline fixtures.",
+      "After live evidence succeeds, prepare parent-owned source commit and separate governance acceptance; Gate 6 remains pending until recorded."
+    ],
+    "evidence_sha256": {
+      "final-source.json": "451ab550669ffeca87467ed8465a4a44acb90034fdd52a7e2c421705deb0249c",
+      "full-final-junit.xml": "74db0ee7bc3ee99f4dab43b56da71c7bcbc605fbd817a1b5cadf519714324008",
+      "full-final.log": "95ce0921fc205c45a5a50d1793b5a471768dc8491a0758d60a85482d50f1947f",
+      "wheel-final-runtime/result.json": "ac009f0a4bd49de407309be57a9888d24fb5831e700429ba2fad38fa3122a444",
+      "browser-integrated/playwright-report.json": "c67566d05370b2b48dbf78d47b8be2d372ad453e809072632eb14028b06ca556",
+      "surface-correction-review/source-binding.json": "ec9abc49df4f73784e8e8a781507eed00323cb5b009ad0bfc225b884797d1d1c",
+      "backend-correction-review/review.json": "a4286bfc7ca16723731d0249bf562bb3d2c8d1868156a4514d84e3aecfb70665",
+      "residual-review/review.json": "0026ddbff0cb0906eb4241b9ad80b2e12ed3cb09d9e1c5ceeafcb03482cd3984"
+    }
+  },
+  "state": "GATE7_AND_RESEARCH_CANDIDATE_IMPLEMENTING",
+  "current_task": "Gate7 corrected frozen candidate verification; manuscript0.3 delivered",
+  "latest_frontend_checkpoint": {
+    "status": "VERIFIED",
+    "source_digest": "7928447b18b9c9d5e2b68014450d6b58292647ba17a2b017caea5b2f0bec96b3",
+    "checkpoint": "../verification/frontend-results-20261004/checkpoint.json",
+    "source_manifest": "../verification/frontend-results-20261004/final-source.json",
+    "report": "docs/frontend-results-fix-20261005.md",
+    "browser_passed": 6,
+    "static_passed": 5,
+    "typecheck": "PASS",
+    "build": "PASS",
+    "astra_review": "PASS_CODE_READ",
+    "updated_utc": "2026-10-04T22:00:52.037040+00:00",
+    "runtime": "../verification/frontend-results-20261004/runtime-20261005.json"
+  },
+  "gate7": {
+    "status": "OFFLINE_CORRECTIONS_REVIEWED_AND_VERIFIED",
+    "gate_acceptance": "PENDING",
+    "source_digest": "631a2de8ef6f947af53678480cbfe49666c56fd3bb13da1f60da8c47c709bb7a",
+    "source_manifest": "../verification/gate7-20261005/corrected-full-02/candidate-source.json",
+    "source_commit_created": false,
+    "original_review": "../verification/gate7-20261005/sol-review.md",
+    "original_verdict": "BLOCKERS_PRESERVED",
+    "corrections": [
+      "G7-SOL-01",
+      "G7-SOL-02",
+      "G7-SOL-03"
+    ],
+    "independent_correction_review": "PASS",
+    "reviewer_agent": "01a10c46-269d-7310-852e-8cea54aa1dbd",
+    "campaign_report": "../verification/gate7-candidate-campaign/attempt-20261005T133318Z-87dc0125d061/report.json",
+    "campaign_executions_passed": 49,
+    "campaign_distinct_cases": 44,
+    "campaign_skipped": 0,
+    "full_suite": {
+      "status": "PASS",
+      "exit_code": 0,
+      "tests": 717,
+      "passed": 717,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "elapsed_seconds": 2602.122,
+      "source_unchanged": true,
+      "source_digest": "631a2de8ef6f947af53678480cbfe49666c56fd3bb13da1f60da8c47c709bb7a",
+      "source_files": 196,
+      "postgres_url_recorded": false,
+      "paid_calls_authorized": false,
+      "provider_key": "process-only offline dummy",
+      "gate6_acceptance": "PENDING",
+      "gate7_acceptance": "PENDING",
+      "timestamp_utc": "2026-10-05T15:11:27.793295+00:00",
+      "command": "existing app Python -B -m pytest tests -vv --tb=short -p no:cacheprovider --basetemp <fresh temporary> --junitxml <redacted final evidence>",
+      "numerical_library_threads": 1
+    },
+    "full_suite_directory": "../verification/gate7-20261005/corrected-full-01",
+    "protected_contracts": "50 MATCH: 49 byte-identical plus exact default-off settings delta",
+    "applied_migrations": "11 unchanged",
+    "live_model_quality": "NOT_ESTABLISHED",
+    "new_paid_provider_calls": 0,
+    "timestamp_utc": "2026-10-06T19:36:23.542686+00:00",
+    "reviewer_agent_status": "CLOSED",
+    "reviewer_report": "../verification/gate7-20261005/sol-correction-review.json",
+    "reviewer_distinct_checks": 76,
+    "accepted": false,
+    "acceptance": "PENDING_REQUIRED_LIVE_EVIDENCE_AND_SOURCE_CHECKPOINT",
+    "current_source_files": 196,
+    "source_freeze_status": "VERIFIED",
+    "followup_evidence": "../verification/gate7-20261005/test-followup-freeze.json",
+    "prior_full_suite": {
+      "status": "FAIL",
+      "exit_code": 1,
+      "tests": 717,
+      "passed": 714,
+      "failures": 3,
+      "errors": 0,
+      "skipped": 0,
+      "elapsed_seconds": 2742.67,
+      "source_unchanged": true,
+      "source_digest": "69e1d8bd952595e35c5823cc8d9132fe5c31f059cf2b15cd7a1f2aa5fc281369",
+      "source_files": 196,
+      "postgres_url_recorded": false,
+      "paid_calls_authorized": false,
+      "provider_key": "process-only offline dummy",
+      "gate6_acceptance": "PENDING",
+      "gate7_acceptance": "PENDING",
+      "timestamp_utc": "2026-10-05T14:19:40.521148+00:00",
+      "command": "existing app Python -B -m pytest tests -vv --tb=short -p no:cacheprovider --basetemp <fresh temporary> --junitxml <redacted final evidence>",
+      "numerical_library_threads": 1
+    },
+    "independent_test_followup_review": "PASS",
+    "followup_reviewer_report": "../verification/gate7-20261005/sol-test-followup-review.json",
+    "followup_independent_checks": 24,
+    "live_provider_preflight": {
+      "status": "PASS",
+      "provider": "nebius",
+      "model": "nvidia/Nemotron-3_5-Lightning",
+      "requests": 3,
+      "remaining_requests_this_batch": 0,
+      "reported_tokens": 524,
+      "reserved_tokens": 2419,
+      "sdk_retries": 0,
+      "evidence": "../verification/gate6-live-20261007-ad2102e158ab/preflight.json"
+    }
+  },
+  "current_research": {
+    "status": "WORKING_PAPER_V03_DELIVERED",
+    "pdf": "../research/SHIFTGUARD_Working_Paper_v0.3.pdf",
+    "docx": "../research/SHIFTGUARD_Working_Paper_v0.3.docx",
+    "defense_brief": "../research/DEFENSE_BRIEF_v0.3.md",
+    "source_manifest": "../verification/research-advance-20261005/final-source.json",
+    "astra_content_review": "PASS on recorded source; parent editorial refinements recorded",
+    "original_files_unchanged": 17,
+    "new_outcome_scoring": false,
+    "protocol_status": "DRAFT_NOT_LOCKED",
+    "externally_shared": false
+  },
+  "current_acceptance_attempt": {
+    "timestamp_utc": "2026-10-07T21:55:30.041285+00:00",
+    "state": "OFFLINE_VERIFIED_READY_FOR_SOURCE_CHECKPOINT",
+    "active_writer": "NONE",
+    "source_digest": "29b51ddbcb2ffa9870db2c18b8c40bd30d52e4026f7418675c46bcee47b8d48a",
+    "source_files": 202,
+    "backend_review": "PASS",
+    "surface_review": "PASS",
+    "parent_full_suite": {
+      "status": "PASS",
+      "passed": 782,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "source_unchanged": true,
+      "source_digest": "29b51ddbcb2ffa9870db2c18b8c40bd30d52e4026f7418675c46bcee47b8d48a"
+    },
+    "browser": {
+      "passed": 16,
+      "failed": 0,
+      "skipped": 0,
+      "provider": "SCRIPTED"
+    },
+    "wheel_runtime": "PASS_9_PROBES_SQLITE_POSTGRES16_92_IMPORTS_OUTSIDE_CHECKOUT",
+    "wheel_sha256": "70098e3efeebcbac6209c555802132493173fca8536f1819addd2b367d5df85f",
+    "frontend_scope": "Two browser fixtures use exact approved preset commands; AgentPanel placeholder only; 150 assertions retained; generated assets rebuilt and separately bound",
+    "scientific_backend_and_migrations": "UNCHANGED",
+    "source_commit": null,
+    "new_provider_calls": 0,
+    "max_calls": 10,
+    "max_tokens": 50000,
+    "sdk_retries": 0,
+    "gate6_acceptance": "PENDING",
+    "gate7_acceptance": "PENDING",
+    "ordinary_assistant_enabled": false,
+    "next": "Finish Sol review, parent source checkpoint, genuine isolated run/read/compare; then same-ledger observed negative challenge and separate governance checkpoint",
+    "historical_failures": [
+      "astra-review/",
+      "astra-review-corrections-01/",
+      "browser-final/",
+      "../gate7-20261005/acceptance-full-20261007-b3a81c57/"
+    ]
+  }
 }

@@ -1,3 +1,23 @@
+# Current acceptance checkpoint — 8 October 2026
+
+ACTIVE_WRITER=NONE. Backend Astra xhigh review PASS; parent full suite **782 passed, zero failures/errors/skips**, including existing PostgreSQL16. Fresh browser **16/16 PASS** with scripted provider; typecheck/build PASS; fresh wheel SHA `70098e3efeebcbac6209c555802132493173fca8536f1819addd2b367d5df85f` passes nine runtime probes and resolves 92 imports outside the checkout. Exact 202-file backend digest `29b51ddbcb2ffa9870db2c18b8c40bd30d52e4026f7418675c46bcee47b8d48a` stayed unchanged.
+
+Sol6.1 xhigh review of the three-file frontend/test correction: **PASS**. Two browser fixtures now use approved named commands; AgentPanel changes only its placeholder. All 150 assertions remain. Rebuilt assets have their own 59-file binding; do not claim every historical frontend/static byte is unchanged. Scientific/core/migration bytes and accepted Gates0–5 remain preserved. Original failed/interrupted reports remain history.
+
+New Nebius allowance **0/10 requests**, maximum **50,000 aggregate tokens**, retries0. Parent owns the authorized local source checkpoint, genuine isolated Bank development run/wait/resume/read/compare, same-ledger containment challenge, and separate governance checkpoint. Gates6/7 remain **PENDING**. Ordinary assistant stays disabled; no deployment/push, confirmatory scoring or scientific-policy change. Read docs/next-execution.md and ../verification/gate67-acceptance-20261007-b3a81c57/interim-checkpoint.json. Earlier entries below are historical source-specific checkpoints.
+
+## Prior authority — 7 October 2026 (bounded acceptance preparation)
+
+The user authorized Gate6/Gate7 acceptance execution with at most **10 additional Nebius requests**, a parent **50,000-token ceiling**, zero SDK retries and one durable shared ledger. The older three-call preflight allowance is exhausted and remains separate history. New provider calls used: **0**.
+
+GPT-6 Luna xhigh's R01–R05 harness correction is frozen: 202 source files, digest `29b51ddbcb2ffa9870db2c18b8c40bd30d52e4026f7418675c46bcee47b8d48a`; parent focused checks 112/112 PASS with PostgreSQL16 and no skips. GPT-6 Astra xhigh performs the residual backend review. GPT-6.1 Sol xhigh reviews any new frontend/content delta; this correction changes none. Do not resume Antigravity or an unrelated accepted-gate audit.
+
+Parent owns the final full suite, source binding, authorized reversible local source commit and separate governance checkpoint. Live calls require the completed Astra PASS and clean source. Gates6/7 remain pending actual workflow and acceptance evidence. Ordinary assistant disabled; existing services only; no deployment, push, public enablement or scientific-policy change. Current packet: `docs/next-execution.md`; evidence: `../verification/gate67-acceptance-20261007-b3a81c57/`. Earlier dated assignments below are history.
+
+## Prior authority — 2 October 2026 (history)
+
+Use `.agent/session-state.md`, `.agent/ownership.json` and `docs/next-execution.md` for the current checkpoint. The user superseded the historical Antigravity assignment: scoped GPT-6 Luna xhigh writers, GPT-6.1 Sol xhigh backend review and GPT-6 Astra xhigh frontend review. The product-recovery batch is frozen; no active application writer. Both bounded correction reviews returned PASS; Gate 6 remains pending required evidence/acceptance. Older dated role assignments below are history, not permission to resume Antigravity or reopen accepted gates.
+
 # SHIFTGUARD operating contract
 
 ## Scope and continuity
@@ -14,10 +34,10 @@
 - No staging or commit before parent verification and authorization.
 
 ## Authoritative paths
-- Current workflow: docs/loop-engineering.md (user-directed Antigravity coding / Astra Extra High review workflow, effective 28 September 2026).
-- Next implementation packet: docs/next-execution.md (Gate 6; prepared, not started). Gate 4 closure records are historical accepted evidence.
+- Current workflow: docs/loop-engineering.md (user-directed Antigravity coding / GPT 6.1 Sol review workflow, effective 30 September 2026).
+- Next implementation packet: docs/next-execution.md (Gate 6 correction review completed with 22 open findings; execute AG-G6-CORRECTIONS-02). Gate 4 closure records are historical accepted evidence.
 - The 26 September Luna coding assignment is superseded by the 28 September Antigravity instruction; preserve historical authorship.
-- Latest review: docs/gate5-correction-review.md; parent acceptance: docs/gate5-acceptance.md. Gate 4 evidence remains historical.
+- Latest review: docs/gate6-correction-review-20261001.md BLOCKERS; latest accepted gate: docs/gate5-acceptance.md. Gate 4 evidence remains historical.
 - Fix ledger: docs/fix-ledger.md.
 - Blueprint: ../SHIFTGUARD_Implementation_Blueprint_v2_2026-09-09.md.
 - Plan: ../docs/aegis/plans/2026-09-10-shiftguard-hackathon-execution-plan.md.
@@ -28,14 +48,14 @@
 - This file does not amend scientific choices.
 
 ## Ownership and escalation
-- Assigned bulk writer: Antigravity, using the user-configured coding model; do not invent its model setting.
-- One agent writes the application branch at a time.
+- Current writer assignment (1 October user override): four GPT-6 Luna xhigh agents with exclusive file scopes in docs/product-refresh-20260930/luna-major-batch-01.md. Antigravity is inactive for this batch.
+- Exactly one writer owns each file; this user-authorized four-agent batch allows only the disjoint scopes in the current packet.
 - .agent/ownership.json is the canonical current writer assignment.
 - Parent verifies evidence and may maintain governance/checkpoint files under user authorization.
-- Independent planner/reviewer: GPT-6 Astra, reasoning effort `xhigh` (Extra High); never a concurrent application writer.
-- Do not dispatch Luna, Terra or Sol as application writers under this assignment.
-- Antigravity implements complete vertical batches and all ordinary corrections. Astra reviews one completed batch, then only correction deltas and affected invariants.
-- Two correction cycles without verified progress trigger Astra root-cause diagnosis and a revised Antigravity brief, not an endless repeat or automatic acceptance.
+- Independent planner/reviewer: GPT 6.1 Sol; never a concurrent application writer.
+- GPT-6.1 Sol xhigh is dispatched only after a complete integrated major batch; no per-file Sol reviews.
+- The four scoped Luna agents implement complete slices and ordinary corrections. GPT-6.1 Sol reviews the integrated major batch, then only correction deltas and affected invariants.
+- Two correction cycles without verified progress trigger GPT 6.1 Sol root-cause diagnosis and a revised Antigravity brief, not an endless repeat or automatic acceptance.
 - Complete coherent atomic batches before seeking review.
 - Ordinary failures stay with the active writer.
 - Capture the exact failure and make evidence-based fixes.
@@ -62,7 +82,7 @@
 - Finish the batch, then run local targeted tests.
 - Fix failures before handing the candidate to parent.
 - Parent performs independent verification.
-- One consolidated Astra Extra High review occurs at batch/gate exit.
+- One consolidated GPT 6.1 Sol review occurs at batch/gate exit.
 - Do not repeatedly request ordinary code review.
 - Do not rerun frozen gates without an affected invariant.
 - Record affected frozen gates when shared behavior changes.

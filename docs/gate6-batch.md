@@ -1,10 +1,14 @@
 # G6-01: bounded Nemotron runtime
 
+Independent checkpoint, 30 September 2026: **BLOCKERS — 25 material findings.** The active next batch is [AG-G6-CORRECTIONS-01](gate6-corrections.md), with [the consolidated review](gate6-review.md) and [Sol application findings](gate6-sol-review.md). The author handoff below is historical evidence of passing selected tests; it is not Gate 6 acceptance. GPT-6.1 Sol Extra High reviews the correction delta; Antigravity codes.
+
+Execution update, 30 September 2026: AG-G6-OFFLINE candidate implementation and verification are **COMPLETE**. Attempt `offline-f72afeff-0cad-438f-bccb-157a39b08ef1` is frozen with zero exits across backend (34 tests on SQLite and PostgreSQL), Playwright E2E (12 browser tests), typecheck, build, and static boundaries. Status is **READY_FOR_GPT_6_1_SOL_OFFLINE_REVIEW**. Detailed evidence in [Gate 6 implementation report](gate6-implementation.md) and [Gate 6 execution plan](gate6-execution-plan.md).
+
 Prepared 28 September 2026 from blueprint v2 Sections 6–10 and the original Gate 6 execution plan. Status: PLANNED; activation requires Gate 5 acceptance. No live provider call, provider capability, current price, account credit or Gate 6 acceptance is claimed by this document.
 
 ## Ownership and scope
 
-Antigravity implements one integrated batch and all ordinary corrections. GPT-6 Astra Extra High independently reviews the completed candidate and correction deltas under `docs/loop-engineering.md`. One application writer at a time; the 28 September workflow supersedes Luna coding ownership.
+Antigravity implements one integrated batch and all ordinary corrections. GPT 6.1 Sol independently reviews the completed candidate and correction deltas under `docs/loop-engineering.md`. One application writer at a time; the 30 September workflow supersedes earlier Astra review assignments.
 
 Retain the accepted scientific engine, API session capabilities, durable jobs, publication ownership and browser. Python owns numerical results. The provider proposes approved operations and evidence references. Seed 31001 only; no confirmatory unsealing, Adult replication, paid-account changes, deployment or broader cleanup.
 
@@ -19,7 +23,7 @@ Expected owners: `shiftguard/agent/{provider,policy,registry,schemas,controller,
 5. **Durable continuation.** Persist the request/tool/job linkage before returning a waiting response. Resume via the existing authority and nonce/receipt system after the job finishes. Keep browser disconnects, duplicate resume requests and provider timeouts distinguishable from scientific failures. Do not hold an HTTP request open for a stress suite.
 6. **Grounded display.** Resolve experiment IDs and permitted metric references from persisted server records. Render only supported facts through a deterministic template; retain null, adverse, fallback and qualification information. Invalid output receives the bounded validation/fallback path, never an unchecked model answer. Display public request/tool/result facts without secrets or hidden reasoning.
 7. **Browser integration.** Add the natural-language workflow beside the working preset controls. Keep all Gate 5 cached-result and job features usable when the provider is disabled or unavailable. Show whether evidence came from a cached result or a new run; show actual approved run/read/compare calls and experiment IDs.
-8. **Verification and review.** Finish local deterministic contract tests and the real browser-to-job flow before the consolidated Astra review. Mock provider tests are labeled mock evidence. Once explicit account access and usage authorization exist, execute minimal exact-model chat, tool-call and structured-output canaries and one live flagship run/read/compare flow. Record sanitized usage and actual capability results. Live proof is required to accept Gate 6.
+8. **Verification and review.** Finish local deterministic contract tests and the real browser-to-job flow before the consolidated GPT 6.1 Sol review. Mock provider tests are labeled mock evidence. Once explicit account access and usage authorization exist, execute minimal exact-model chat, tool-call and structured-output canaries and one live flagship run/read/compare flow. Record sanitized usage and actual capability results. Live proof is required to accept Gate 6.
 
 ## Acceptance matrix
 
@@ -32,7 +36,7 @@ Expected owners: `shiftguard/agent/{provider,policy,registry,schemas,controller,
 | G6-A5 | Provider timeout/429/5xx and unavailable credentials produce sanitized explicit states while the Gate 5 browser remains usable. |
 | G6-A6 | Real local browser-to-worker continuation and public-safe tool trace pass; affected Gate 4 ownership/session invariants remain verified. |
 | G6-A7 | Account-specific exact-model chat/tool canaries and a live flagship run/read/compare transcript exist; structured-output limits have a tested fallback. Mocks cannot satisfy this row. |
-| G6-A8 | Independent Astra review, identified-source checks, redacted evidence and separate source/governance checkpoints complete. |
+| G6-A8 | Independent GPT 6.1 Sol review, identified-source checks, redacted evidence and separate source/governance checkpoints complete. |
 
 Minimum planned tests cover registry authorization, argument validation, malformed provider responses, call/turn limits, retry idempotency, cancellation/continuation races, provider failures, evidence-only rendering and label/secret exclusion. Reuse the Gate 5 browser suites and run backend suites only where the new integration affects their contracts. Store logs, source hashes and sanitized live evidence outside the application checkout under `../verification/gate6/`.
 

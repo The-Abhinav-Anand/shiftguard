@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 import threading
 import time
-from typing import Any
+from typing import Any, Iterator
 from uuid import uuid4
 
 from sqlalchemy import text
@@ -43,23 +44,24 @@ class JobQueue:
         max_active_per_session: int = 2,
         payload_hash: str | None = None,
     ) -> JobRecord:
-        """Enqueue a new job with optional session-scoped idempotency key and admission quota.
-        
-        Serializes admission and idempotency across processes using a write-reserving transaction
-        (BEGIN IMMEDIATE on SQLite with busy retry; row-level lock on PostgreSQL).
-        Checks idempotency FIRST to return existing winning records without quota consumption or duplicate jobs.
-        """
-        payload_json = json.dumps(request_params, sort_keys=True, ensure_ascii=False)
-        if not payload_hash:
-            payload_hash = hashlib.sha256(payload_json.encode("utf-8")).hexdigest()
-        job_id = str(uuid4())
-        now = utc_now_str()
-        scope = session_id or "global"
+        """Enqueue through the same caller-connection admission primitive used by agents."""
+        with self.admission_transaction() as conn:
+            return self.enqueue_in_transaction(
+                conn,
+                request_params,
+                session_id=session_id,
+                idempotency_key=idempotency_key,
+                max_attempts=max_attempts,
+                max_active_per_session=max_active_per_session,
+                payload_hash=payload_hash,
+            )
 
+    @contextmanager
+    def admission_transaction(self) -> Iterator[Any]:
+        """Own one serialized write transaction; nested work must use its connection."""
         with self._admission_lock:
             conn = self.engine.connect()
             try:
-                # 1. Acquire write-reserving lock before any reads
                 if self.is_sqlite:
                     for retry in range(50):
                         try:
@@ -72,114 +74,129 @@ class JobQueue:
                                 raise
                 else:
                     conn.execute(text("BEGIN"))
-                    if session_id:
-                        conn.execute(
-                            text("SELECT id FROM agent_sessions WHERE id = :session_id FOR UPDATE"),
-                            {"session_id": session_id},
-                        )
-
-                # 2. Check idempotency FIRST
-                if idempotency_key:
-                    existing = conn.execute(
-                        text("SELECT scope, key, payload_hash, job_id, response_code, response_json FROM idempotency_records WHERE scope = :scope AND key = :key"),
-                        {"scope": scope, "key": idempotency_key},
-                    ).mappings().fetchone()
-
-                    if existing:
-                        if existing["payload_hash"] != payload_hash:
-                            conn.rollback()
-                            raise IdempotencyConflictError(
-                                f"Idempotency key '{idempotency_key}' is already associated with a different payload"
-                            )
-                        # Return winning existing job record without consuming quota or inserting duplicate job
-                        winning_id = existing["job_id"]
-                        job_row = conn.execute(
-                            text("SELECT * FROM jobs WHERE id = :job_id"),
-                            {"job_id": winning_id},
-                        ).mappings().fetchone()
-                        conn.rollback()
-                        if job_row:
-                            return JobRecord.from_row(dict(job_row))
-                        raise RuntimeError(f"Idempotency record references non-existent job {winning_id}")
-
-                # 3. Admission quota check per session SECOND
-                if session_id:
-                    active_count = conn.execute(
-                        text("SELECT COUNT(*) FROM jobs WHERE session_id = :session_id AND status IN ('queued', 'running', 'claimed')"),
-                        {"session_id": session_id},
-                    ).scalar() or 0
-                    if active_count >= max_active_per_session:
-                        conn.rollback()
-                        raise QuotaExceededError(
-                            f"Session '{session_id}' exceeded active job quota ({active_count}/{max_active_per_session})"
-                        )
-
-                # 4. Insert job
-                conn.execute(
-                    text("""
-                        INSERT INTO jobs (
-                            id, session_id, idempotency_key, payload_hash, status,
-                            request_params_json, attempt, max_attempts, cancel_requested, created_at
-                        ) VALUES (
-                            :id, :session_id, :idempotency_key, :payload_hash, :status,
-                            :request_params_json, 0, :max_attempts, :cancel_requested, :created_at
-                        )
-                    """),
-                    {
-                        "id": job_id,
-                        "session_id": session_id,
-                        "idempotency_key": idempotency_key,
-                        "payload_hash": payload_hash,
-                        "status": JobStatus.QUEUED.value,
-                        "request_params_json": payload_json,
-                        "max_attempts": max_attempts,
-                        "cancel_requested": False,
-                        "created_at": now,
-                    },
-                )
-
-                # 5. Insert idempotency record
-                if idempotency_key:
-                    conn.execute(
-                        text("""
-                            INSERT INTO idempotency_records (
-                                scope, key, payload_hash, job_id, response_code, response_json, created_at
-                            ) VALUES (
-                                :scope, :key, :payload_hash, :job_id, 202, :response_json, :created_at
-                            )
-                        """),
-                        {
-                            "scope": scope,
-                            "key": idempotency_key,
-                            "payload_hash": payload_hash,
-                            "job_id": job_id,
-                            "response_json": json.dumps({"job_id": job_id, "status": JobStatus.QUEUED.value}),
-                            "created_at": now,
-                        },
-                    )
-
-                # 6. Log enqueued event
-                conn.execute(
-                    text("""
-                        INSERT INTO job_events (job_id, event_type, details_json, created_at)
-                        VALUES (:job_id, :event_type, :details_json, :created_at)
-                    """),
-                    {
-                        "job_id": job_id,
-                        "event_type": JobEventType.ENQUEUED.value,
-                        "details_json": json.dumps({"session_id": session_id}),
-                        "created_at": now,
-                    },
-                )
+                yield conn
                 conn.commit()
-
-                job_row = conn.execute(
-                    text("SELECT * FROM jobs WHERE id = :job_id"),
-                    {"job_id": job_id},
-                ).mappings().fetchone()
-                return JobRecord.from_row(dict(job_row))
+            except BaseException:
+                conn.rollback()
+                raise
             finally:
                 conn.close()
+
+    def enqueue_in_transaction(
+        self,
+        conn: Any,
+        request_params: dict[str, Any],
+        session_id: str | None = None,
+        idempotency_key: str | None = None,
+        max_attempts: int = 3,
+        max_active_per_session: int = 2,
+        payload_hash: str | None = None,
+        session_locked: bool = False,
+    ) -> JobRecord:
+        """Apply canonical idempotency and quota admission on an existing transaction."""
+        payload_json = json.dumps(request_params, sort_keys=True, ensure_ascii=False)
+        if not payload_hash:
+            payload_hash = hashlib.sha256(payload_json.encode("utf-8")).hexdigest()
+        job_id = str(uuid4())
+        now = utc_now_str()
+        scope = session_id or "global"
+
+        if not self.is_sqlite and session_id and not session_locked:
+            conn.execute(
+                text("SELECT id FROM agent_sessions WHERE id = :session_id FOR UPDATE"),
+                {"session_id": session_id},
+            )
+
+        # Idempotency precedes quota, and a replay returns the canonical stored job.
+        if idempotency_key:
+            existing = conn.execute(
+                text("SELECT payload_hash, job_id FROM idempotency_records WHERE scope = :scope AND key = :key"),
+                {"scope": scope, "key": idempotency_key},
+            ).mappings().fetchone()
+            if existing:
+                if existing["payload_hash"] != payload_hash:
+                    raise IdempotencyConflictError(
+                        f"Idempotency key '{idempotency_key}' is already associated with a different payload"
+                    )
+                job_row = conn.execute(
+                    text("SELECT * FROM jobs WHERE id = :job_id"),
+                    {"job_id": existing["job_id"]},
+                ).mappings().fetchone()
+                if not job_row:
+                    raise RuntimeError(f"Idempotency record references non-existent job {existing['job_id']}")
+                return JobRecord.from_row(dict(job_row))
+
+        if session_id:
+            active_count = conn.execute(
+                text("SELECT COUNT(*) FROM jobs WHERE session_id = :session_id AND status IN ('queued', 'running', 'claimed')"),
+                {"session_id": session_id},
+            ).scalar() or 0
+            if active_count >= max_active_per_session:
+                raise QuotaExceededError(
+                    f"Session '{session_id}' exceeded active job quota ({active_count}/{max_active_per_session})"
+                )
+
+        conn.execute(
+            text("""
+                INSERT INTO jobs (
+                    id, session_id, idempotency_key, payload_hash, status,
+                    request_params_json, attempt, max_attempts, cancel_requested, created_at
+                ) VALUES (
+                    :id, :session_id, :idempotency_key, :payload_hash, :status,
+                    :request_params_json, 0, :max_attempts, :cancel_requested, :created_at
+                )
+            """),
+            {
+                "id": job_id,
+                "session_id": session_id,
+                "idempotency_key": idempotency_key,
+                "payload_hash": payload_hash,
+                "status": JobStatus.QUEUED.value,
+                "request_params_json": payload_json,
+                "max_attempts": max_attempts,
+                "cancel_requested": False,
+                "created_at": now,
+            },
+        )
+
+        if idempotency_key:
+            conn.execute(
+                text("""
+                    INSERT INTO idempotency_records (
+                        scope, key, payload_hash, job_id, response_code, response_json, created_at
+                    ) VALUES (
+                        :scope, :key, :payload_hash, :job_id, 202, :response_json, :created_at
+                    )
+                """),
+                {
+                    "scope": scope,
+                    "key": idempotency_key,
+                    "payload_hash": payload_hash,
+                    "job_id": job_id,
+                    "response_json": json.dumps({"job_id": job_id, "status": JobStatus.QUEUED.value}),
+                    "created_at": now,
+                },
+            )
+
+        conn.execute(
+            text("""
+                INSERT INTO job_events (job_id, event_type, details_json, created_at)
+                VALUES (:job_id, :event_type, :details_json, :created_at)
+            """),
+            {
+                "job_id": job_id,
+                "event_type": JobEventType.ENQUEUED.value,
+                "details_json": json.dumps({"session_id": session_id}),
+                "created_at": now,
+            },
+        )
+        job_row = conn.execute(
+            text("SELECT * FROM jobs WHERE id = :job_id"),
+            {"job_id": job_id},
+        ).mappings().fetchone()
+        if not job_row:
+            raise RuntimeError(f"Newly admitted job '{job_id}' could not be read")
+        return JobRecord.from_row(dict(job_row))
 
     def get_job(self, job_id: str) -> JobRecord | None:
         """Retrieve a job by ID."""

@@ -4,10 +4,10 @@ import {
   AccessibleTable,
   ChartPanel,
   PersistedPlot,
-  chartColors,
   chartLayout,
   formatNumber,
   methodLabel,
+  methodStyle,
   scenarioKey,
 } from "./shared";
 
@@ -30,11 +30,12 @@ export function Reliability(props: {
     name: "Perfect calibration reference",
     x: [0, 1],
     y: [0, 1],
-    line: { color: "#96a7ad", dash: "dash", width: 1.5 },
+    line: { color: "#56635B", dash: "dash", width: 1.5 },
     hoverinfo: "skip",
   };
-  const points: Data[] = series.flatMap(({ method, record }, index) => {
+  const points: Data[] = series.flatMap(({ method, record }) => {
     if (!record?.reliability_bins?.some((bin) => bin.mean_probability !== null && bin.positive_fraction !== null)) return [];
+    const style = methodStyle(method);
     return [{
       type: "scatter",
       mode: "lines+markers",
@@ -42,8 +43,8 @@ export function Reliability(props: {
       x: record.reliability_bins.map((bin) => bin.mean_probability),
       y: record.reliability_bins.map((bin) => bin.positive_fraction),
       connectgaps: false,
-      line: { color: chartColors[index % chartColors.length], width: 1.8 },
-      marker: { color: chartColors[index % chartColors.length], size: 7 },
+      line: { color: style.color, dash: style.dash, width: 1.8 },
+      marker: { color: style.color, symbol: style.marker, size: 7 },
       hovertemplate: `${methodLabel(method)}<br>Mean prediction: %{x:.3f}<br>Observed fraction: %{y:.3f}<extra></extra>`,
     }];
   });

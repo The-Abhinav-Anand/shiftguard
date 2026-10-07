@@ -1,0 +1,153 @@
+{
+  "version": "byo-v1-contracts-20261001",
+  "status": "PLANNED_NOT_RUN",
+  "scope": "Private binary tabular frozen-model calibration assessment; preserves public benchmark and accepted scientific contracts",
+  "source_plan": "business-data-model-plan.md",
+  "implementation_status": "NOT_STARTED",
+  "rules": {
+    "required_outcome": "Every applicable positive and negative contract case passes on one unchanged candidate",
+    "required_backend_evidence": ["SQLite scoped repository behavior", "Live PostgreSQL 16 transactions and restricted-role RLS"],
+    "missing_required_evidence": "BLOCKED",
+    "failed_case": "FAIL",
+    "not_executed": "NOT_RUN",
+    "collection_policy": "Proposed nodes below are future targets; replace with actual collected node IDs before reporting results",
+    "source_binding": "Before/after source and generated-asset hashes, HEAD/dirty provenance, command exits, raw logs, JUnit/browser reports and installed-wheel origins",
+    "acceptance_owner": "Parent; separate source commit and governance checkpoint",
+    "live_provider_required": false,
+    "public_activation": "Requires independent acceptance and explicit deployment authority"
+  },
+  "contracts": [
+    {
+      "id": "BYO-I01",
+      "rule": "Every private operation uses verified current account, organization membership and operation authority",
+      "batches": ["B1", "B4", "B5"],
+      "owners": ["shiftguard/business/auth.py", "shiftguard/api/routes/business/"],
+      "planned_test_files": ["tests/integration/test_business_authority.py"],
+      "positive_cases": ["Authorized analyst registers own project and reads authorized report", "Viewer reads report without gaining write or delete authority"],
+      "negative_cases": ["Demo capability and forged organization selector rejected", "Expired, wrong-audience and revoked account rejected", "Membership revoked after initial check cannot admit or publish work", "Owner-only deletion/member operation rejected for analyst/viewer"],
+      "required_proof": "HTTP decisions and zero unauthorized DB/object/job side effects, including authority changes during controlled waits",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "BYO-I02",
+      "rule": "Tenant boundaries apply to DB, foreign keys, queue, storage, public APIs, cache, downloads and exports",
+      "batches": ["B1", "B4", "B5"],
+      "owners": ["shiftguard/business/repository.py", "shiftguard/business/object_store.py", "shiftguard/api/routes/business/", "frontend/src/state/privateWorkspace.ts"],
+      "planned_test_files": ["tests/integration/test_business_authority.py", "tests/business/test_byo_tenant_storage.py", "tests/e2e/test_business_identity.spec.ts"],
+      "positive_cases": ["Identical data in two tenants retain separate private handles", "Authorized range/export request gets only own verified artifact"],
+      "negative_cases": ["Foreign asset/job/recipe/result guessed ID is non-disclosing", "Cross-tenant foreign key insertion rejected", "Public experiment listing and agent result fallbacks never discover private reports", "Restricted PostgreSQL runtime role cannot bypass RLS and pooled connection context cannot leak", "Logout and organization switch expose no old private payload or rebind work"],
+      "required_proof": "Two users/two organizations, runtime-role PostgreSQL RLS plus SQLite explicit scoping, object bytes and browser/cache observations",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "BYO-I03",
+      "rule": "Uploads stay quarantined until exact content, bounded validation and immutable READY evidence are committed",
+      "batches": ["B2"],
+      "owners": ["shiftguard/business/uploads.py", "shiftguard/business/validation/", "shiftguard/business/object_store.py"],
+      "planned_test_files": ["tests/business/test_byo_upload_limits.py", "tests/business/test_byo_upload_recovery.py"],
+      "positive_cases": ["Valid streamed synthetic CSV has matching raw/canonical/report hashes and READY state", "Identical completion replay returns one receipt and validation job"],
+      "negative_cases": ["Chunked overrun, false length, quota race, giant field and invalid format rejected", "Disconnected transfer and crash cannot expose incomplete assets", "Different content under same upload conflicts", "Stale validator cannot promote or remove current owner bytes", "Required scanner/storage/sandbox failure blocks readiness"],
+      "required_proof": "Actual byte accounting, DB reservation release exactly once, reopened state and owned-object/staging visibility",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "BYO-I04",
+      "rule": "Dataset schema, class/role identity and label access are explicit, immutable and isolated",
+      "batches": ["B2", "B3", "B5"],
+      "owners": ["shiftguard/business/schemas.py", "shiftguard/business/validation/", "shiftguard/business/recipe.py"],
+      "planned_test_files": ["tests/business/test_byo_dataset_contract.py", "tests/business/test_byo_label_firewall.py", "tests/e2e/test_business_validation.spec.ts"],
+      "positive_cases": ["Exact supported dtype/missing/class mapping preserved through canonicalization", "Declared versus verified training provenance remains distinct", "One-class role qualification and valid metric availability preserved"],
+      "negative_cases": ["Invalid UTF-8, quoting, duplicate normalized headers, labels, coercion and row width rejected", "Record/entity overlap prevents role leakage; legitimate equal feature vectors not silently discarded", "Final labels never enter inference, selectors, tools, DOM or logs", "Label-dependent acquisition changes fail the nested-prefix guard", "Changed mapping/schema requires a new version"],
+      "required_proof": "Raw and canonical identities, exact ordered role membership, canary labels and negative inspection of every handoff",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "BYO-I05",
+      "rule": "Only approved self-contained frozen graphs execute inside a tested resource and access sandbox",
+      "batches": ["B3", "B6"],
+      "owners": ["shiftguard/business/inference/", "shiftguard/business/validation/model.py"],
+      "planned_test_files": ["tests/business/test_byo_model_profile.py", "tests/business/test_byo_sandbox.py"],
+      "positive_cases": ["Approved numeric and proven mixed preprocessing/model profile executes with no refit", "Runtime/profile/version manifest matches installed isolated runner"],
+      "negative_cases": ["Pickle/joblib/custom Python/native ops and unapproved ONNX domains rejected before loading", "External tensors, nested graph violations and oversized dimensions rejected without allocation escape", "CPU/RAM/wall/PID limits terminate excessive models and reap children", "Model/parser cannot read host files, DB or secrets or use network", "Hosted readiness rejects missing sandbox or test-only identity/runtime injection"],
+      "required_proof": "Actual platform isolation tests and process exit/resource evidence; structural ONNX validation alone is insufficient",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "BYO-I06",
+      "rule": "Probability outputs bind exact schema, class columns, row order, missing behavior and conversion parity",
+      "batches": ["B3"],
+      "owners": ["shiftguard/business/inference/adapter.py", "shiftguard/business/validation/model.py"],
+      "planned_test_files": ["tests/business/test_byo_probability_contract.py"],
+      "positive_cases": ["Original trusted fixture parity meets frozen tolerances", "Natural/injected missingness and unseen-category policy work in the approved graph", "Batch 1/16/512 and repeat inference preserve row probabilities"],
+      "negative_cases": ["Swapped classes/rows/columns, wrong row count and hard labels cannot score", "NaN/inf/out-of-range/unnormalized/map or sequence outputs fail typed validation", "Unknown missing representation and unproven graph profile stay unsupported", "Fixture produced only by uploaded graph is not independent parity provenance"],
+      "required_proof": "Original fixture and output hashes, per-batch original class/row binding and no permissive output coercion",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "BYO-I07",
+      "rule": "Scientific assessment preserves frozen inference, pre-evaluation recipe, nested labels, paired masks and truthful fallbacks",
+      "batches": ["B3", "B4"],
+      "owners": ["shiftguard/business/runner.py", "shiftguard/business/temperature.py", "shiftguard/business/recipe.py", "shiftguard/metrics/"],
+      "planned_test_files": ["tests/business/test_byo_scientific_contract.py", "tests/business/test_byo_temperature_policy.py"],
+      "positive_cases": ["Source and target calibration independently fit original frozen-model probabilities", "Masks precede acquisition and paired methods share final rows/masks", "Decision threshold/loss and metrics agree with independent analytic fixtures", "Raw/source/target comparison allows distinct calibrated map IDs while binding each side's exact fitted parameters and condition"],
+      "negative_cases": ["Preprocessor/predictor refit, source-stacked target fitting and outcome-guided recipe changes rejected", "Budget-zero/one-class/nonconverged fits preserve fallback and exact consumption without redraw", "Budget-zero target fit is unattempted and does not inflate fit-failure counts", "Raw failure yields null metrics and unavailable comparisons", "Hardcoded Bank evaluation row count or feature/sentinel policy rejected for business data", "Comparison with mismatched predictor, evaluation rows, masks, acquisition records, costs or referenced map parameters is unavailable", "Unqualified/adverse outcomes and reused evaluation warnings cannot be omitted"],
+      "required_proof": "Analytic numerical assertions, immutable model bytes/state, evaluator-only outcomes and persisted context/diagnostic readback",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "BYO-I08",
+      "rule": "Admission and replay accept the authorized immutable recipe once within current quota",
+      "batches": ["B1", "B4", "B5"],
+      "owners": ["shiftguard/jobs/queue.py", "shiftguard/business/repository.py", "shiftguard/api/routes/business/assessments.py"],
+      "planned_test_files": ["tests/integration/test_business_runtime.py", "tests/e2e/test_business_identity.spec.ts"],
+      "positive_cases": ["Managed HTTP job executes its exact submitted recipe", "Same key/body returns one durable job and original receipt", "Intentional rerun retains a distinct execution audit"],
+      "negative_cases": ["Concurrent last-slot requests never exceed two organization jobs", "Same key/different recipe conflicts before creating a duplicate", "Accepted-then-lost response/reload/retry cannot create a second job", "Replays under revoked or another principal do not grant old access", "Changed/expired/deleting asset cannot enter a new accepted recipe"],
+      "required_proof": "Separate processes/connections on both backends, real accepted HTTP response loss, stored recipe/audit and exact job identity",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "BYO-I09",
+      "rule": "Current worker authority decides publication and terminal state atomically, including recovery and cancellation",
+      "batches": ["B4"],
+      "owners": ["shiftguard/jobs/worker.py", "shiftguard/jobs/recovery.py", "shiftguard/business/repository.py"],
+      "planned_test_files": ["tests/integration/test_business_runtime.py", "tests/business/test_byo_publication_races.py"],
+      "positive_cases": ["Normal and post-rename crash completion have identical result/audit/hash relationships", "Valid distinct executions of identical content both persist"],
+      "negative_cases": ["Expired/replaced fence or attempt cannot heartbeat/publish/complete", "Claim/cancel/recovery and authority-revocation schedules retain winning terminal decision", "Conflicting content or failed conditional transition rolls back every result/audit/event/publication mutation", "Live CLI/upload/worker owners survive unrelated cleanup", "Unknown private job kind cannot fall through to benchmark baseline"],
+      "required_proof": "Controlled barriers/crash points and complete DB/file/object assertions after reopen on both supported backends",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "BYO-I10",
+      "rule": "Private artifacts, logs, retention, deletion and restores preserve confidentiality and owned lineage",
+      "batches": ["B2", "B4", "B6"],
+      "owners": ["shiftguard/business/object_store.py", "shiftguard/business/repository.py", "shiftguard/api/routes/business/assets.py"],
+      "planned_test_files": ["tests/business/test_byo_privacy_retention.py", "tests/business/test_byo_restore.py"],
+      "positive_cases": ["Authorized exact manifest download verifies current bytes", "Deletion receipt separates access revocation/live-copy removal/backup expiry", "Backup restore revalidates incomplete publication and asset states"],
+      "negative_cases": ["Native/provider/parser errors never expose labels, raw cells, paths, credentials or stack traces", "Hash mismatch and missing blob cannot serve purported verified evidence", "Pinned/live assets cannot be swept by age or unsafe reference count", "Delete/export/recovery races cannot remove another owner's data", "Private assistant, telemetry, localStorage and public endpoints reveal no canary private input"],
+      "required_proof": "Storage fault injection, content/secret canaries, exact deleted version inventory and measured restore drill",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "BYO-I11",
+      "rule": "Forward migrations, source/package and supported old databases share one verified contract",
+      "batches": ["B1", "B6"],
+      "owners": ["shiftguard/alembic/versions/", "shiftguard/migrations.py", "pyproject.toml", "Dockerfile"],
+      "planned_test_files": ["tests/business/test_byo_migration_upgrade.py", "tests/business/test_byo_installed_package.py"],
+      "positive_cases": ["Fresh/current head and upgrades from accepted 0008/actual supported Gate 6 schema preserve demo jobs/sessions/results", "Installed wheel outside checkout includes private modules/migrations and passes CLI/API/import smoke"],
+      "negative_cases": ["Applied historical migration bytes cannot change", "Missing runtime/RLS/object/sandbox resources block readiness", "Source checkout imports cannot masquerade as installed-wheel proof", "No old demo session receives private authority through backfill"],
+      "required_proof": "Actual PostgreSQL and SQLite fresh/upgrade data readback, wheel origin/hash checks and unchanged historical revision hashes",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "BYO-I12",
+      "rule": "Browser and acceptance evidence represent actual private state and one unchanged supported candidate",
+      "batches": ["B5", "B6"],
+      "owners": ["frontend/src/hooks/usePrivateWorkspace.ts", "frontend/src/components/business/", "verification/business-byo/"],
+      "planned_test_files": ["tests/e2e/test_business_onboarding.spec.ts", "tests/e2e/test_business_identity.spec.ts", "tests/e2e/test_business_validation.spec.ts", "tests/business/test_byo_evidence_hygiene.py"],
+      "positive_cases": ["Keyboard/mobile/reduced-motion onboarding and evidence tables work with actual API/worker state", "Generated/served asset graph and source/report digests match frozen candidate", "Manual BYO works without provider access and public Gate 5 behavior remains"],
+      "negative_cases": ["Fake upload progress, Bank substitution, missing/null/fallback metrics and fabricated success rejected", "Offline/expired authority/org switch/stale response cannot overwrite or transfer current intent", "Missing reports/required skips/failed commands/wrong source never produce PASS", "Unsupported graph/task/feature shows explicit unavailable state rather than fake upload capability"],
+      "required_proof": "Real private end-to-end browser assertions, visual/accessibility checks, actual collected nodes/logs/JUnit and parent independent source binding",
+      "status": "NOT_RUN"
+    }
+  ]
+}

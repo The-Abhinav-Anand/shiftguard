@@ -1,6 +1,6 @@
 import path from "node:path";
 import { writeFile } from "node:fs/promises";
-import { test, expect, type Page } from "../../frontend/e2e/fixtures";
+import { test, expect, openAnalysisOptions, type Page } from "../../frontend/e2e/fixtures";
 import type { StressPayload } from "../../frontend/src/api/types";
 
 const fixed = (value: number | null | undefined) => value == null ? "Unavailable" : value.toFixed(3);
@@ -8,7 +8,7 @@ const table = (page: Page, id: string) => page.locator(`article[aria-labelledby=
 
 test("real worker stress payload binds every chart, table and filter; identical rerun restores job identity", async ({ page }, info) => {
   test.setTimeout(15 * 60 * 1000);
-  await page.goto("/");
+  await page.goto("/demo");
   await expect(page.getByRole("button", { name: "Submit run" })).toBeEnabled();
   await expect(page.getByRole("combobox", { name: "Approved preset", exact: true })).toHaveValue("bank-outage-50");
   await page.getByRole("combobox", { name: "Approved preset", exact: true }).selectOption("bank-stress");
@@ -22,6 +22,7 @@ test("real worker stress payload binds every chart, table and filter; identical 
   const card = page.locator(".job-card").filter({ hasText: firstJob });
   await expect(card.locator(".job-status")).toHaveText("completed", { timeout: 12 * 60 * 1000 });
   await expect(page.getByRole("heading", { name: "Experiment result", exact: true })).toBeVisible();
+  await openAnalysisOptions(page);
 
   const experimentId = await page.locator(".provenance-list dd").first().textContent();
   const persisted = await (await page.request.get(`/api/v1/experiments/${experimentId}`)).json();
@@ -93,7 +94,7 @@ test("real worker stress payload binds every chart, table and filter; identical 
 
 for (const preset of ["bank-outage-50", "bank-baseline"]) {
   test(`real ${preset} preset publishes a readable result`, async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/demo");
     await expect(page.getByRole("button", { name: "Submit run" })).toBeEnabled();
     await page.getByRole("combobox", { name: "Approved preset", exact: true }).selectOption(preset);
     await page.getByRole("button", { name: "Submit run" }).click();

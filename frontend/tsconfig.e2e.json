@@ -1,5 +1,5 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": { "types": ["node"] },
-  "include": ["playwright.config.ts", "scripts/e2e-setup.ts", "e2e/**/*.ts", "../tests/e2e/**/*.ts"]
+  "include": ["playwright.config.ts", "playwright.refresh.config.ts", "scripts/e2e-setup.ts", "e2e/**/*.ts", "../tests/e2e/**/*.ts"]
 }

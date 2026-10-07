@@ -21,6 +21,7 @@ dependencies = [
   "sqlalchemy>=2.0,<3",
   "typer>=0.16,<1",
   "uvicorn[standard]>=0.35,<1",
+  "openai>=1.50,<2",
 ]
 
 [project.optional-dependencies]
@@ -31,7 +32,7 @@ shiftguard = "shiftguard.cli:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-ra"
+addopts = "-ra --basetemp=.pytest_tmp"
 markers = [
   "live: requires an explicitly enabled external service",
   "postgres: requires a PostgreSQL 16 database",

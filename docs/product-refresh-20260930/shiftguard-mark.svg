@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">SHIFTGUARD displaced-register mark</title>
+  <desc id="desc">An angular S held by two reference corners. Its vermilion middle register is shifted to the right. Standalone brand design, not an application asset installation.</desc>
+  <path d="M4 18V4h14M46 60h14V46" fill="none" stroke="#182922" stroke-width="2"/>
+  <path d="M12 12h40v8H20v8h-8ZM44 36h8v16H12v-8h32Z" fill="#182922"/>
+  <path d="M20 28h32v8H20Z" fill="#B84224"/>
+</svg>

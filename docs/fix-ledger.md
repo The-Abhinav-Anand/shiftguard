@@ -194,3 +194,15 @@ SG-SOL-01 (recovery cancellation race), SG-SOL-02 (nondefault HTTP configuration
 ## Gate 5 correction acceptance — 29 September 2026
 
 G5-R01 (persisted per-bin fallback/cache) and G5-R02 (submission-time authentication recovery) are RESOLVED on `f63116fedc2751493d79d44897ba913b6d28b0b5`. Astra Extra High verdict PASS, 8 independent probes. Parent typecheck/build, 3 affected browser and 5 static cases pass; 4 generated assets and 79 protected backend files match. Author full browser 9/9 is supporting evidence. Original docs/gate5-review.md remains unchanged. Source binding and separate acceptance checkpoint: docs/gate5-acceptance.md. No Gate 6 implementation or unrelated Gate 4 audit occurred.
+
+## Gate 6 correction review — 1 October 2026
+
+Independent closure: G6-S04/G6-S06/G6-S13 corrected; remaining G6-S01–S18 and G6-P01–P07 partial/open (22 total). The [complete per-ID closure matrix and actual evidence](gate6-correction-review-20261001.md) is authoritative for this review; [AG-G6-CORRECTIONS-02](gate6-corrections-02.md) owns all remaining fixes. Author all-resolved claims remain history. Gate 6 acceptance PENDING; A7 live proof BLOCKED.
+
+## Gate 6 comprehensive correction closure — 4 October 2026
+
+C03–C07, PR01–PR03, SR01–SR03, INT01 and residual PR03-R1: OFFLINE_VERIFIED. Original blocker reports are retained. See ../verification/gate6-comprehensive-20261002/final-checkpoint.json for exact source, test, package and independent review bindings. Gate 6 acceptance PENDING; live A7 NOT_RUN.
+
+## Frontend result discovery and graphs - 5 October 2026
+
+Default outage/baseline table-only presentation, folded saved-result discovery, stale latest selection and opening a run below its graphs: RESOLVED. Three graphs use persisted values; null/unscored evidence is preserved. 6 ordinary-server browser cases and 5 static-boundary cases passed; typecheck/build and generated-asset parity PASS; Astra xhigh focused code review PASS. See docs/frontend-results-fix-20261005.md and ../verification/frontend-results-20261004/checkpoint.json. Backend and accepted Gates 0-5 unchanged. Gate 6 PENDING; live A7 user-deferred.

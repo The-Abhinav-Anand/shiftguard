@@ -1,0 +1,16 @@
+.preset-chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.preset-chart-grid > .chart-panel { min-width: 0; }
+.preset-chart-condition { display: grid; gap: 6px; margin-top: 12px; color: var(--muted); font-size: 13px; }
+.preset-chart-condition select { width: 100%; min-height: 44px; padding: 8px 10px; border: 1px solid var(--control-line); background: var(--surface); color: var(--ink); font: inherit; }
+.preset-chart-grid .plotly-frame { min-width: 0; }
+.preset-chart-grid .data-table-wrap { min-width: 0; }
+
+@media (max-width: 700px) {
+  .preset-chart-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+}

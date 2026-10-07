@@ -1,5 +1,5 @@
 import path from "node:path";
-import { test, expect, openSeededStress } from "../../frontend/e2e/fixtures";
+import { test, expect, openSeededStress, openAnalysisOptions } from "../../frontend/e2e/fixtures";
 import type { StressPayload } from "../../frontend/src/api/types";
 
 test("persisted cache survives reload with private credentials and keyboard/mobile access", async ({ page }, info) => {
@@ -8,6 +8,7 @@ test("persisted cache survives reload with private credentials and keyboard/mobi
   await page.reload();
   await expect(page.locator(".result-heading .result-source")).toHaveText("Browser-cached result");
   await expect(page.locator(".session-id")).toHaveAttribute("title", session!);
+  await openAnalysisOptions(page);
   await page.getByLabel("Score view").focus();
   await page.keyboard.press("ArrowDown");
   await page.keyboard.press("Enter");
@@ -75,6 +76,7 @@ test("persisted cache survives reload with private credentials and keyboard/mobi
   expect("failed_attempts" in (cachedBeforeReload ?? {})).toBe(false);
   await page.reload();
   await expect(page.locator(".result-heading .result-source")).toHaveText("Browser-cached result");
+  await openAnalysisOptions(page);
   await selectSparseCondition();
   await expectSparseDetails();
   const cachedAfterReload = await cachedDiagnostics();
@@ -163,6 +165,6 @@ test("[simulated] unavailable records remain explicit and corrupt storage has a 
   await page.evaluate(() => localStorage.setItem("shiftguard.browser-workspace.v1", "not-json"));
   await page.reload();
   await expect(page.getByText(/Browser storage could not be read/)).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Your persisted result will land here." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your saved result appears here" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Submit run" })).toBeEnabled();
 });

@@ -1,10 +1,40 @@
 import { lazy, Suspense } from "react";
 import type { Data, Layout } from "plotly.js";
 import type { ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
+import { ChartErrorBoundary } from "../ChartErrorBoundary";
 
 const Plot = lazy(() => import("./Plot"));
 
-export const chartColors = ["#177b73", "#335fbd", "#bd6d36", "#8c5e9c", "#4c7e4e", "#bd5470", "#6b7d8c", "#b09437"];
+export const chartColors = ["#2E704F", "#71529B", "#263A53", "#B44E77", "#317F7C", "#95720A", "#536378", "#B65035"];
+
+type MethodStyle = {
+  color: string;
+  dash: "solid" | "dash" | "dot" | "longdash";
+  marker: "circle" | "square" | "diamond" | "triangle-up" | "cross" | "star" | "hexagon" | "triangle-down";
+};
+
+const methodStyles: Record<string, MethodStyle> = {
+  raw: { color: chartColors[0], dash: "solid", marker: "circle" },
+  source_temperature: { color: chartColors[1], dash: "solid", marker: "square" },
+  source_remasked_temperature: { color: chartColors[2], dash: "dash", marker: "diamond" },
+  source_fraction_binned_temperature: { color: chartColors[3], dash: "dot", marker: "triangle-up" },
+  target_temperature: { color: chartColors[4], dash: "solid", marker: "cross" },
+  target_platt_logodds: { color: chartColors[5], dash: "dash", marker: "star" },
+  target_beta: { color: chartColors[6], dash: "dot", marker: "hexagon" },
+  target_isotonic: { color: chartColors[7], dash: "longdash", marker: "triangle-down" },
+};
+
+export function methodStyle(method: string): MethodStyle {
+  const known = methodStyles[method];
+  if (known) return known;
+  let hash = 2166136261;
+  for (const character of method) hash = Math.imul(hash ^ character.charCodeAt(0), 16777619);
+  const index = (hash >>> 0) % chartColors.length;
+  const dashStyles: MethodStyle["dash"][] = ["solid", "dash", "dot", "longdash"];
+  const markerStyles: MethodStyle["marker"][] = ["circle", "square", "diamond", "triangle-up", "cross", "star", "hexagon", "triangle-down"];
+  return { color: chartColors[index], dash: dashStyles[index % dashStyles.length], marker: markerStyles[index] };
+}
 
 export function methodLabel(method: string | null | undefined): string {
   if (!method) return "Unavailable";
@@ -92,35 +122,61 @@ export function PersistedPlot(props: {
   }
   return (
     <div className="plotly-frame" data-testid={props.testId} aria-label="Interactive persisted-data chart; numeric values follow in the table.">
-      <Suspense fallback={<p role="status">Loading chart… Numeric values are available below.</p>}>
-      <Plot
-        data={props.data}
-        layout={props.layout}
-        config={{ displayModeBar: false, responsive: true, scrollZoom: false }}
-        useResizeHandler
-        style={{ width: "100%", height: "100%" }}
-      />
-      </Suspense>
+      <ChartErrorBoundary>
+        <Suspense fallback={<p className="chart-loading" role="status">Loading chart… Numeric values are available below.</p>}>
+          <Plot
+            data={props.data}
+            layout={props.layout}
+            config={{ displayModeBar: false, responsive: true, scrollZoom: false }}
+            useResizeHandler
+            style={{ width: "100%", height: "100%" }}
+          />
+        </Suspense>
+      </ChartErrorBoundary>
     </div>
   );
 }
 
 export const chartLayout: Partial<Layout> = {
   autosize: true,
-  height: 310,
-  margin: { l: 58, r: 18, t: 16, b: 68 },
-  font: { family: "Inter, ui-sans-serif, system-ui, sans-serif", color: "#314452", size: 11 },
+  height: 300,
+  margin: { l: 58, r: 14, t: 12, b: 72 },
+  font: { family: "Manrope, 'Segoe UI Variable', 'Segoe UI', sans-serif", color: "#263A53", size: 12 },
   paper_bgcolor: "rgba(0,0,0,0)",
   plot_bgcolor: "rgba(0,0,0,0)",
   showlegend: true,
-  legend: { orientation: "h", y: -0.31, x: 0, font: { size: 10 } },
-  xaxis: { gridcolor: "#e8edf0", zeroline: false, automargin: true },
-  yaxis: { gridcolor: "#e8edf0", zeroline: false, automargin: true },
+  legend: { orientation: "h", y: -0.24, x: 0, xanchor: "left", font: { size: 10 }, itemclick: "toggle", itemdoubleclick: "toggleothers" },
+  hoverlabel: { bgcolor: "#263A53", bordercolor: "#263A53", font: { color: "#FFFFFF", size: 12 } },
+  xaxis: { gridcolor: "#E1E4E8", zeroline: false, automargin: true, color: "#536378", tickfont: { size: 11 } },
+  yaxis: { gridcolor: "#E1E4E8", zeroline: false, automargin: true, color: "#536378", tickfont: { size: 11 } },
 };
 
 export function AccessibleTable(props: { caption: string; children: ReactNode }) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [overflows, setOverflows] = useState(false);
+
+  useEffect(() => {
+    const element = wrapRef.current;
+    if (!element) return;
+    const measure = () => setOverflows(element.scrollWidth > element.clientWidth + 1);
+    measure();
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
+    observer?.observe(element);
+    window.addEventListener("resize", measure);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, []);
+
   return (
-    <div className="data-table-wrap">
+    <div
+      ref={wrapRef}
+      className="data-table-wrap"
+      role={overflows ? "region" : undefined}
+      aria-label={overflows ? props.caption : undefined}
+      tabIndex={overflows ? 0 : undefined}
+    >
       <table className="data-table">
         <caption>{props.caption}</caption>
         {props.children}

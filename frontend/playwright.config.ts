@@ -19,6 +19,19 @@ if (process.env.SG_E2E_BASE_URL && !hostedBaseURL) {
 
 const databasePath = path.join(attemptDirectory, "shiftguard.sqlite").replaceAll("\\", "/");
 const pythonPath = path.join(repoRoot, ".venv", "Scripts", "python.exe");
+const localHarnessEnv: Record<string, string> = {
+  ...Object.fromEntries(Object.entries(process.env).filter((entry): entry is [string, string] => typeof entry[1] === "string")),
+  SHIFTGUARD_ENVIRONMENT: "local",
+  SHIFTGUARD_AGENT_ENABLED: "false",
+  SHIFTGUARD_DB_URL: `sqlite:///${databasePath}`,
+  SHIFTGUARD_ARTIFACT_ROOT: path.join(attemptDirectory, "artifacts"),
+  SHIFTGUARD_EMBEDDED_WORKER: "true",
+  OPENBLAS_NUM_THREADS: "1",
+  OMP_NUM_THREADS: "1",
+};
+delete localHarnessEnv.SHIFTGUARD_AGENT_PROVIDER_MODE;
+delete localHarnessEnv.SHIFTGUARD_ALLOW_TEST_SCRIPTED_PROVIDER;
+delete localHarnessEnv.NEBIUS_API_KEY;
 
 export default defineConfig({
   testDir: "../tests/e2e",
@@ -48,14 +61,7 @@ export default defineConfig({
       url: "http://127.0.0.1:8765/health/live",
       timeout: 90_000,
       reuseExistingServer: false,
-      env: {
-        ...process.env,
-        SHIFTGUARD_DB_URL: `sqlite:///${databasePath}`,
-        SHIFTGUARD_ARTIFACT_ROOT: path.join(attemptDirectory, "artifacts"),
-        SHIFTGUARD_EMBEDDED_WORKER: "true",
-        OPENBLAS_NUM_THREADS: "1",
-        OMP_NUM_THREADS: "1",
-      },
+      env: localHarnessEnv,
     },
   }),
   metadata: {
@@ -64,6 +70,9 @@ export default defineConfig({
     hosted: Boolean(hostedBaseURL),
     evidenceDirectory: attemptDirectory,
     screenshotDirectory,
+    providerKind: hostedBaseURL ? "externally-supplied" : "scripted-test-harness",
+    evidenceMode: hostedBaseURL ? "externally-supplied" : "scripted",
+    liveProviderCalls: false,
     isolatedDatabase: hostedBaseURL ? "hosted mode; server isolation supplied externally" : databasePath,
   },
 });

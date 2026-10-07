@@ -1,6 +1,6 @@
 # Antigravity execution instructions — SHIFTGUARD
 
-Checkpoint update, 29 September 2026: **AG-G5-CLOSE is completed and accepted.** This dated packet is retained as history. The active next packet is [AG-G6-OFFLINE](gate6-batch.md), with status prepared/not started; see [Gate 5 acceptance](gate5-acceptance.md).
+Active checkpoint, 30 September 2026: **Gate 6 independent review returned BLOCKERS (25 findings).** Execute only [AG-G6-CORRECTIONS-01](gate6-corrections.md), with [the complete review](gate6-review.md), [Sol application findings](gate6-sol-review.md) and [next execution](next-execution.md). Antigravity codes; **GPT-6.1 Sol Extra High** reviews. The dated AG-G5-CLOSE instructions below, including their Astra assignment and old HEAD/status, are retained as history and are **not the current execution packet**. Gate 5 is accepted; Gate 6 is pending.
 
 Effective 28 September 2026. Copy this entire document into Antigravity. It replaces Luna as the future coding owner, while retaining the existing implementation and evidence. This is an execution packet; it is not a claim that Antigravity has already run or that a gate has passed.
 

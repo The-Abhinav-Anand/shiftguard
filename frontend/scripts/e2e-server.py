@@ -1,4 +1,4 @@
-"""Run the unchanged FastAPI app with portable test-harness shutdown."""
+"""Run the isolated scripted FastAPI app with portable test-harness shutdown."""
 from pathlib import Path
 import os
 import threading
@@ -6,8 +6,11 @@ import time
 
 import uvicorn
 
+from shiftguard.api.test_harness import create_scripted_test_app
+from shiftguard.settings import Settings
+
 stop_file = Path(os.environ["SG_GATE5_ATTEMPT_DIR"]) / "server.stop"
-server = uvicorn.Server(uvicorn.Config("shiftguard.api.main:app", host="127.0.0.1", port=8765, log_level="warning"))
+server = uvicorn.Server(uvicorn.Config(create_scripted_test_app(Settings()), host="127.0.0.1", port=8765, log_level="warning"))
 
 
 def watch_shutdown() -> None:

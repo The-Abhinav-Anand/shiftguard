@@ -1,0 +1,20 @@
+:root {
+  color-scheme: light;
+  --paper: #F4F1E9;
+  --surface: #FFFEFA;
+  --ink: #182922;
+  --muted: #56635B;
+  --accent: #B84224;
+  --forest: #11271F;
+  --citron: #DDE88A;
+  --rule: #D6D9CE;
+  --control-line: #7C877D;
+  --success: #276548;
+  --warning: #825500;
+  --error: #A5322D;
+  --info: #285C8E;
+  --font-ui: Manrope, "Segoe UI Variable", "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  --content-wide: 1312px;
+  --content-workbench: 1488px;
+}
