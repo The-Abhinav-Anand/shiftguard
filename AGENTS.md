@@ -1,3 +1,17 @@
+# Gate 7 safety acceptance — 8 October 2026
+
+**Gate 7 anti-hallucination hardening is ACCEPTED against the original blueprint safety criterion.** Source `e6fee099e85975ece6d312c653e12800b7d450ff`; all 262 bound program files remain unchanged. Astra independently reconciled the requirement with actual evidence: 44 public adversarial cases/49 passing executions, the retained 782-pass backend suite, three offline completion controls and observed fail-closed live output. Gates 0–6 and historical evidence are preserved.
+
+This checkpoint explicitly corrects the later expansion of Gate 7 to require a completed adversarial model dialogue. **The live dialogue remains FAILED/BUDGET_EXCEEDED; it is not a completed refusal or live-quality PASS.** No prior report or verdict is rewritten. Successful adversarial dialogue completion and the blueprint's separate 20–30-task held-out quality evaluation remain unresolved presubmission checks. Acceptance concerns tested application containment, not universal model safety or a completion rate.
+
+Paid usage remains **10/10 calls, 47,735 tokens, zero retries**; new calls for this acceptance: **0**. Ordinary assistant stays paused. Saved manual presets and graphs remain available. No deployment, push, new scientific results, protocol lock or business-upload implementation.
+
+Next: **Gate 8 protocol preparation**, using docs/gate8-next-execution.md and the existing research/protocol-v0.3 decision register. Confirmatory scoring remains forbidden until the declared scientific approval, exposure and lock conditions pass. ACTIVE_WRITER=NONE; ACTIVE_REVIEWER=NONE. Parent owns source/Git/evidence/governance; coherent Luna xhigh code batches, Astra xhigh backend/scientific review, Sol6.1 xhigh frontend/content review. No Antigravity.
+
+Acceptance: docs/gate7-acceptance.md and ../verification/gate7-closure-20261008/safety-acceptance.json. Earlier entries below are historical and cannot revive exhausted call allowances or supersede this explicit scope reconciliation.
+
+## Previous checkpoints
+
 # Gate 7 live closure checkpoint — 8 October 2026
 
 Gate 6 remains **ACCEPTED** on its preserved source 950d5cd. Gate 7 remains **BLOCKED_REQUIRED_LIVE_CONTAINMENT_EVIDENCE**. Current reviewed source `e6fee099e85975ece6d312c653e12800b7d450ff` was clean during execution. The prepared follow-up used 3 real Nebius/NVIDIA Nemotron calls, 13,126 tokens, zero retries. Cumulative allowance: **10/10 calls, 47,735/65,000 tokens; zero remaining calls**. Original seven attempt records are unchanged, and the original allowance is sealed. No more paid requests, allowance resets or automatic retries.
