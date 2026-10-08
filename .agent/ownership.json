@@ -1,7 +1,7 @@
 {
   "active_writer": "NONE",
-  "state": "GATE6_ACCEPTED_GATE7_LIVE_CONTAINMENT_BLOCKED",
-  "candidate_commit": "950d5cd2d363247d20e7ab5b9a54faa5a4dbcf61",
+  "state": "BLOCKED_REQUIRED_LIVE_CONTAINMENT_EVIDENCE",
+  "candidate_commit": "e6fee099e85975ece6d312c653e12800b7d450ff",
   "reviewer": "gpt-6.1-sol xhigh",
   "scoped_writers": [
     {
@@ -70,7 +70,7 @@
     }
   ],
   "next_writer": null,
-  "model_policy": "Four GPT-6 Luna xhigh writers; one GPT-6.1 Sol xhigh review only after integrated major batch",
+  "model_policy": "Scoped GPT-6 Luna xhigh corrections; GPT-6 Astra xhigh backend/source/output review; GPT-6.1 Sol xhigh frontend/content review after coherent batches",
   "execution_policy": {
     "implementer": {
       "platform": "Codex subagents",
@@ -89,13 +89,13 @@
   },
   "implementation_agent": null,
   "assigned_writer": "NONE",
-  "next_batch": "G6-REQUIRED-EVIDENCE-AND-ACCEPTANCE",
-  "scope_contract": "docs/product-refresh-20260930/luna-major-batch-01.md",
+  "next_batch": "G7_AWAITING_NEW_LIVE_AUTHORIZATION",
+  "scope_contract": "docs/gate7-live-closure-20261008.md",
   "candidate_source_digest": "8bb8cb4c68e813dc44781acc236b0d63de6bd3b7c2077dd58e897cda47c260af",
-  "working_head": "83037b0f02eef62203c3f565a063d824af2722d7",
+  "working_head": "e6fee099e85975ece6d312c653e12800b7d450ff",
   "author_declared_digest": "fd84e1ff09bffc67a24d6d6f26aa6ffc8d4b4dcfca2c2ad96ab5a3a8926cbf1a",
   "review_trigger": "Only after integrated major batch is self-tested and frozen",
-  "reviewer_agent": "01a0f813-bb83-7090-ab28-25f9a68c9bb9",
+  "reviewer_agent": "NONE",
   "accepted_source_commit": "f63116fedc2751493d79d44897ba913b6d28b0b5",
   "candidate_manifest": "../verification/gate6-comprehensive-20261002/final-source.json",
   "luna_major_review": {
@@ -114,7 +114,7 @@
     "live_A7": "BLOCKED_NOT_RUN",
     "checkpoint_type": "Separate parent governance after frozen-source verification; no code changes"
   },
-  "current_user_authorization": "5 October: check locally supplied key sparingly; continue Gate7 if working and advance paper. First attempt rejected; no retries until corrected.",
+  "current_user_authorization": "8 October: continue approved remaining3 calls, cumulative10/65000 ceiling; now10calls47735tokens, zero remaining calls. No further paid dispatch.",
   "review_snapshot": "verification/product-execution-20261001/frontend-cleanup-major-01/frozen-g6-source",
   "frontend_cleanup_dispatch": {
     "parent_owners": [
@@ -178,130 +178,40 @@
     "preflight_writer": "01a0f8bb-092d-7e90-bf72-3b3488fc6878"
   },
   "latest_execution_checkpoint": {
-    "updated_utc": "2026-10-04T07:28:26.830746+00:00",
-    "state": "OFFLINE_CORRECTIONS_VERIFIED_GATE6_PENDING_LIVE_EVIDENCE",
-    "source_digest": "8bb8cb4c68e813dc44781acc236b0d63de6bd3b7c2077dd58e897cda47c260af",
-    "source_manifest": "final-source.json",
-    "final_residual_delta": [
-      "shiftguard/agent/controller.py",
-      "shiftguard/agent/policy.py",
-      "tests/agent/test_g6_call_id_boundary.py",
-      "tests/agent/test_g6_nul_id.py"
-    ],
-    "source_commit": null,
-    "commit_created": false,
-    "deployment": false,
-    "live_provider_calls": false,
-    "active_writer": "NONE",
-    "gate6_acceptance": "PENDING",
-    "closed_findings": [
-      "C03",
-      "C04",
-      "C05",
-      "C06",
-      "C07",
-      "PR01",
-      "PR02",
-      "PR03",
-      "SR01",
-      "SR02",
-      "SR03",
-      "INT01",
-      "PR03-R1"
-    ],
-    "open_material_blockers_in_reviewed_correction_scope": [],
-    "full_suite": {
-      "tests": 611,
-      "failed": 0,
-      "errors": 0,
-      "skipped": 0,
-      "passed": 611,
-      "postgresql_cases": 108,
-      "duration_seconds": 983.338,
-      "sha256": "74db0ee7bc3ee99f4dab43b56da71c7bcbc605fbd817a1b5cadf519714324008",
-      "exit_code": 0,
-      "warnings": 2,
-      "exit_code_evidence": "Parent retrieved completed exec session 87576 on 4 October 2026: exit_code=0."
-    },
-    "browser": {
-      "startTime": "2026-10-03T08:35:22.660Z",
-      "duration": 125206.22,
-      "expected": 17,
-      "skipped": 0,
-      "unexpected": 0,
-      "flaky": 0
-    },
-    "wheel": {
-      "status": "PASS",
-      "sha256": "4d8db45cedeb2226e0f2c443d95aa5772a2ab90045283e5578a74c5837a49d4c",
-      "runtime_probes": 9,
-      "module_origins": 90,
-      "historical_database_unchanged": true
-    },
-    "reviews": {
-      "surface": "PASS",
-      "backend_original": "BLOCKERS_PRESERVED",
-      "backend_residual": "PASS",
-      "residual_source_binding": {
-        "verdict": "PASS",
-        "scope": "Residual-only PR03-R1 input-guard review; no Gate 6 acceptance claim",
-        "root": "C:/Users/Abhinav Anand/Downloads/nvidia/shiftguard",
-        "contract": "IDs are nonempty strings, valid UTF-8, at most 256 encoded bytes, exclude U+0000; accepted IDs preserved exactly.",
-        "source": {
-          "head": "83037b0f02eef62203c3f565a063d824af2722d7",
-          "checkout_clean": false,
-          "manifest": "../final-source.json",
-          "declared_digest": "8bb8cb4c68e813dc44781acc236b0d63de6bd3b7c2077dd58e897cda47c260af",
-          "manifest_sha256": "451ab550669ffeca87467ed8465a4a44acb90034fdd52a7e2c421705deb0249c",
-          "verification": "All five reviewed file hashes independently computed and matched manifest.files; aggregate digest not independently recomputed; no post-review hash pass.",
-          "sha256": {
-            "shiftguard/agent/policy.py": "3c1b57eca5de8f92d37e1a79222d2591ba618243685b21e1bb05066b18a419e7",
-            "shiftguard/agent/controller.py": "776812f34099650a656ae39c42bba8620848246691888a7071211355766064dc",
-            "shiftguard/agent/registry.py": "ca764d79cc960e342848a7f7ada56bf211e1dcc12135bb62f1152adb2191a498",
-            "tests/agent/test_g6_nul_id.py": "36ee55bf3198259d41bafb591e6be195824b56623814b096a6e1a9aab7ffa635",
-            "tests/agent/test_g6_call_id_boundary.py": "0599dbd5862f55166730f789031cec81e27b5997182f65a1f3c838ab5cbebc11"
-          }
-        },
-        "closed_residual": {
-          "id": "PR03-R1",
-          "basis": [
-            "policy.py:8-15 rejects nonstrings, empty strings and NUL before UTF-8 encoding; strict encoding rejects surrogates; encoded length is bounded to 256; accepted value returned unchanged.",
-            "controller.py:353 rejects invalid IDs inside _normalize_decision before checkpoint_decision at line 507; accepted decision and assistant message retain original ID.",
-            "registry.py:305-309 uses the same helper before argument preparation or handler dispatch, preserving accepted ID unchanged.",
-            "NUL regressions inspect direct registry plus synchronous/job controller rejection, with no accepted checkpoint, execution or job; fixture parametrizes SQLite/PostgreSQL in isolated schemas.",
-            "Boundary tests cover exact ASCII/multibyte 256-byte acceptance and empty, NUL, oversized, surrogate and nonstring rejection."
-          ]
-        },
-        "material_residual_blockers": [],
-        "runtime": {
-          "independent_tests": "NOT_RUN; user stopped extra probes before any runtime command was started",
-          "parent_reported": "All six NUL SQLite/PostgreSQL cases passed; full suite at 50% with no failures; final wheel nine probes passed.",
-          "parent_results_independently_verified": false,
-          "full_suite_final_result": "Not established by this review"
-        },
-        "history": "Original backend-correction-review/REPORT.md BLOCKERS verdict and evidence preserved; this PASS applies only to the revised contract on the identified residual source.",
-        "changes": "Only residual-review/review.json and residual-review/report.md written; application source/tests/governance/history not modified."
-      }
-    },
-    "protected_backend_count": 49,
-    "unchanged_applied_migrations": 10,
-    "accepted_gate_objects_unchanged": 6,
-    "live_A7": "NOT_RUN_REQUIRES_LOCAL_ACCESS_AND_EXPLICIT_CALL_TOKEN_BUDGET",
-    "next_steps": [
-      "Configure Nebius credentials locally without pasting secrets into chat; authorize a bounded live-call and token budget.",
-      "Run exact-model live chat, tool and structured-output canaries plus flagship run/read/compare; keep evidence separate from offline fixtures.",
-      "After live evidence succeeds, prepare parent-owned source commit and separate governance acceptance; Gate 6 remains pending until recorded."
-    ],
-    "evidence_sha256": {
-      "final-source.json": "451ab550669ffeca87467ed8465a4a44acb90034fdd52a7e2c421705deb0249c",
-      "full-final-junit.xml": "74db0ee7bc3ee99f4dab43b56da71c7bcbc605fbd817a1b5cadf519714324008",
-      "full-final.log": "95ce0921fc205c45a5a50d1793b5a471768dc8491a0758d60a85482d50f1947f",
-      "wheel-final-runtime/result.json": "ac009f0a4bd49de407309be57a9888d24fb5831e700429ba2fad38fa3122a444",
-      "browser-integrated/playwright-report.json": "c67566d05370b2b48dbf78d47b8be2d372ad453e809072632eb14028b06ca556",
-      "surface-correction-review/source-binding.json": "ec9abc49df4f73784e8e8a781507eed00323cb5b009ad0bfc225b884797d1d1c",
-      "backend-correction-review/review.json": "a4286bfc7ca16723731d0249bf562bb3d2c8d1868156a4514d84e3aecfb70665",
-      "residual-review/review.json": "0026ddbff0cb0906eb4241b9ad80b2e12ed3cb09d9e1c5ceeafcb03482cd3984"
-    }
+    "status": "BLOCKED_REQUIRED_LIVE_CONTAINMENT_EVIDENCE",
+    "accepted": false,
+    "source_commit": "e6fee099e85975ece6d312c653e12800b7d450ff",
+    "source_clean_at_execution": true,
+    "runtime_sha256": "fd55b031db907238d4d8fa246631cf56aa93b766e8b7aa0489a9398605f2a093",
+    "frontend_product_digest": "ac09244554b7e0784510908af09a010c9a18ad7c47862a477ebe9337e184c266",
+    "request_id": "req_be1ddf62717141e2b9d2",
+    "terminal_status": "FAILED",
+    "terminal_error": "BUDGET_EXCEEDED",
+    "positive_gate6_workflow": "ACCEPTED_SEPARATE_PRESERVED_EVIDENCE",
+    "live_challenge": "INCOMPLETE_BY_CALL_LIMIT_NOT_A_CONTAINMENT_PASS",
+    "current_followup_calls": 3,
+    "current_followup_tokens": 13126,
+    "cumulative_calls": 10,
+    "cumulative_tokens": 47735,
+    "maximum_calls": 10,
+    "maximum_tokens": 65000,
+    "remaining_authorized_calls": 0,
+    "sdk_retries": 0,
+    "original_allowance_sealed": true,
+    "scientific_side_effects_absent": true,
+    "idempotent_replay_new_calls": 0,
+    "new_jobs": 0,
+    "new_experiments": 0,
+    "new_execution_audits": 0,
+    "new_publications": 0,
+    "evidence": "../verification/gate7-closure-20261008/live/parent-negative-audit.json",
+    "output_review": "../verification/gate7-closure-20261008/astra-live-output-review/review.json",
+    "offline_diagnosis": "THREE_CONTROLS_PASS_EXPECTED_CAP_NO_COMPLETION_DEFECT_DEMONSTRATED",
+    "offline_real_provider_calls": 0,
+    "offline_completion_control_cases": 3,
+    "offline_review": "../verification/gate7-closure-20261008/astra-offline-completion-review/review.json",
+    "next": "Await separate explicit live usage authorization; current allowance exhausted; no source patch justified by these controls",
+    "ordinary_assistant_enabled": false
   },
   "recovery_batch_20261002": {
     "parent_paths": [
