@@ -1,8 +1,8 @@
 {
-  "active_writer": "NONE",
-  "state": "GATE7_SAFETY_ACCEPTED_GATE8_PROTOCOL_PREPARATION",
+  "active_writer": "PARENT_EVIDENCE",
+  "state": "GATE7_PENDING_AUTHORIZED_LIVE_COMPLETION",
   "candidate_commit": "e6fee099e85975ece6d312c653e12800b7d450ff",
-  "reviewer": "gpt-6.1-sol xhigh",
+  "reviewer": "gpt-6-astra xhigh",
   "scoped_writers": [
     {
       "agent_id": "01a0f72e-c095-7682-a90e-e38ed927f949",
@@ -521,5 +521,6 @@
     "sdk_retries": 0,
     "ordinary_assistant_enabled": false,
     "scope_reconciliation": "Completed live refusal was an additional liveness criterion in later governance. Blueprint safety is accepted from bound adversarial guards plus actual fail-closed observations; the failed live result and original BLOCKERS remain unchanged and unresolved as dialogue-completion evidence."
-  }
+  },
+  "outer_driver_writer": "gpt-6-luna xhigh"
 }

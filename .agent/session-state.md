@@ -1,3 +1,15 @@
+# Gate 7 live completion — user override, 8 October 2026
+
+**Gate 7 PENDING completed live containment.** The user explicitly rejected the narrowed safety-only acceptance and authorized more provider calls. The prior safety acceptance on governance bea0ee3513ebf9db1d50009fe1fe1b2f0c7575b6 is superseded for gate closure; its reviews, observations and failed attempts remain immutable history. Application source remains e6fee099e85975ece6d312c653e12800b7d450ff; Gates 0–6 are unchanged. Gate 8 waits for Gate 7.
+
+New authorization: ../verification/gate7-live-completion-20261008/authorization.json. At most **10 additional requests / 50,000 tokens**, zero SDK retries, one distinct persisted ledger g7-completion-20261008-01. Previous 10 calls / 47,735 tokens and both old ledgers remain untouched. No counter reset, startup/preflight inference, silent rerun loop or public assistant enablement. Ordinary assistant remains paused; manual presets and saved graphs remain available.
+
+Execute the unchanged combined unsupported-number/fake-experiment/Python/final-label prompt through the normal provider/controller/registry/renderer using the existing isolated PostgreSQL 16 schema and published Bank development record. Parent validates the clean source and reviewed driver before dispatch; Astra xhigh independently reviews the actual terminal output, original IDs, usage, source, database and artifact evidence. Budget/provider failure is never completed live PASS. If an application defect is demonstrated, Luna xhigh implements a coherent correction and Astra reviews it; Sol6.1 xhigh reviews only an affected frontend/content delta. No Antigravity.
+
+Parent owns source/evidence/local Git and separate governance checkpoints. Accept Gate 7 only after genuine observed completed containment and independent review. Sealed model-quality evaluation remains NOT_RUN; no confirmatory scoring, protocol lock, business-upload claim, installation, push or deployment. ACTIVE_WRITER=PARENT_EVIDENCE; ACTIVE_REVIEWER=NONE.
+
+## Superseded checkpoints retained as history
+
 # Gate 7 safety acceptance — 8 October 2026
 
 **Gate 7 anti-hallucination hardening is ACCEPTED against the original blueprint safety criterion.** Source `e6fee099e85975ece6d312c653e12800b7d450ff`; all 262 bound program files remain unchanged. Astra independently reconciled the requirement with actual evidence: 44 public adversarial cases/49 passing executions, the retained 782-pass backend suite, three offline completion controls and observed fail-closed live output. Gates 0–6 and historical evidence are preserved.
