@@ -24,16 +24,21 @@ function budgetSummary(value: unknown): string | null {
   const callsRemainingRaw = nonNegativeCount(value.calls_remaining);
   const tokensUsedRaw = nonNegativeCount(value.tokens_committed);
   const tokensRemainingRaw = nonNegativeCount(value.tokens_remaining);
-  const callsUsed = callsUsedRaw ?? (callsRemainingRaw !== null && callsRemainingRaw <= 10 ? 10 - callsRemainingRaw : null);
-  const callsRemaining = callsRemainingRaw ?? (callsUsedRaw !== null && callsUsedRaw <= 10 ? 10 - callsUsedRaw : null);
-  const tokensUsed = tokensUsedRaw ?? (tokensRemainingRaw !== null && tokensRemainingRaw <= 50_000 ? 50_000 - tokensRemainingRaw : null);
-  const tokensRemaining = tokensRemainingRaw ?? (tokensUsedRaw !== null && tokensUsedRaw <= 50_000 ? 50_000 - tokensUsedRaw : null);
+  // The server owns the daily limits; the panel shows used/limit only when both counts arrive.
   const details: string[] = [];
-  if (callsUsed !== null && callsUsed <= 10) {
-    details.push(`${callsUsed}/10 calls used${callsRemaining !== null && callsRemaining <= 10 ? ` · ${callsRemaining} remaining` : ""}`);
+  if (callsUsedRaw !== null && callsRemainingRaw !== null) {
+    details.push(`${callsUsedRaw}/${callsUsedRaw + callsRemainingRaw} calls used · ${callsRemainingRaw} remaining`);
+  } else if (callsUsedRaw !== null) {
+    details.push(`${callsUsedRaw} calls used`);
+  } else if (callsRemainingRaw !== null) {
+    details.push(`${callsRemainingRaw} calls remaining`);
   }
-  if (tokensUsed !== null && tokensUsed <= 50_000) {
-    details.push(`${tokensUsed.toLocaleString("en-US")}/50,000 tokens committed${tokensRemaining !== null && tokensRemaining <= 50_000 ? ` · ${tokensRemaining.toLocaleString("en-US")} remaining` : ""}`);
+  if (tokensUsedRaw !== null && tokensRemainingRaw !== null) {
+    details.push(`${tokensUsedRaw.toLocaleString("en-US")}/${(tokensUsedRaw + tokensRemainingRaw).toLocaleString("en-US")} tokens committed · ${tokensRemainingRaw.toLocaleString("en-US")} remaining`);
+  } else if (tokensUsedRaw !== null) {
+    details.push(`${tokensUsedRaw.toLocaleString("en-US")} tokens committed`);
+  } else if (tokensRemainingRaw !== null) {
+    details.push(`${tokensRemainingRaw.toLocaleString("en-US")} tokens remaining`);
   }
   if (value.halted === true) details.push("budget halted");
   const day = typeof value.utc_day === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value.utc_day) ? value.utc_day : null;

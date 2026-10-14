@@ -8,7 +8,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import text
 
-from shiftguard.agent.ordinary_budget import OrdinaryBudget
+from shiftguard.agent.ordinary_budget import ORDINARY_MAX_CALLS, OrdinaryBudget
 from shiftguard.api.main import create_app
 from shiftguard.migrations import upgrade_database
 from shiftguard.storage.db import create_engine_for_settings
@@ -264,7 +264,7 @@ def test_rejection_before_dispatch_records_nothing_and_keeps_the_conversation_us
         headers=headers,
     ).json()
     conversation_id = first["conversation_id"]
-    _set_ordinary_ledger(client, calls_used=10)
+    _set_ordinary_ledger(client, calls_used=ORDINARY_MAX_CALLS)
     body = {
         "prompt": "Blocked follow-up",
         "idempotency_key": "turn-2",
@@ -460,4 +460,4 @@ def test_prompt_limit_and_status_expose_only_ordinary_public_counts(chat_runtime
     status = client.get("/api/v1/agent/status").json()
     assert status["general_chat_enabled"] is True
     assert status["ordinary_budget"]["calls_used"] == 0
-    assert status["ordinary_budget"]["calls_remaining"] == 10
+    assert status["ordinary_budget"]["calls_remaining"] == 50

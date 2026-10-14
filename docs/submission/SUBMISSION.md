@@ -43,7 +43,7 @@ reports the adverse results too.
   label firewall: final outcomes stay inside one evaluator.
 - React, TypeScript and Plotly for the workbench.
 - NVIDIA Nemotron (`nvidia/Nemotron-3_5-Lightning`) on Nebius Token Factory through the
-  OpenAI-compatible API, with a hard daily budget (10 calls, 50,000 tokens), reservations
+  OpenAI-compatible API, with a hard daily budget (50 calls, 100,000 tokens), reservations
   before each call, zero retries and at-most-once replay.
 
 ## Challenges

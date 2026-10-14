@@ -26,7 +26,7 @@
 
 ## Model allowance
 
-Both assistants share one budget of 10 model calls and 50,000 tokens per UTC day across all
+Both assistants share one budget of 50 model calls and 100,000 tokens per UTC day across all
 visitors, with no retries. A Results question can use several calls. When the day's budget
 is used up, both assistants say so plainly, and everything else keeps working: runs, saved
 results and charts. The budget resets at 00:00 UTC (05:30 IST).

@@ -13,8 +13,8 @@ repository `Dockerfile`.
 
 ## Do not scale
 
-Run exactly one `api` and one `worker` replica. The ordinary model budget (10 calls and
-50,000 tokens per UTC day, shared by general chat and the Results assistant) has one owner
+Run exactly one `api` and one `worker` replica. The ordinary model budget (50 calls and
+100,000 tokens per UTC day, shared by general chat and the Results assistant) has one owner
 per database. A second provider-enabled API process refuses to start instead of taking
 over the first one's open reservation.
 

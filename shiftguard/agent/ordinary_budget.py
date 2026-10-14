@@ -31,8 +31,9 @@ from shiftguard.agent.ordinary_owner import OrdinaryDispatchOwner, OrdinaryOwner
 
 
 ORDINARY_NAMESPACE = "ordinary-v1"
-ORDINARY_MAX_CALLS = 10
-ORDINARY_MAX_TOKENS = 50_000
+# Owner-set daily allowance (15 October 2026): 50 calls and 100,000 tokens per UTC day.
+ORDINARY_MAX_CALLS = 50
+ORDINARY_MAX_TOKENS = 100_000
 ORDINARY_MAX_OUTPUT_TOKENS = 1024
 ORDINARY_MAX_RETRIES = 0
 _SOURCE_DIGEST = hashlib.sha256(b"shiftguard.ordinary_budget.v1").hexdigest()

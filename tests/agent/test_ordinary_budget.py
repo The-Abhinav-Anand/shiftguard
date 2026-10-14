@@ -71,7 +71,7 @@ def test_unknown_usage_halts_daily_budget_and_keeps_reservation_charged(ordinary
 
 
 def test_call_limit_is_atomic_under_concurrent_reservations(ordinary_engine):
-    budgets = [OrdinaryBudget(ordinary_engine) for _ in range(14)]
+    budgets = [OrdinaryBudget(ordinary_engine) for _ in range(ORDINARY_MAX_CALLS + 4)]
 
     def attempt(budget):
         try:
@@ -79,7 +79,7 @@ def test_call_limit_is_atomic_under_concurrent_reservations(ordinary_engine):
         except OrdinaryBudgetLimitExceeded:
             return None
 
-    with ThreadPoolExecutor(max_workers=14) as pool:
+    with ThreadPoolExecutor(max_workers=ORDINARY_MAX_CALLS + 4) as pool:
         results = list(pool.map(attempt, budgets))
     accepted = [result for result in results if result is not None]
     assert len(accepted) == ORDINARY_MAX_CALLS
@@ -93,7 +93,7 @@ def test_token_bound_and_unknown_restart_fail_closed(ordinary_engine, monkeypatc
     with pytest.raises(OrdinaryBudgetLimitExceeded, match="tokens"):
         budget.reserve(
             model="nvidia/Nemotron-3_5-Lightning",
-            messages=[{"role": "user", "content": "x" * 51_000}],
+            messages=[{"role": "user", "content": "x" * (ORDINARY_MAX_TOKENS + 1_000)}],
             tools=None,
             max_output_tokens=ORDINARY_MAX_OUTPUT_TOKENS,
         )
@@ -121,3 +121,22 @@ def test_new_utc_day_gets_a_separate_daily_aggregate(ordinary_engine, monkeypatc
     assert budget.public_snapshot()["calls_used"] == 0
     second = _reserve(budget)
     assert second.utc_day == "2026-10-10"
+
+
+def test_owner_set_daily_allowance_is_fifty_calls_and_one_hundred_thousand_tokens(ordinary_engine):
+    assert (ORDINARY_MAX_CALLS, ORDINARY_MAX_TOKENS, ORDINARY_MAX_OUTPUT_TOKENS) == (50, 100_000, 1024)
+    assert ordinary_module.ORDINARY_MAX_RETRIES == 0
+    snapshot = OrdinaryBudget(ordinary_engine).public_snapshot()
+    assert (snapshot["calls_remaining"], snapshot["tokens_remaining"]) == (50, 100_000)
+
+
+def test_a_day_opened_under_a_different_policy_halts_instead_of_resetting(ordinary_engine):
+    # A ledger row written under another allowance is never re-based or reset mid-day.
+    budget = OrdinaryBudget(ordinary_engine)
+    _reserve(budget)
+    with ordinary_engine.begin() as connection:
+        connection.execute(ordinary_module._daily.update().values(max_calls=10))
+    with pytest.raises(OrdinaryBudgetHalted, match="policy_binding_mismatch"):
+        _reserve(budget)
+    assert budget.public_snapshot()["halted"] is True
+    assert budget.public_snapshot()["calls_used"] == 1
