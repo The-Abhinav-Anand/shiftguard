@@ -20,7 +20,20 @@ Executor: Claude Code (claude-opus-5-5), with two Sonnet implementation subagent
   - Linux `fcntl` owner probe: PASS (`linux-owner-probe.json`).
   - CLI failure output leaks neither the password nor the API key marker (`cli-leak-before.txt`).
   - Local stack r3 (`run_stack.sh`, host networking because this daemon has no container DNS): offline release probe PASS (`probe-r3-baseline.json`).
-  - Next step, written but not yet run: `python restart_probe.py r3` (worker kill and API restart mid-job, replay, redeploy artifact digests, cancellation). Then the second-owner refusal with `CHAT=true`, then `run_stack.sh down r3`. Stack r3 is still running.
+  - 15 October, same stack: `restart-probe-r3.json` PASS. A bank-stress job survived a worker kill and an API restart and was published once. The same-key replay returned the same job. 10/10 artifact digests matched before and after an API redeploy. Cancellation worked.
+  - Second provider-enabled API refused on PostgreSQL (`second-owner-r3-image2.log`). Peak memory: worker 315 MiB, API 161 MiB, PostgreSQL 37 MiB. Container logs and the served frontend: no password or URL.
+  - Fixed and committed (`5d5671a`): alembic `fileConfig` had been disabling existing loggers at in-process startup.
+  - Rebuilt image `c00425ec34d4`. Stack r3 torn down.
+
+**15 October commits (owner authorized commits):**
+- `9e39afd` corrections and scaffold.
+- `44210bb` allowance raised to 50 calls / 100,000 tokens (owner-set; local server restarted on it).
+- `2366e7c` launch plan: `docs/superpowers/plans/2026-10-15-launch-plan.md`.
+- `5d5671a` logging fix.
+
+Nothing pushed. Git history scan: no API key, `.env` or database files in any commit.
+
+Next (launch plan Phase A): add a Caddy HTTPS service and `deploy/bootstrap-vm.sh`. Then the owner's hosting choice (Oracle Always Free recommended), GitHub repository and push method, and video date.
 
 Open, in the owner's hands: source-commit authorization; hosting account and cost; a specific live allowance; the judge access/capacity arrangement; Devpost eligibility and submission.
 
