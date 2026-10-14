@@ -4,6 +4,7 @@ import { api, isStressPayload } from "../api/client";
 import { SelectedDiagnostics } from "../components/ResultDetails";
 import { PresetResult } from "../components/PresetResult";
 import { AgentPanel } from "../components/AgentPanel";
+import { GeneralChatPanel } from "../components/GeneralChatPanel";
 import { BudgetCurve } from "../components/charts/BudgetCurve";
 import { DecisionLoss, costPairKey } from "../components/charts/DecisionLoss";
 import { PatternVsRate } from "../components/charts/PatternVsRate";
@@ -69,6 +70,7 @@ export default function BenchmarkWorkbench() {
   const [healthError, setHealthError] = useState(false);
   const [resultsLoading, setResultsLoading] = useState(true);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [assistantMode, setAssistantMode] = useState<"results" | "general">("results");
   const [activityOpen, setActivityOpen] = useState(false);
   const [focusAttempt, setFocusAttempt] = useState<{ experimentId: string; previous: StoredExperiment | null; settled: boolean } | null>(null);
   const resultRequest = useRef(0);
@@ -82,6 +84,17 @@ export default function BenchmarkWorkbench() {
     ? experiment.payload.payloads.budget_curve.scenarios[curveKey]?.[currentSelection.method === "all" ? methodOptions[0] : currentSelection.method] ?? []
     : [];
   const selectedPreset = PRESETS.find((item) => item.value === preset) ?? PRESETS[0];
+  const chatDisabledReason = workbench.backend !== "online" || !workbench.ready
+    ? "Connect to the server before using general chat."
+    : !agent.agentStatus
+      ? "Checking general chat availability…"
+      : !agent.agentStatus.general_chat_enabled
+        ? "General chat is paused."
+        : !agent.agentStatus.available
+          ? "Chat provider unavailable."
+          : !workbench.workspace.session
+            ? "A server session is required."
+            : null;
 
   useEffect(() => {
     if (experiment) setSelection(initialSelection(experiment.payload));
@@ -430,21 +443,35 @@ export default function BenchmarkWorkbench() {
         </aside>
       </details>
 
-      <AgentPanel
-        agentStatus={agent.agentStatus}
-        activeRequest={agent.activeRequest}
-        recoveryIntent={agent.recoveryIntent}
-        storageError={agent.storageError}
-        isSubmitting={agent.isSubmitting}
-        error={agent.error}
-        sessionExpired={agent.sessionExpired}
-        canRetry={agent.canRetry}
-        onSubmitQuery={(prompt) => { void agent.submitQuery(prompt); }}
-        onRetryQuery={() => { void agent.retryQuery(); }}
-        onReconnect={() => { void workbench.reconnect(); }}
-        onSelectExperiment={(experimentId) => { void workbench.loadPublished(experimentId); }}
-        onClear={agent.clearRequest}
-      />
+      <div className="assistant-mode-picker" role="group" aria-label="Choose assistant">
+        <button type="button" aria-pressed={assistantMode === "general"} onClick={() => setAssistantMode("general")}>General chat</button>
+        <button type="button" aria-pressed={assistantMode === "results"} onClick={() => setAssistantMode("results")}>Results assistant</button>
+      </div>
+      <div className="assistant-panel" hidden={assistantMode !== "general"}>
+        <GeneralChatPanel
+          credentials={workbench.workspace.session}
+          enabled={chatDisabledReason === null}
+          disabledReason={chatDisabledReason}
+          ordinaryBudget={agent.agentStatus?.ordinary_budget}
+        />
+      </div>
+      <div className="assistant-panel" hidden={assistantMode !== "results"}>
+        <AgentPanel
+          agentStatus={agent.agentStatus}
+          activeRequest={agent.activeRequest}
+          recoveryIntent={agent.recoveryIntent}
+          storageError={agent.storageError}
+          isSubmitting={agent.isSubmitting}
+          error={agent.error}
+          sessionExpired={agent.sessionExpired}
+          canRetry={agent.canRetry}
+          onSubmitQuery={(prompt) => { void agent.submitQuery(prompt); }}
+          onRetryQuery={() => { void agent.retryQuery(); }}
+          onReconnect={() => { void workbench.reconnect(); }}
+          onSelectExperiment={(experimentId) => { void workbench.loadPublished(experimentId); }}
+          onClear={agent.clearRequest}
+        />
+      </div>
 
       {latestRecovery && <p className="activity-recovery" role="status">Recent recovery: {latestRecovery.outcome}</p>}
       <details className="activity-disclosure" id="activity" open={activityOpen} onToggle={(event) => setActivityOpen(event.currentTarget.open)}>

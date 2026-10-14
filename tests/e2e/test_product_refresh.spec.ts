@@ -212,12 +212,16 @@ test("F13 public and workbench entry chunks stay separate from Plotly and option
   expect(initialModules.some((asset) => asset.module === "scene"), "the workbench must not load Three or GSAP scene modules").toBe(false);
 });
 
-test("F14 assistant remains blocked while manual workbench controls stay available", async ({ page }) => {
+test("F14 assistant stays paused while manual workbench controls stay available", async ({ page }) => {
   const audit = refreshAudit(page);
   await page.goto("/demo");
-  await expect(page.getByText(/Assistant integration under review/)).toBeVisible();
+  await expect(page.getByText(/Paid inference is paused/)).toBeVisible();
   await expect(page.getByRole("combobox", { name: "Approved preset", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Submit run" })).toBeVisible();
-  await expect(page.locator("input, textarea, [contenteditable='true']")).toHaveCount(0);
-  expect(audit.providerAttempts, "blocked assistant UI must not call status, submit, or resume endpoints").toEqual([]);
+  // The accepted assistants are mounted since Gate 6: their inputs exist but stay disabled, and only status is read.
+  await expect(page.locator("input:enabled, textarea:enabled, [contenteditable='true']")).toHaveCount(0);
+  expect(
+    audit.providerAttempts.filter((attempt) => attempt !== "GET /api/v1/agent/status"),
+    "a paused assistant must not submit, resume or chat",
+  ).toEqual([]);
 });

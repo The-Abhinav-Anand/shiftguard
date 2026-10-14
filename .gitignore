@@ -19,3 +19,12 @@ dist/
 build/
 *.egg-info/
 verification/gate2/
+# Judge deployment secrets and mounted data stay local (see deploy/README.md).
+deploy/judge.env
+deploy/postgres.env
+deploy/datasets/
+deploy/secrets/
+# Ordinary-dispatch ownership lock beside a SQLite database.
+*.ordinary-owner.lock
+# Local tool state.
+.orchestrator/

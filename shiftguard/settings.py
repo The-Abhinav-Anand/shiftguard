@@ -127,6 +127,10 @@ class Settings(BaseSettings):
         default=False,
         validation_alias=AliasChoices("SHIFTGUARD_AGENT_ENABLED", "agent_enabled"),
     )
+    general_chat_enabled: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("SHIFTGUARD_GENERAL_CHAT_ENABLED", "general_chat_enabled"),
+    )
     agent_max_turns: int = Field(
         default=6,
         validation_alias=AliasChoices("SHIFTGUARD_AGENT_MAX_TURNS", "agent_max_turns"),

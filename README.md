@@ -61,7 +61,7 @@ Run `.\scripts\start-local.ps1` from the repository root first. Vite proxies `/a
 
 Production builds the frontend and serves it from the same FastAPI origin. API routes remain under `/api/v1` and are never handled by the SPA fallback.
 
-`/` opens the preloaded-data workbench; `/demo` is an alias. `/about` explains the product and its business use. Private workspace routes explicitly describe planned capabilities. The public assistant remains disabled pending Gate 6 acceptance.
+`/` opens the preloaded-data workbench; `/demo` is an alias. `/about` explains the product and its business use. Private workspace routes explicitly describe planned capabilities. [Ordinary Nemotron access](docs/ordinary-chat.md) covers general chat, the evidence-grounded results assistant and their shared daily usage allowance. Source defaults remain disabled; local configuration controls activation.
 
 ## Container
 

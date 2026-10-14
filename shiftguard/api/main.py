@@ -13,13 +13,41 @@ import threading
 import os
 
 from shiftguard.agent.provider import AgentProvider
-from shiftguard.api.routes import agent, agent_requests, experiments, health, jobs, metadata
+from shiftguard.agent.ordinary_budget import OrdinaryBudget
+from shiftguard.agent.ordinary_owner import OrdinaryDispatchOwner
+from shiftguard.api.routes import agent, agent_requests, chat, experiments, health, jobs, metadata
 from shiftguard.jobs.queue import JobQueue
 from shiftguard.jobs.recovery import run_recovery_loop
 from shiftguard.jobs.worker import ExperimentWorker
 from shiftguard.migrations import upgrade_database
 from shiftguard.settings import Settings
 from shiftguard.storage.db import check_database_connection, create_engine_for_settings
+
+
+_MAX_VALIDATION_ERRORS = 20
+_MAX_LOCATION_PARTS = 8
+_MAX_LOCATION_PART_CHARS = 64
+_MAX_ERROR_TEXT_CHARS = 200
+
+
+def _public_validation_errors(errors) -> list[dict[str, object]]:
+    """Project Pydantic errors onto JSON primitives; never echo input or exception objects."""
+    public: list[dict[str, object]] = []
+    for error in list(errors)[:_MAX_VALIDATION_ERRORS]:
+        location: list[object] = []
+        for part in tuple(error.get("loc", ()))[:_MAX_LOCATION_PARTS]:
+            if type(part) is int:
+                location.append(part)
+            else:
+                location.append(str(part)[:_MAX_LOCATION_PART_CHARS])
+        public.append(
+            {
+                "loc": location,
+                "type": str(error.get("type", "value_error"))[:_MAX_LOCATION_PART_CHARS],
+                "msg": str(error.get("msg", "Invalid value"))[:_MAX_ERROR_TEXT_CHARS],
+            }
+        )
+    return public
 
 
 @asynccontextmanager
@@ -42,52 +70,71 @@ async def lifespan(app: FastAPI):
 
     upgrade_database(settings)
     engine = create_engine_for_settings(settings)
-    check_database_connection(engine)
-    app.state.engine = engine
+    ordinary_owner: OrdinaryDispatchOwner | None = None
+    try:
+        check_database_connection(engine)
+        app.state.engine = engine
 
-    agent_provider = getattr(app.state, "agent_provider", None)
-    if agent_provider is None:
-        agent_provider = AgentProvider(settings)
-        app.state.agent_provider = agent_provider
+        ordinary_budget = None
+        if not test_harness and (settings.agent_enabled or settings.general_chat_enabled):
+            # Own dispatch for this database before treating any open reservation as abandoned.
+            ordinary_owner = OrdinaryDispatchOwner(engine)
+            ordinary_owner.acquire()
+            ordinary_budget = OrdinaryBudget(engine, owner=ordinary_owner)
+            ordinary_budget.recover_unresolved()
+        app.state.ordinary_budget = ordinary_budget
 
-    stop_event = threading.Event()
-    worker_threads: list[threading.Thread] = []
-    queue = None
+        agent_provider = getattr(app.state, "agent_provider", None)
+        if agent_provider is None:
+            agent_provider = AgentProvider(settings, ordinary_budget=ordinary_budget)
+            app.state.agent_provider = agent_provider
 
-    enable_worker = getattr(app.state, "enable_worker", None)
-    if enable_worker is None:
-        enable_worker = settings.embedded_worker
+        stop_event = threading.Event()
+        worker_threads: list[threading.Thread] = []
+        queue = None
 
-    if enable_worker:
-        if test_worker_factory is not None:
-            queue = test_worker_factory.create_queue(engine)
-            worker = test_worker_factory.create_worker(settings)
-        else:
-            queue = JobQueue(engine)
-            worker = ExperimentWorker(settings, heartbeat_interval=5, lease_seconds=30)
+        enable_worker = getattr(app.state, "enable_worker", None)
+        if enable_worker is None:
+            enable_worker = settings.embedded_worker
 
-        def _worker_runner():
-            worker.run_loop(queue, stop_event, poll_interval=settings.worker_poll_interval)
+        if enable_worker:
+            if test_worker_factory is not None:
+                queue = test_worker_factory.create_queue(engine)
+                worker = test_worker_factory.create_worker(settings)
+            else:
+                queue = JobQueue(engine)
+                worker = ExperimentWorker(settings, heartbeat_interval=5, lease_seconds=30)
 
-        def _recovery_runner():
-            run_recovery_loop(engine, settings.artifact_root, stop_event, interval=settings.recovery_interval)
+            def _worker_runner():
+                worker.run_loop(queue, stop_event, poll_interval=settings.worker_poll_interval)
 
-        t_worker = threading.Thread(target=_worker_runner, daemon=True, name="shiftguard-embedded-worker")
-        t_recovery = threading.Thread(target=_recovery_runner, daemon=True, name="shiftguard-embedded-recovery")
-        t_worker.start()
-        t_recovery.start()
-        worker_threads.extend([t_worker, t_recovery])
+            def _recovery_runner():
+                run_recovery_loop(engine, settings.artifact_root, stop_event, interval=settings.recovery_interval)
 
-    yield
+            t_worker = threading.Thread(target=_worker_runner, daemon=True, name="shiftguard-embedded-worker")
+            t_recovery = threading.Thread(target=_recovery_runner, daemon=True, name="shiftguard-embedded-recovery")
+            t_worker.start()
+            t_recovery.start()
+            worker_threads.extend([t_worker, t_recovery])
 
-    stop_event.set()
-    if test_worker_factory is not None and queue is not None:
-        test_worker_factory.shutdown(queue)
-    for t in worker_threads:
-        t.join(timeout=3.0)
-    if hasattr(app.state, "agent_provider") and app.state.agent_provider is not None:
-        await app.state.agent_provider.close()
-    engine.dispose()
+        try:
+            yield
+        finally:
+            stop_event.set()
+            if test_worker_factory is not None and queue is not None:
+                test_worker_factory.shutdown(queue)
+            for t in worker_threads:
+                t.join(timeout=3.0)
+    finally:
+        try:
+            if getattr(app.state, "agent_provider", None) is not None:
+                await app.state.agent_provider.close()
+        finally:
+            # Dispatch has stopped (provider closed) before ownership is released,
+            # on startup failure as well as normal shutdown.
+            if ordinary_owner is not None:
+                ordinary_owner.close()
+            engine.dispose()
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -115,7 +162,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     "code": "VALIDATION_ERROR",
                     "message": "Invalid request parameters",
                     "request_id": req_id,
-                    "details": {"errors": exc.errors()},
+                    "details": {"errors": _public_validation_errors(exc.errors())},
                 }
             },
         )
@@ -141,6 +188,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(experiments.router)
     app.include_router(agent.router)
     app.include_router(agent_requests.router)
+    app.include_router(chat.router)
 
     static_dir = Path(__file__).parent.parent / "static"
     index_file = static_dir / "index.html"

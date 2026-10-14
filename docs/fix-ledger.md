@@ -206,3 +206,19 @@ C03–C07, PR01–PR03, SR01–SR03, INT01 and residual PR03-R1: OFFLINE_VERIFIE
 ## Frontend result discovery and graphs - 5 October 2026
 
 Default outage/baseline table-only presentation, folded saved-result discovery, stale latest selection and opening a run below its graphs: RESOLVED. Three graphs use persisted values; null/unscored evidence is preserved. 6 ordinary-server browser cases and 5 static-boundary cases passed; typecheck/build and generated-asset parity PASS; Astra xhigh focused code review PASS. See docs/frontend-results-fix-20261005.md and ../verification/frontend-results-20261004/checkpoint.json. Backend and accepted Gates 0-5 unchanged. Gate 6 PENDING; live A7 user-deferred.
+
+## Opus correction batch OR-01–OR-09 — 14–15 October 2026
+
+| ID | Fix | Regressions (all pass on frozen source `7c5027db…`) |
+|---|---|---|
+| OR-01 | Messages and completions carry server ids/ordinals; the browser merges by identity (count heuristic removed); legacy receipts served through a read adapter | `tests/e2e/test_chat_receipt_recovery.spec.ts` (11), `tests/agent/test_chat_review_regressions.py` identity cases |
+| OR-02 | `shiftguard/agent/ordinary_owner.py`: one ordinary-dispatch owner per database (PostgreSQL advisory lock / SQLite sidecar OS lock) acquired before recovery; recovery requires ownership | `tests/agent/test_ordinary_owner.py` (real processes, both backends) |
+| OR-03 | `ChatStore.fail_known`: a returned-but-refused reply becomes a replayable FAILED receipt; ambiguous outcomes stay PENDING | `tests/agent/test_chat_review_regressions.py::test_known_rejected_reply_is_terminal_and_replayable` and siblings |
+| OR-04 | `validate_prepared_aggregate`; required `plan=` on every estimate/interval entry point | `tests/repeats/test_uncertainty.py::test_rejects_impossible_prepared_aggregate` |
+| OR-05 | `membership_by_outer`; fixed_external requires one cohort across outers | `tests/repeats/test_uncertainty.py::test_fixed_external_requires_identical_row_membership` |
+| OR-06 | Resolution accounting bound to evaluation rows and fallback chains; `validate_coordinate_result` joins pairs to terminal conditions; record v2 | `tests/repeats/test_repeat_validation.py::test_inventory_rejects_invalid_resolution_accounting`, adapter pair-binding tests |
+| OR-07 | Adult uniforms: ndarray, shape, float dtype, finite, `0 <= u < 1` | `tests/adult_adapter/test_adult_missingness.py::test_rejects_invalid_uniform_arrays` |
+| OR-08 | `_ROUNDING_SLACK` clamp removed; out-of-bound group sums raise | `tests/repeats_adapter/test_development_adapter.py::test_out_of_bound_group_loss_is_not_clamped` |
+| OR-09 | Validation errors projected to JSON-safe `loc`/`type`/`msg`, at most 20, no input echo | `tests/integration/test_validation_error_shape.py`, whitespace cases |
+
+Full suite 1,307 passed / 0 skipped (SQLite + PostgreSQL 16); browser 67 passed / 3 real-server skips; asset parity 14/14; installed wheel PASS; numerical engine owners unchanged. Executor verification only, not an independent review; the initial CORRECTIONS_REQUIRED review is unchanged. Record: `../verification/opus-corrections-20261014T143057Z-e00915d6b06f4ca29296a9687592c006/correction-review.json` (sha256 `f14284c9…772f`). Not committed.

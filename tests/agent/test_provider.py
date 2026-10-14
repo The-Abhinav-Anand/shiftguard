@@ -37,6 +37,52 @@ def test_provider_disabled_raises_on_chat():
     asyncio.run(_run())
 
 
+def test_provider_error_assumes_dispatch_unless_known_otherwise():
+    assert ProviderError(code="PROVIDER_TIMEOUT", message="Simulated timeout").dispatched is True
+    assert ProviderDisabledError().dispatched is False
+
+
+def test_live_adapter_separates_rejection_before_dispatch_from_failed_dispatch(monkeypatch):
+    from types import SimpleNamespace
+
+    from shiftguard.agent import provider as provider_module
+
+    class FailingSDK:
+        def __init__(self):
+            self.calls = 0
+            self.chat = SimpleNamespace(completions=SimpleNamespace(create=self.create))
+
+        async def create(self, **_kwargs):
+            self.calls += 1
+            raise RuntimeError("connection dropped after send")
+
+        async def close(self):
+            return None
+
+    sdk = FailingSDK()
+    monkeypatch.setattr(provider_module, "AsyncOpenAI", lambda **_kwargs: sdk)
+    provider = AgentProvider(Settings(
+        _env_file=None, agent_enabled=False, general_chat_enabled=True,
+        nebius_api_key="offline-test-key",
+    ))
+
+    async def _run():
+        with pytest.raises(ProviderError) as before:
+            await provider.general_chat([])
+        with pytest.raises(ProviderError) as after:
+            await provider.general_chat([{"role": "user", "content": "hello"}])
+        # The results-assistant path keeps its own flag and never borrows the chat flag.
+        with pytest.raises(ProviderDisabledError) as paused:
+            await provider.chat([{"role": "user", "content": "hello"}], tools=None)
+        return before.value, after.value, paused.value
+
+    before, after, paused = asyncio.run(_run())
+    assert before.dispatched is False
+    assert after.dispatched is True
+    assert paused.dispatched is False
+    assert sdk.calls == 1
+
+
 def test_secret_redaction():
     text_with_bearer = "Authorization failed: Bearer secret_nebius_key_1234567890abcdef in request"
     redacted = redact_secrets(text_with_bearer)

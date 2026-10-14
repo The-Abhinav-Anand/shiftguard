@@ -81,8 +81,183 @@ def git_state() -> dict[str, object]:
     }
 
 
+# Ordinary chat's only permitted settings addition: one default-off flag.
+GENERAL_CHAT_FIELD = '''    general_chat_enabled: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("SHIFTGUARD_GENERAL_CHAT_ENABLED", "general_chat_enabled"),
+    )
+'''
+# The app factory's only permitted changes, as (current text, baseline text): ordinary-chat
+# wiring, exclusive ordinary-dispatch ownership around startup recovery (OR-02), a lifespan
+# that releases that ownership after the provider closes, including on startup failure, and
+# JSON-safe validation errors (OR-09). Everything else must reconstruct the baseline bytes.
+_APP_FACTORY_VALIDATION_ERRORS = '''_MAX_VALIDATION_ERRORS = 20
+_MAX_LOCATION_PARTS = 8
+_MAX_LOCATION_PART_CHARS = 64
+_MAX_ERROR_TEXT_CHARS = 200
+
+
+def _public_validation_errors(errors) -> list[dict[str, object]]:
+    """Project Pydantic errors onto JSON primitives; never echo input or exception objects."""
+    public: list[dict[str, object]] = []
+    for error in list(errors)[:_MAX_VALIDATION_ERRORS]:
+        location: list[object] = []
+        for part in tuple(error.get("loc", ()))[:_MAX_LOCATION_PARTS]:
+            if type(part) is int:
+                location.append(part)
+            else:
+                location.append(str(part)[:_MAX_LOCATION_PART_CHARS])
+        public.append(
+            {
+                "loc": location,
+                "type": str(error.get("type", "value_error"))[:_MAX_LOCATION_PART_CHARS],
+                "msg": str(error.get("msg", "Invalid value"))[:_MAX_ERROR_TEXT_CHARS],
+            }
+        )
+    return public
+
+
+'''
+_APP_FACTORY_LIFESPAN = '''    ordinary_owner: OrdinaryDispatchOwner | None = None
+    try:
+        check_database_connection(engine)
+        app.state.engine = engine
+
+        ordinary_budget = None
+        if not test_harness and (settings.agent_enabled or settings.general_chat_enabled):
+            # Own dispatch for this database before treating any open reservation as abandoned.
+            ordinary_owner = OrdinaryDispatchOwner(engine)
+            ordinary_owner.acquire()
+            ordinary_budget = OrdinaryBudget(engine, owner=ordinary_owner)
+            ordinary_budget.recover_unresolved()
+        app.state.ordinary_budget = ordinary_budget
+
+        agent_provider = getattr(app.state, "agent_provider", None)
+        if agent_provider is None:
+            agent_provider = AgentProvider(settings, ordinary_budget=ordinary_budget)
+            app.state.agent_provider = agent_provider
+
+        stop_event = threading.Event()
+        worker_threads: list[threading.Thread] = []
+        queue = None
+
+        enable_worker = getattr(app.state, "enable_worker", None)
+        if enable_worker is None:
+            enable_worker = settings.embedded_worker
+
+        if enable_worker:
+            if test_worker_factory is not None:
+                queue = test_worker_factory.create_queue(engine)
+                worker = test_worker_factory.create_worker(settings)
+            else:
+                queue = JobQueue(engine)
+                worker = ExperimentWorker(settings, heartbeat_interval=5, lease_seconds=30)
+
+            def _worker_runner():
+                worker.run_loop(queue, stop_event, poll_interval=settings.worker_poll_interval)
+
+            def _recovery_runner():
+                run_recovery_loop(engine, settings.artifact_root, stop_event, interval=settings.recovery_interval)
+
+            t_worker = threading.Thread(target=_worker_runner, daemon=True, name="shiftguard-embedded-worker")
+            t_recovery = threading.Thread(target=_recovery_runner, daemon=True, name="shiftguard-embedded-recovery")
+            t_worker.start()
+            t_recovery.start()
+            worker_threads.extend([t_worker, t_recovery])
+
+        try:
+            yield
+        finally:
+            stop_event.set()
+            if test_worker_factory is not None and queue is not None:
+                test_worker_factory.shutdown(queue)
+            for t in worker_threads:
+                t.join(timeout=3.0)
+    finally:
+        try:
+            if getattr(app.state, "agent_provider", None) is not None:
+                await app.state.agent_provider.close()
+        finally:
+            # Dispatch has stopped (provider closed) before ownership is released,
+            # on startup failure as well as normal shutdown.
+            if ordinary_owner is not None:
+                ordinary_owner.close()
+            engine.dispose()
+'''
+_BASELINE_LIFESPAN = '''    check_database_connection(engine)
+    app.state.engine = engine
+
+    agent_provider = getattr(app.state, "agent_provider", None)
+    if agent_provider is None:
+        agent_provider = AgentProvider(settings)
+        app.state.agent_provider = agent_provider
+
+    stop_event = threading.Event()
+    worker_threads: list[threading.Thread] = []
+    queue = None
+
+    enable_worker = getattr(app.state, "enable_worker", None)
+    if enable_worker is None:
+        enable_worker = settings.embedded_worker
+
+    if enable_worker:
+        if test_worker_factory is not None:
+            queue = test_worker_factory.create_queue(engine)
+            worker = test_worker_factory.create_worker(settings)
+        else:
+            queue = JobQueue(engine)
+            worker = ExperimentWorker(settings, heartbeat_interval=5, lease_seconds=30)
+
+        def _worker_runner():
+            worker.run_loop(queue, stop_event, poll_interval=settings.worker_poll_interval)
+
+        def _recovery_runner():
+            run_recovery_loop(engine, settings.artifact_root, stop_event, interval=settings.recovery_interval)
+
+        t_worker = threading.Thread(target=_worker_runner, daemon=True, name="shiftguard-embedded-worker")
+        t_recovery = threading.Thread(target=_recovery_runner, daemon=True, name="shiftguard-embedded-recovery")
+        t_worker.start()
+        t_recovery.start()
+        worker_threads.extend([t_worker, t_recovery])
+
+    yield
+
+    stop_event.set()
+    if test_worker_factory is not None and queue is not None:
+        test_worker_factory.shutdown(queue)
+    for t in worker_threads:
+        t.join(timeout=3.0)
+    if hasattr(app.state, "agent_provider") and app.state.agent_provider is not None:
+        await app.state.agent_provider.close()
+    engine.dispose()
+'''
+APP_FACTORY_ORDINARY_CHAT = (
+    (
+        "from shiftguard.agent.ordinary_budget import OrdinaryBudget\n"
+        "from shiftguard.agent.ordinary_owner import OrdinaryDispatchOwner\n"
+        "from shiftguard.api.routes import agent, agent_requests, chat, experiments, health, jobs, metadata\n",
+        "from shiftguard.api.routes import agent, agent_requests, experiments, health, jobs, metadata\n",
+    ),
+    (_APP_FACTORY_VALIDATION_ERRORS, ""),
+    (_APP_FACTORY_LIFESPAN, _BASELINE_LIFESPAN),
+    (
+        '                    "details": {"errors": _public_validation_errors(exc.errors())},\n',
+        '                    "details": {"errors": exc.errors()},\n',
+    ),
+    (
+        "    app.include_router(agent_requests.router)\n    app.include_router(chat.router)\n",
+        "    app.include_router(agent_requests.router)\n",
+    ),
+)
+
+
+def _matches_baseline(restored: str, expected: str | None) -> bool:
+    # The baseline's line-ending convention is kept; no other text is ignored.
+    return any(sha256_bytes(value.encode("utf-8")) == expected for value in (restored, restored.replace("\n", "\r\n")))
+
+
 def authorized_settings_delta(content: bytes, expected: str | None) -> bool:
-    """Only the two exact default-off provider additions may differ from baseline."""
+    """Only the exact default-off provider and general-chat additions may differ from baseline."""
     field = '''    nebius_enable_thinking: bool = Field(
         default=False,
         validation_alias=AliasChoices("NEBIUS_ENABLE_THINKING", "nebius_enable_thinking"),
@@ -98,11 +273,23 @@ def authorized_settings_delta(content: bytes, expected: str | None) -> bool:
         source = content.decode("utf-8").replace("\r\n", "\n")
     except UnicodeDecodeError:
         return False
-    if source.count(field) != 1 or source.count(property_block) != 1:
+    if source.count(field) != 1 or source.count(property_block) != 1 or source.count(GENERAL_CHAT_FIELD) > 1:
         return False
-    restored = source.replace(field, "").replace(property_block, "")
-    # The baseline's line-ending convention is kept; no other text is ignored.
-    return any(sha256_bytes(value.encode("utf-8")) == expected for value in (restored, restored.replace("\n", "\r\n")))
+    restored = source.replace(field, "").replace(property_block, "").replace(GENERAL_CHAT_FIELD, "")
+    return _matches_baseline(restored, expected)
+
+
+def authorized_app_factory_delta(content: bytes, expected: str | None) -> bool:
+    """Only the exact ordinary-chat wiring may differ from the baseline app factory."""
+    try:
+        restored = content.decode("utf-8").replace("\r\n", "\n")
+    except UnicodeDecodeError:
+        return False
+    for current, baseline in APP_FACTORY_ORDINARY_CHAT:
+        if restored.count(current) != 1:
+            return False
+        restored = restored.replace(current, baseline)
+    return _matches_baseline(restored, expected)
 
 
 def protected_comparison() -> dict[str, object]:
@@ -124,16 +311,23 @@ def protected_comparison() -> dict[str, object]:
             expected = supplement.get("file_hashes", {}).get(relative)
             baseline_origin = "prior-source-review-binding"
         path = APP / Path(relative)
-        actual = sha256_bytes(path.read_bytes()) if path.is_file() else None
-        permitted_delta = bool(relative == "shiftguard/settings.py" and path.is_file()
-                               and authorized_settings_delta(path.read_bytes(), expected))
+        content = path.read_bytes() if path.is_file() else None
+        actual = sha256_bytes(content) if content is not None else None
+        permitted_delta = bool(relative == "shiftguard/settings.py" and content is not None
+                               and authorized_settings_delta(content, expected))
+        app_factory_delta = bool(relative == "shiftguard/api/main.py" and content is not None
+                                 and authorized_app_factory_delta(content, expected))
+        ordinary_chat_delta = app_factory_delta or bool(
+            permitted_delta and GENERAL_CHAT_FIELD.encode("utf-8") in content.replace(b"\r\n", b"\n")
+        )
         comparisons.append({
             "path": relative,
             "baseline_sha256": expected,
             "candidate_sha256": actual,
-            "matches": bool(expected and actual and (expected == actual or permitted_delta)),
+            "matches": bool(expected and actual and (expected == actual or permitted_delta or app_factory_delta)),
             "byte_identical": bool(expected and actual and expected == actual),
             "authorized_provider_only_delta": permitted_delta,
+            "authorized_ordinary_chat_delta": ordinary_chat_delta,
             "baseline_origin": baseline_origin,
             "baseline_present": bool(expected),
             "candidate_present": actual is not None,
@@ -167,6 +361,7 @@ def protected_comparison() -> dict[str, object]:
         "protected_contract_matches": sum(row["matches"] for row in comparisons),
         "byte_identical_protected_contracts": sum(row["byte_identical"] for row in comparisons),
         "authorized_provider_only_deltas": sum(row["authorized_provider_only_delta"] for row in comparisons),
+        "authorized_ordinary_chat_deltas": sum(row["authorized_ordinary_chat_delta"] for row in comparisons),
         "applied_migration_count": len(migrations),
         "applied_migration_matches": sum(row["matches"] for row in migrations),
         "files": comparisons,

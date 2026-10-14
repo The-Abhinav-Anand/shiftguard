@@ -48,7 +48,7 @@ def test_upgrade_database_from_isolated_working_directory(tmp_path, monkeypatch)
     try:
         with engine.connect() as conn:
             rev = conn.execute(text("SELECT version_num FROM alembic_version")).scalar()
-            assert rev == "0011_gate6_call_id_capacity"
+            assert rev == "0012_ordinary_chat_and_budget"
 
             table_rows = conn.execute(
                 text("SELECT name FROM sqlite_master WHERE type='table'")
@@ -63,5 +63,10 @@ def test_upgrade_database_from_isolated_working_directory(tmp_path, monkeypatch)
             assert "agent_sessions" in tables
             assert "idempotency_records" in tables
             assert "continuation_receipts" in tables
+            assert "shiftguard_chat_conversations" in tables
+            assert "shiftguard_chat_messages" in tables
+            assert "shiftguard_chat_receipts" in tables
+            assert "ordinary_budget_daily" in tables
+            assert "ordinary_budget_calls" in tables
     finally:
         engine.dispose()

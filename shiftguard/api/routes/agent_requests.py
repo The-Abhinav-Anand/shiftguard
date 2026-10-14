@@ -32,7 +32,9 @@ def get_agent_status(request: Request) -> JSONResponse:
     provider = getattr(request.app.state, "agent_provider", None) or AgentProvider(settings)
     is_scripted = provider.__class__.__name__ in ("ScriptedProvider", "DynamicE2EProvider")
     agent_enabled = bool(getattr(settings, "agent_enabled", False)) or is_scripted
-    provider_kind = "scripted" if is_scripted else ("nebius" if agent_enabled else "disabled")
+    general_chat_enabled = bool(getattr(settings, "general_chat_enabled", False))
+    provider_kind = "scripted" if is_scripted else ("nebius" if agent_enabled or general_chat_enabled else "disabled")
+    ordinary_budget = getattr(request.app.state, "ordinary_budget", None)
 
     return JSONResponse(
         status_code=200,
@@ -44,6 +46,8 @@ def get_agent_status(request: Request) -> JSONResponse:
             "max_turns": 6,
             "max_calls": 8,
             "active_requests_count": 0,
+            "general_chat_enabled": general_chat_enabled,
+            "ordinary_budget": ordinary_budget.public_snapshot() if ordinary_budget is not None else None,
         },
     )
 

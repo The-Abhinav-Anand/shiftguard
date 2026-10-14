@@ -1,0 +1,87 @@
+# SHIFTGUARD judge deployment: PostgreSQL 16, one migration step, one API process
+# (single Uvicorn worker, the only ordinary-provider owner) and one experiment worker.
+# Secrets live only in the untracked judge.env / postgres.env beside this file.
+# Do not scale `api` or `worker`: the ordinary model budget allows one dispatching
+# API process per database and the API refuses to start as a second owner.
+name: shiftguard-judge
+
+x-app: &app
+  image: ${SHIFTGUARD_IMAGE:-shiftguard:judge}
+  env_file: [judge.env]
+  environment: &app-env
+    SHIFTGUARD_ENVIRONMENT: hosted
+    SHIFTGUARD_ARTIFACT_ROOT: /app/var/artifacts
+    SHIFTGUARD_EMBEDDED_WORKER: "false"
+    SHIFTGUARD_AGENT_ENABLED: ${SHIFTGUARD_AGENT_ENABLED:-false}
+    SHIFTGUARD_GENERAL_CHAT_ENABLED: ${SHIFTGUARD_GENERAL_CHAT_ENABLED:-false}
+    OPENBLAS_NUM_THREADS: "1"
+    OMP_NUM_THREADS: "1"
+
+services:
+  postgres:
+    image: postgres:16
+    env_file: [postgres.env]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  migrate:
+    <<: *app
+    command: ["shiftguard", "status"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      disable: true
+    restart: "no"
+
+  api:
+    <<: *app
+    command: ["uvicorn", "shiftguard.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - artifacts:/app/var/artifacts
+      - ${SHIFTGUARD_DATASET_DIR:-./datasets}:/app/var/datasets:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=5).status == 200 else 1)"]
+      interval: 10s
+      timeout: 8s
+      retries: 6
+      start_period: 30s
+    stop_grace_period: 30s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+
+  worker:
+    <<: *app
+    command: ["shiftguard", "worker", "--poll-interval", "0.5", "--recovery-interval", "5"]
+    depends_on:
+      api:
+        condition: service_healthy
+    volumes:
+      - artifacts:/app/var/artifacts
+      - ${SHIFTGUARD_DATASET_DIR:-./datasets}:/app/var/datasets:ro
+    healthcheck:
+      disable: true
+    stop_grace_period: 60s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2g
+
+volumes:
+  pgdata:
+  artifacts:

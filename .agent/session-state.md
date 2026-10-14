@@ -1,133 +1,84 @@
-# Gate 7 acceptance — genuine live policy denial, 8 October 2026
+# Current execution — correction batch checkpoint, 15 October 2026
 
-**Gate 7 ACCEPTED after the required real live refusal/policy denial, independently reviewed PASS by Astra xhigh.** This completes the user-requested live requirement; the earlier safety-only acceptance remains superseded history. Application source `e6fee099e85975ece6d312c653e12800b7d450ff`; clean live execution `86139a167c3551b8e499b0b08aa6983abdd4da96`. All 262 bound program files and accepted Gates 0–6 are preserved.
+Executor: Claude Code (claude-opus-5-5), with two Sonnet implementation subagents on disjoint files (chat A1/A2; repeat/Adult B1–B3). Executor verification only; this is not an independent review, and nothing has been committed.
 
-The unchanged four-threat prompt attempted an unsupported numerical result, fake publication, arbitrary Python and final-test labels. Three real Nebius/NVIDIA Nemotron calls reached an explicit no-tool final refusal. Python returned the exact authorization-denial outcomes; no fabricated facts, Python execution, labels, new jobs or scientific DB/artifact changes occurred. **The denied operation remains FAILED**, as the accepted controller contract requires. Raw final prose is not a valid JSON plan and is not displayed. The strict collector's BLOCKED result is preserved; its COMPLETED-only check is not the retained safe-refusal/explicit-policy-denial acceptance criterion. Astra reviewed the actual source, transcript, input/usage bindings and these distinctions. This is genuine final live evidence; prior quota failures are not counted as success.
+- **Correction batch OR-01–OR-09:** all nine closed by executor verification.
+  - Frozen source: `7c5027db…19b3e2`, 331 files, identical before and after the runs.
+  - Checks: full suite 1,307 passed with 0 skipped (159 PostgreSQL cases); browser 67 passed with 3 real-server skips; asset parity 14/14; installed wheel PASS; corrected probes 8/8; numerical engine owners unchanged.
+  - Record: `../../verification/opus-corrections-20261014T143057Z-e00915d6b06f4ca29296a9687592c006/correction-review.json` (sha256 `f14284c9…772f`). The initial review (CORRECTIONS_REQUIRED) is unchanged. Two earlier finalize outputs with a node-key bug are kept beside it under `attempt*` names.
+- **Local runtime:** the server was restarted on the corrected code at http://127.0.0.1:8000. It holds the SQLite ordinary-owner lock `var/shiftguard.db.ordinary-owner.lock`. Readiness PASS; ledger 0/10 calls; no paid call made.
+- **Gate 10 preparation (not acceptance):**
+  - Files: `deploy/compose.judge.yaml`, the env examples, `deploy/README.md`, a nonroot single-worker `Dockerfile`, `.dockerignore`.
+  - Readiness now checks the database, migration head, storage and the verified Bank dataset.
+  - `scripts/check_hosted_release.py` is an offline probe with no model calls. It passed in-process against a real Bank job.
+  - Not yet done: Linux image build and the `fcntl` ownership path.
+- **Gate 11 drafts:** `docs/submission/` (claims, submission text, demo script, judge guide, release checklist).
+- **Gates 8 and 9:** fabricated-data engineering only. Pending.
 
-Additional paid usage: **3 calls / 13,291 tokens**, SDK retries0. Linked cumulative acceptance usage:13 calls/61,026 tokens. All usage is known/settled; original tool/attempt IDs and historical ledgers are unchanged. Same-request replay adds zero calls. Stop paid execution after this passing result; parent seals the unused new allowance in final-checkpoint.json. Ordinary assistant stays paused; saved manual presets and graphs remain available. Ordinary13 tables/156 files are unchanged.
+- **Gate 10 local Linux evidence:** `../../verification/gate10-image-20261014T184638Z-e606f2d016c8/`.
+  - Image `shiftguard:judge-candidate`, ID `sha256:435e9e39…5efa`. Nonroot uid 10001, one Uvicorn worker. Frontend byte-identical to the served build. Image history has no secrets. Base digests are in `base-images.txt`.
+  - Linux `fcntl` owner probe: PASS (`linux-owner-probe.json`).
+  - CLI failure output leaks neither the password nor the API key marker (`cli-leak-before.txt`).
+  - Local stack r3 (`run_stack.sh`, host networking because this daemon has no container DNS): offline release probe PASS (`probe-r3-baseline.json`).
+  - Next step, written but not yet run: `python restart_probe.py r3` (worker kill and API restart mid-job, replay, redeploy artifact digests, cancellation). Then the second-owner refusal with `CHAT=true`, then `run_stack.sh down r3`. Stack r3 is still running.
 
-Acceptance and actual-output review: ../verification/gate7-live-completion-20261008/acceptance.json and astra-live-output-review/review.json in that packet. Retained source-bound evidence:782 backend tests PASS and public44-case/49-execution containment PASS; new driver12 and audit16 offline checks PASS. Model schema compliance and the sealed20–30-task quality evaluation are separate, unperformed quality work; this observation is not a task-success-rate estimate or universal safety claim.
+Open, in the owner's hands: source-commit authorization; hosting account and cost; a specific live allowance; the judge access/capacity arrangement; Devpost eligibility and submission.
 
-Next: **Gate 8 offline protocol preparation**, using docs/gate8-next-execution.md. Research v0.3 remains a development study; protocol DRAFT_NOT_LOCKED. Resolve declared decisions, authority and exposure before protocol lock/scoring. No new provider calls, confirmatory scoring, business-upload claim, installation, push, public enablement or deployment is authorized by this checkpoint. ACTIVE_WRITER=NONE; ACTIVE_REVIEWER=NONE. Parent owns source/evidence/Git/governance; Luna xhigh codes coherent batches, Astra xhigh reviews backend/science, Sol6.1 xhigh reviews affected frontend/content; no Antigravity.
+# Previous checkpoint — Claude continuation, 12 October 2026
 
-## Earlier checkpoints retained as history
+Executor: Claude Code (claude-opus-5-5). Everything below is executor verification. No independent review, source commit, paid provider call, flag change, deployment or scientific approval occurred. HEAD is still f3f696579345347884d547f7ec4c75a84ce21184 and is not the source identity. Frozen working tree: source_tree_sha256 `4fc45b03cc1d051b19dbc89e9de62bd665006ee0546a5f309d4bebf8324bd287`, served assets `87ba56100ae2b9402d29393be9c9ac0279e25736a36fc5a03768fd1e514f74ad`, identical before and after the evidence runs. Evidence: `../../verification/claude-continuation-5308e5ade8554dc2a1098e32c5f3aaf0/` (`summary.json`, both `source-binding-frozen-*.json`).
 
-# Gate 7 live completion — user override, 8 October 2026
+**Ordinary chat — IMPLEMENTED_DELTA_NOT_ACCEPTED.**
 
-**Gate 7 PENDING completed live containment.** The user explicitly rejected the narrowed safety-only acceptance and authorized more provider calls. The prior safety acceptance on governance bea0ee3513ebf9db1d50009fe1fe1b2f0c7575b6 is superseded for gate closure; its reviews, observations and failed attempts remain immutable history. Application source remains e6fee099e85975ece6d312c653e12800b7d450ff; Gates 0–6 are unchanged. Gate 8 waits for Gate 7.
+- Migration fixture closed: a rejected downgrade stays at 0012 on PostgreSQL (transactional DDL) and at 0011 on SQLite; the assertion is now dialect-specific with a matching table-presence check. No applied migration edited.
+- Fixed test-first: a message rejected before any dispatch left a permanent PENDING receipt and a busy conversation. The provider now marks whether a request could have left the process and the route forgets only a definite non-dispatch.
+- Fixed test-first: the general-chat flag alone let `/api/v1/agent/requests` dispatch. The provider now gates each mode on its own flag (`chat` for the results assistant, tool-free `general_chat`).
+- Frontend: an unresolved reply is reported as pending and "New conversation" releases the panel; production assets rebuilt and reproduce byte-for-byte. `test_result_discovery` no longer depends on the kind of the newest saved record.
+- Counts on the frozen tree: focused backend 67/67 on both backends; full suite 1004 = 1002 pass, 2 fail, 0 skip (119 PostgreSQL cases); full browser 55 pass, 1 fail, 3 skip; real API and embedded worker on an isolated replica of the runtime state 4/4 browser checks, job `f523d5d4-f098-4e66-9667-c6610ede3277` republished experiment `e90c4adbda3d53664a823f84`. The real `var/shiftguard.db` was not opened for writing and is still at revision 0011.
 
-New authorization: ../verification/gate7-live-completion-20261008/authorization.json. At most **10 additional requests / 50,000 tokens**, zero SDK retries, one distinct persisted ledger g7-completion-20261008-01. Previous 10 calls / 47,735 tokens and both old ledgers remain untouched. No counter reset, startup/preflight inference, silent rerun loop or public assistant enablement. Ordinary assistant remains paused; manual presets and saved graphs remain available.
+Open before acceptance and local activation (flags remain false/false):
 
-Execute the unchanged combined unsupported-number/fake-experiment/Python/final-label prompt through the normal provider/controller/registry/renderer using the existing isolated PostgreSQL 16 schema and published Bank development record. Parent validates the clean source and reviewed driver before dispatch; Astra xhigh independently reviews the actual terminal output, original IDs, usage, source, database and artifact evidence. Budget/provider failure is never completed live PASS. If an application defect is demonstrated, Luna xhigh implements a coherent correction and Astra reviews it; Sol6.1 xhigh reviews only an affected frontend/content delta. No Antigravity.
+1. `tests/agent/test_gate7_candidate_evidence.py` fails twice: the retained delta changes two Gate 7 protected contracts, `shiftguard/settings.py` and `shiftguard/api/main.py` (48/50 match, 11/11 applied migrations match). Extending that protected baseline is an acceptance decision and was not self-authorized.
+2. Independent backend/science and frontend reviews: NOT_RUN.
+3. `tests/e2e/test_product_refresh.spec.ts` F14 expects the pre-Gate-6 blocked-assistant banner; `BlockedAssistant` has been unmounted since 950d5cd, so it fails on HEAD as well. Left untouched.
+4. Live provider proof: NOT_RUN (no current call/token ceiling).
 
-Parent owns source/evidence/local Git and separate governance checkpoints. Accept Gate 7 only after genuine observed completed containment and independent review. Sealed model-quality evaluation remains NOT_RUN; no confirmatory scoring, protocol lock, business-upload claim, installation, push or deployment. ACTIVE_WRITER=PARENT_EVIDENCE; ACTIVE_REVIEWER=NONE.
+For the reviewer, observed and not changed: 0012's downgrade drops the ordinary ledger without a data guard; a dispatched reply that is then rejected stays PENDING; a conversation is bounded by the provider's 64-message limit; no test yet for concurrent same-key chat replay, the cancelled-coroutine path or cross-session append.
 
-## Superseded checkpoints retained as history
+**Gate 8 P2 — IMPLEMENTED_SYNTHETIC_ONLY_NOT_ACCEPTED.** `shiftguard/repeats/` (models, seeds, planning, validation, aggregation, uncertainty, completion, synthetic_store) with `tests/repeats/` (186 pass; golden seed digest `68900ea10536435e183f1f57d47154281f7c32db34a5f837b369330693bbffee`; 93–98% line coverage per module by the standard-library tracer). Fabricated fixtures only; no loader, runner, evaluator, label or provider is imported or reached. The plan's `test_validation.py` is named `test_repeat_validation.py` because `tests/unit/test_validation.py` already owns that basename. Gate 8 stays PROTOCOL_PREPARATION_IN_PROGRESS and DRAFT_NOT_LOCKED; EXT-HUMAN-APPROVER, EXT-CUSTODIAN-EXPOSURE, EXT-SCI-03/04-AUTHORITY, EXT-EVALUATION-BINDING and EXT-FEATURE-GROUP-AUDIT are unchanged and INT-RESOURCE-PREFLIGHT is unmeasured.
 
-# Gate 7 safety acceptance — 8 October 2026
+**Governance and document follow-ups, same day (no source change; frozen tree digest unaffected).**
 
-**Gate 7 anti-hallucination hardening is ACCEPTED against the original blueprint safety criterion.** Source `e6fee099e85975ece6d312c653e12800b7d450ff`; all 262 bound program files remain unchanged. Astra independently reconciled the requirement with actual evidence: 44 public adversarial cases/49 passing executions, the retained 782-pass backend suite, three offline completion controls and observed fail-closed live output. Gates 0–6 and historical evidence are preserved.
+- `.agent/gates.json` gate_7: `acceptance_record` and `next` now follow the final live packet `../verification/gate7-live-completion-20261008/acceptance.json` (sha256 `33bd1908…dbc23`, status ACCEPTED_COMPLETED_LIVE_POLICY_DENIAL). The earlier pointer and prose are kept as `superseded_*`; no status or binding changed.
+- Faculty guide: `../../verification/faculty-docx-reconciliation-20261012/record.json`. Markdown and PDF match their 10 October record and the PDF contains every source block. The DOCX does not: Word re-saved it at 16:09 on 10 October, four minutes after the record, with the title shortened to "SHIFTGUARD" and the Purpose paragraph, "How to use this guide" and the 27-entry Contents removed (36 of 709 text blocks). The other 673 blocks, 27 chapter bookmarks, 55 questions and 8 metric deltas are intact. The DOCX and the historical record were not modified.
 
-This checkpoint explicitly corrects the later expansion of Gate 7 to require a completed adversarial model dialogue. **The live dialogue remains FAILED/BUDGET_EXCEEDED; it is not a completed refusal or live-quality PASS.** No prior report or verdict is rewritten. Successful adversarial dialogue completion and the blueprint's separate 20–30-task held-out quality evaluation remain unresolved presubmission checks. Acceptance concerns tested application containment, not universal model safety or a completion rate.
+**14 October 2026 — user instructed "make this work"; all suites green, activation not yet performed.** Frozen tree `6a3c4bcf06a52cde3053efbc0be786dbf00df454a244c9077e7fb4b64f8ba801` (served assets unchanged, `87ba5610…`), identical before and after the runs. Evidence: `../../verification/claude-activation-158abcc270004800946a88716f5096f0/`.
 
-Paid usage remains **10/10 calls, 47,735 tokens, zero retries**; new calls for this acceptance: **0**. Ordinary assistant stays paused. Saved manual presets and graphs remain available. No deployment, push, new scientific results, protocol lock or business-upload implementation.
+- `scripts/check_gate7_candidate.py` now accepts exactly the default-off ordinary-chat additions to `shiftguard/settings.py` and `shiftguard/api/main.py` (50/50 protected contracts, 48 byte-identical, 11/11 migrations); new negative probes reject a default-on flag and any other app-factory change. This closes item 1 above on the user's instruction, without an independent review.
+- F14 rewritten for the accepted post-Gate-6 UI (paused assistant, inputs disabled, only the status read attempted). Added a cross-session append/replay test.
+- Full backend suite 1009/1009 on both backends, 0 skipped; full browser suite 56 pass, 0 fail, 3 skip (the real-server tests).
+- Activation (flags to true in `.env`, backup of `var/shiftguard.db`, `scripts/start-local.ps1`) was blocked by the session's permission policy and did NOT happen: flags are still false/false, no server is running, the real database is still at 0011. Independent review and live provider proof remain NOT_RUN.
 
-Next: **Gate 8 protocol preparation**, using docs/gate8-next-execution.md and the existing research/protocol-v0.3 decision register. Confirmatory scoring remains forbidden until the declared scientific approval, exposure and lock conditions pass. ACTIVE_WRITER=NONE; ACTIVE_REVIEWER=NONE. Parent owns source/Git/evidence/governance; coherent Luna xhigh code batches, Astra xhigh backend/scientific review, Sol6.1 xhigh frontend/content review. No Antigravity.
+Next bounded action: the user runs the activation commands or permits them; then one real chat message as live proof. `handoff.json` and `HANDOFF.md` were not edited and still describe the pre-execution transfer state.
 
-Acceptance: docs/gate7-acceptance.md and ../verification/gate7-closure-20261008/safety-acceptance.json. Earlier entries below are historical and cannot revive exhausted call allowances or supersede this explicit scope reconciliation.
+## Retained transfer note — 12 October 2026
 
-## Previous checkpoints
+The user requested transfer to Claude Code Opus 5.5. Receiving instructions are in ../CLAUDE.md and ../../deliverables/claude-handoff-20261012/PROJECT_HANDOFF.md; execution plan: ../docs/superpowers/plans/2026-10-12-claude-project-continuation.md. Previous model staffing below is historical. Transfer preparation changes no source implementation, accepted gate, runtime flag, paid allowance or scientific lock. Claude has not yet executed the plan.
 
-# Gate 7 live closure checkpoint — 8 October 2026
+## Retained cleanup checkpoint — 11 October 2026
 
-Gate 6 remains **ACCEPTED** on its preserved source 950d5cd. Gate 7 remains **BLOCKED_REQUIRED_LIVE_CONTAINMENT_EVIDENCE**. Current reviewed source `e6fee099e85975ece6d312c653e12800b7d450ff` was clean during execution. The prepared follow-up used 3 real Nebius/NVIDIA Nemotron calls, 13,126 tokens, zero retries. Cumulative allowance: **10/10 calls, 47,735/65,000 tokens; zero remaining calls**. Original seven attempt records are unchanged, and the original allowance is sealed. No more paid requests, allowance resets or automatic retries.
+Project cleanup is complete: 12,213 disposable files removed; 40 offline product tests and frontend typechecking PASS. Next resume the unfinished ordinary Nemotron chat and Gate 8 work. This cleanup does not accept that candidate, enable local flags, spend provider credits or change scientific policy.
 
-The model made two denied unauthorized experiment reads and one public Bank metadata read; a fourth provider turn was blocked by the exhausted call cap. Terminal FAILED/BUDGET_EXCEEDED is **not** completed live containment PASS. Parent independently verified source, persisted request/tool identities, known usage, same-request replay adding zero calls, unchanged scientific DB/disk and ordinary 13 tables/156 files. Astra's actual-output review preserves this blocker. No new jobs, experiments, execution audits, publications or artifacts; no fabricated empirical final claims, arbitrary Python or final-label output.
+Resume implementation from `../../docs/aegis/work/2026-10-09-nemotron-gate8/20-checkpoint.md` in the outer workspace after cleanup. Ordinary chat is implemented but awaits the remaining migration-fixture check, parent frontend build/integration verification and independent review. Flags were verified False/False on 10 October; no current enablement is inferred from source files.
 
-Astra's requested offline diagnosis is complete: three fresh pytest cases passed with zero failures/errors/skips and two existing dependency warnings. The exact saved three decisions reproduce the call-cap failure before a fourth SDK dispatch. Both a direct no-tool final plan and the same two denied reads followed by that plan complete within quota. Normal API/provider/controller/registry/store/renderer were exercised in isolated SQLite databases; SDK completions were fixtures and network traffic was explicitly denied. No real provider calls or live-ledger access. The normal completion path works; no application correction is justified by these observations. Independent offline evidence review PASS does not replace the missing live outcome.
+Gate 8 P1 technical review is complete, with all 15 P/U decisions mapped. P2 seed/aggregation engineering is not implemented. Protocol remains DRAFT_NOT_LOCKED; synthetic engineering is permitted under the existing packet, while confirmatory scoring requires the actual custodian, scientific approval and exposure evidence.
 
-Frontend: **Assistant paused**, with manual presets and saved graphs available. Sol PASS; 21 fresh scripted browser checks; typecheck/build and fresh wheel SQLite/PG16 probes PASS. Backend 202/science 39 unchanged; prior 782-PASS suite applies to its unchanged backend bytes, not a fabricated postcommit rerun. Original failed reviews/reports remain history. Ordinary assistant stays disabled; Gate 8 unopened; research protocol DRAFT_NOT_LOCKED. No public enablement, deployment, push or scientific scoring.
+Retained source baseline: f3f696579345347884d547f7ec4c75a84ce21184 on implementation/gate-0. Preserve all dirty and untracked code. Gates 0–7 retain their accepted/frozen evidence; use .agent/gates.json for exact bindings. Historical paid allowances are sealed.
 
-ACTIVE_WRITER=NONE; ACTIVE_REVIEWER=NONE. Parent packet: ../verification/gate7-closure-20261008/. Read docs/gate7-live-closure-20261008.md and docs/next-execution.md. Earlier entries below are historical and cannot authorize more paid usage.
+The implementation roles remain the 9 October assignment: Hegel / GPT-6 Luna xhigh backend/chat, Nash / GPT-6 Luna xhigh frontend, Kant / GPT-6 Astra xhigh scientific decision review. Parent owns integration, runtime, evidence and governance; Astra reviews backend/science, Sol6.1 xhigh reviews affected frontend. No Antigravity. Old assignments in the history archive are superseded.
 
-## Historical checkpoints
+Current work evidence: `../../verification/nemotron-gate8-20261009/`. Cleanup evidence: `../../verification/cleanup-20261011/`. The faculty guide and research manuscripts remain retained. No automatic paid checks, installation, deployment, push or outcome access is part of cleanup.
 
-# Current checkpoint — 8 October 2026
+## Retained history
 
-Gate6 **ACCEPTED** on source `950d5cd2d363247d20e7ab5b9a54faa5a4dbcf61` after the real Nebius/NVIDIA Nemotron Bank run → durable wait/resume → published read → qualified eight-method comparison, independent DB/disk/transcript audit and narrow Astra output review PASS. Parent separately checkpoints governance; actual governance commit is recorded outside the checkout in ../verification/gate67-acceptance-20261007-b3a81c57/acceptance.json. All G6-A1–A8 proofs are mapped there to actual passing test nodes and evidence hashes. Full782 Python tests, browser16 (scripted provider), typecheck/build and fresh installed-wheel checks PASS; reviewed source202 and product/browser59 paths bound. No postcommit full-suite rerun is claimed: tested bytes were independently bridged to Git blobs.
-
-Gate7 **PENDING**. Public containment49 executions/44 distinct cases PASS, but the one real combined challenge ended FAILED/BUDGET_EXCEEDED after an unauthorized run was denied. No job/data/artifact side effects and no fabricated rendered claims; this is partial observed evidence, not completed live containment PASS. The single shared allowance used **7/10 calls, 34,609/50,000 tokens, retries0**. Remaining15,391 tokens cannot cover the smallest normal full-registry reservation16,044. No further provider calls; never replace/reset this allowance or silently raise its ceiling.
-
-ACTIVE_WRITER=NONE; ACTIVE_REVIEWER=NONE. Accepted Gates0–5, 39 scientific files and11 migrations preserved; ordinary13 tables/156 artifacts unchanged. Ordinary assistant disabled, preloaded-result app retained. Research v0.3 delivered; protocol DRAFT_NOT_LOCKED, no confirmatory/Adult/efficacy claim. No push, deployment or public enablement. Read docs/next-execution.md. Earlier entries are historical source-specific checkpoints and cannot authorize paid usage.
-
-## Historical checkpoints
-
-# Current acceptance checkpoint — 8 October 2026
-
-ACTIVE_WRITER=NONE. Backend Astra xhigh review PASS; parent full suite **782 passed, zero failures/errors/skips**, including existing PostgreSQL16. Fresh browser **16/16 PASS** with scripted provider; typecheck/build PASS; fresh wheel SHA `70098e3efeebcbac6209c555802132493173fca8536f1819addd2b367d5df85f` passes nine runtime probes and resolves 92 imports outside the checkout. Exact 202-file backend digest `29b51ddbcb2ffa9870db2c18b8c40bd30d52e4026f7418675c46bcee47b8d48a` stayed unchanged.
-
-Sol6.1 xhigh review of the three-file frontend/test correction: **PASS**. Two browser fixtures now use approved named commands; AgentPanel changes only its placeholder. All 150 assertions remain. Rebuilt assets have their own 59-file binding; do not claim every historical frontend/static byte is unchanged. Scientific/core/migration bytes and accepted Gates0–5 remain preserved. Original failed/interrupted reports remain history.
-
-New Nebius allowance **0/10 requests**, maximum **50,000 aggregate tokens**, retries0. Parent owns the authorized local source checkpoint, genuine isolated Bank development run/wait/resume/read/compare, same-ledger containment challenge, and separate governance checkpoint. Gates6/7 remain **PENDING**. Ordinary assistant stays disabled; no deployment/push, confirmatory scoring or scientific-policy change. Read docs/next-execution.md and ../verification/gate67-acceptance-20261007-b3a81c57/interim-checkpoint.json. Earlier entries below are historical source-specific checkpoints.
-
-# Active acceptance execution — 7 October 2026
-
-Fresh user allowance: at most10newcalls,50,000-token parent ceiling, zero retries; new dispatched calls0. Budget/harness writer 01a112c8-7aac-7cb2-a65f-6506392686ed (GPT-6 Luna xhigh). Existing PostgreSQL16 is available. Astra xhigh review required before any live request. Gates6/7 remain pending required evidence/checkpoints. Ordinary assistant disabled; accepted Gates0–5 unchanged. New evidence ../verification/gate67-acceptance-20261007-b3a81c57. Older checkpoints below are preserved history.
-
-# Live provider checkpoint — 7 October 2026
-
-The user authorized at most three new Nebius/Nemotron requests. Exactly 3/3 completed; all canaries PASS; 524 reported tokens; zero SDK retries. No requests remain in this batch. Evidence: ../verification/gate6-live-20261007-ad2102e158ab/parent-checkpoint.json. Current application source still matches all 196 frozen files. Ordinary assistant remains disabled; no scientific jobs or further provider calls.
-
-Gate6/Gate7 acceptance remains PENDING: the genuine flagship run/read/compare workflow and source/governance acceptance are NOT_RUN. Next free work is offline aggregate-budget guard and isolated harness preparation, then focused review. Further live execution requires a new explicit ceiling; do not borrow old unused allowances. Model roles follow the current docs/next-execution.md. Earlier checkpoints below are history for their sources.
-
-# Verified offline checkpoint — 7 October 2026
-
-ACTIVE_WRITER=NONE. Gate7 offline corrections are reviewed and verified: full suite 717/717 passed, zero failures/errors/skips; adversarial campaign 44 distinct cases / 49 successful executions. Prior Sol correction review PASS (76 distinct checks) and the separate test-only follow-up review PASS (24 independent executions) retain their exact-source bindings. Original BLOCKERS verdict and the 714-pass/3-failure full run remain history. Only two test files changed in the follow-up; all 92 runtime Python files and all 103 campaign-owned files stayed byte-identical. Protected contracts: 50 MATCH; all 11 applied migrations unchanged.
-
-Current source digest: 631a2de8ef6f947af53678480cbfe49666c56fd3bb13da1f60da8c47c709bb7a. Read ../verification/gate7-20261005/final-checkpoint.json and docs/next-execution.md. Gates0–5 records are unchanged. Gates6/7 acceptance remains PENDING_REQUIRED_LIVE_EVIDENCE_AND_SOURCE_CHECKPOINT. No source commit or deployment.
-
-Research v0.3 is delivered as Markdown, editable DOCX and nine-page PDF with defense brief. Both development comparison tables were independently recomputed. Astra content review PASS, final export inspection and 17 unchanged original research files are recorded separately. Protocol remains DRAFT_NOT_LOCKED; no new research outcomes or external publication.
-
-Corrected Nebius key authenticated the exact NVIDIA model (38 reported tokens); strict PONG failed. No additional paid calls. Two calls / 7,842 reserved tokens remain in the original allowance. The requested cumulative increase to four calls / 8,192 tokens remains unanswered. Ordinary assistant stays disabled; saved preloaded results are available.
-
-Earlier checkpoints below are retained history for their recorded sources. Intermediate correction checkpoints are preserved in ../verification/gate7-20261005/governance-before-final-delivery/.
-
-# Active task - 5 October 2026
-
-The user replaced the local credential. Corrected-key request authenticated the exact Nemotron model (38 reported tokens), but strict PONG failed. Preserve both live attempts; complete canary and application workflow remain unverified. No automatic retry or public provider enablement. Gate6 PENDING; Gate7 offline candidate implementing under the user's conditional model-access authorization.
-
-Scoped Luna xhigh manuscript, draft-protocol and provider-control writers have completed. The Gate7 adversarial writer remains active. Parent rechecked 34 affected provider tests (PASS), eight protocol draft checks (PASS), both comparison tables against pinned condition records, and 17 protected original research files (unchanged). Astra xhigh is reviewing the frozen research content. Parent owns integration, exports, exact-source code review and governance. No new outcome scoring, source commit or deployment. Any increased paid usage ceiling remains dependent on the user's answer to the separate bounded request.
-
-Prior frontend/backend checkpoint below remains valid for its exact source.
-
-# Current checkpoint - 5 October 2026
-
-ACTIVE_WRITER=NONE. Default preset graphs and saved-result discovery are VERIFIED.
-Ordinary local app: http://127.0.0.1:8000/; existing launcher restarted, worker running,
-assistant disabled. Open a visible saved result to focus its graphs. Outage/baseline
-now have Brier, log-loss and reliability graphs before diagnostics; persisted values
-and null gaps are preserved.
-
-Frontend correction: 6 browser cases passed, 5 static-boundary cases passed;
-typecheck/build/static parity PASS; Astra xhigh focused code review PASS.
-Final source digest: 7928447b18b9c9d5e2b68014450d6b58292647ba17a2b017caea5b2f0bec96b3.
-Evidence: ../verification/frontend-results-20261004/checkpoint.json, final-source.json,
-runtime-20261005.json. Report: docs/frontend-results-fix-20261005.md.
-
-Backend and protected client bytes unchanged (96 compared files); accepted Gates 0-5
-and applied migrations unchanged. Historical backend full suite: 611 passed, no
-failures/errors/skips, including 108 PostgreSQL-labelled cases. That suite belongs
-to its earlier exact source, not a new full-suite run on this frontend correction.
-Prior immutable evidence: ../verification/gate6-comprehensive-20261002/final-checkpoint.json.
-Original blocker reports remain preserved.
-
-No source commit, deployment or provider calls. Gate 6 PENDING; live A7 is
-USER_DEFERRED_2026_10_04. Do not request or run provider calls while deferred.
-When the user resumes it, use docs/gate6-live-verification.md with local credentials
-and an explicitly authorized call/token allowance. Parent owns source acceptance,
-any source commit and a separate governance acceptance checkpoint.
-
-Workflow: scoped GPT-6 Luna xhigh coding; GPT-6.1 Sol xhigh backend review;
-GPT-6 Astra xhigh frontend review after integrated batches. No Antigravity.
-Preserve dirty work; no unrelated audit or repeat of closed checks.
-Historical governance bytes: ../verification/frontend-results-20261004/governance-before-20261005/.
+Repeated and superseded checkpoints from these four files are preserved byte-for-byte in `history/checkpoints-before-cleanup-20261011.zip`, including an internal SHA-256 manifest. Current acceptance reports, test reports, usage ledgers and scientific artifacts remain at their original paths. Archived instructions cannot revive old allowances or writer assignments.

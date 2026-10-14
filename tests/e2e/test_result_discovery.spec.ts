@@ -19,9 +19,10 @@ test("visible saved result opens its charts and returns focus to the result head
   await expect(page.locator("details.job-history")).toHaveJSProperty("open", false);
 
   await savedRecord.getByRole("button").click();
-  const resultHeading = page.getByRole("heading", { name: "Experiment result", exact: true });
+  // The newest saved record is a stress result or a preset result depending on what ran before.
+  const resultHeading = page.locator("#results").getByRole("heading", { level: 2, name: /^(Experiment result|Published preset result)$/ });
   await expect(resultHeading).toBeFocused();
-  await expect(page.locator("#results .chart-grid")).toBeVisible();
+  await expect(page.locator("#results .chart-grid").or(page.getByRole("region", { name: "Persisted preset graphs", exact: true }))).toBeVisible();
   await expect(savedRecord.getByRole("button")).toHaveAttribute("aria-pressed", "true");
   await expect(page.locator("#results")).toContainText(experimentId.slice(0, 18));
   const headingTop = await resultHeading.evaluate((heading) => heading.getBoundingClientRect().top);

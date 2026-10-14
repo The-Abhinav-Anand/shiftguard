@@ -21,6 +21,16 @@ from shiftguard.agent.budget import (
     BudgetUsageInvalid,
 )
 from shiftguard.agent.policy import AgentErrorCode
+from shiftguard.agent.ordinary_budget import (
+    ORDINARY_MAX_OUTPUT_TOKENS,
+    OrdinaryBudget,
+    OrdinaryBudgetBoundExceeded,
+    OrdinaryBudgetHalted,
+    OrdinaryBudgetLimitExceeded,
+    OrdinaryBudgetUsageInvalid,
+    OrdinaryReservation,
+)
+from shiftguard.agent.ordinary_owner import OrdinaryOwnerUnavailable
 from shiftguard.agent.schemas import FunctionCall, ToolCall
 from shiftguard.settings import Settings
 
@@ -58,12 +68,22 @@ class ProviderResponse(BaseModel):
 
 
 class ProviderError(Exception):
-    def __init__(self, code: str, message: str, status_code: int | None = None, raw_error: str | None = None):
+    def __init__(
+        self,
+        code: str,
+        message: str,
+        status_code: int | None = None,
+        raw_error: str | None = None,
+        dispatched: bool = True,
+    ):
         safe_message = redact_secrets(message)
         super().__init__(safe_message)
         self.code = code
         self.message = safe_message
         self.status_code = status_code
+        # False only when no request can have left this process. Anything else
+        # may have reached the provider and must be treated as possibly billed.
+        self.dispatched = dispatched
         # Never retain arbitrary upstream text. The legacy field remains available,
         # but carries only a fixed marker when a raw detail was supplied.
         self.raw_error = "[redacted provider detail]" if raw_error else None
@@ -71,7 +91,10 @@ class ProviderError(Exception):
 
 class ProviderDisabledError(ProviderError):
     def __init__(self, message: str = "Agent provider is disabled or credentials are unconfigured"):
-        super().__init__(code=AgentErrorCode.PROVIDER_DISABLED, message=message, status_code=503)
+        super().__init__(
+            code=AgentErrorCode.PROVIDER_DISABLED, message=message, status_code=503,
+            dispatched=False,
+        )
 
 
 class ProviderClient(Protocol):
@@ -90,23 +113,36 @@ class AgentProvider:
     """Async OpenAI-compatible client adapter targeting Nebius Token Factory."""
 
     def __init__(
-        self, settings: Settings, *, attempt_budget: AttemptBudget | None = None
+        self,
+        settings: Settings,
+        *,
+        attempt_budget: AttemptBudget | None = None,
+        ordinary_budget: OrdinaryBudget | None = None,
     ) -> None:
         self.settings = settings
-        self.enabled = getattr(settings, "agent_enabled", False)
+        self.agent_enabled = bool(getattr(settings, "agent_enabled", False))
+        self.general_chat_enabled = bool(getattr(settings, "general_chat_enabled", False))
+        self.enabled = self.agent_enabled or self.general_chat_enabled
         self.api_key = getattr(settings, "nebius_api_key", None)
         self.base_url = getattr(settings, "nebius_base_url", "https://api.tokenfactory.nebius.com/v1")
         self.model = getattr(settings, "nebius_model", "nvidia/Nemotron-3_5-Lightning")
         self.timeout = float(getattr(settings, "nebius_timeout", 25.0))
         self.max_retries = 0
         self.max_output_tokens = int(getattr(settings, "nebius_max_output_tokens", 1024))
+        self.ordinary_budget = ordinary_budget
+        if ordinary_budget is not None:
+            self.max_output_tokens = min(self.max_output_tokens, ORDINARY_MAX_OUTPUT_TOKENS)
         self.chat_template_kwargs = settings.nebius_chat_template_kwargs
         if attempt_budget is not None and not isinstance(attempt_budget, AttemptBudget):
             raise TypeError("live provider budget must be an AttemptBudget")
         self.attempt_budget = (
             attempt_budget
             if attempt_budget is not None
-            else AttemptBudget.from_invocation_environment(settings)
+            else (
+                AttemptBudget.from_invocation_environment(settings)
+                if self.agent_enabled
+                else None
+            )
         )
 
         self._client: AsyncOpenAI | None = None
@@ -133,29 +169,74 @@ class AgentProvider:
         messages: Sequence[dict[str, Any]],
         tools: Sequence[dict[str, Any]] | None = None,
     ) -> ProviderResponse:
-        if not self.enabled or self._client is None:
+        """Results-assistant dispatch. Only the agent flag opens it."""
+        return await self._dispatch(messages, tools, allowed=self.agent_enabled)
+
+    async def general_chat(self, messages: Sequence[dict[str, Any]]) -> ProviderResponse:
+        """Ordinary conversation. Only its own flag opens it, and it never carries tools."""
+        return await self._dispatch(messages, None, allowed=self.general_chat_enabled)
+
+    async def _dispatch(
+        self,
+        messages: Sequence[dict[str, Any]],
+        tools: Sequence[dict[str, Any]] | None,
+        *,
+        allowed: bool,
+    ) -> ProviderResponse:
+        if not allowed or self._client is None:
             raise ProviderDisabledError(
                 "Nemotron provider is disabled or NEBIUS_API_KEY is missing. "
                 "Manual workbench presets and cached results remain fully operational."
             )
 
         reservation: AttemptReservation | None = None
+        ordinary_reservation: OrdinaryReservation | None = None
+        dispatched = False
 
         def close_unknown(failure_kind: str) -> None:
-            nonlocal reservation
-            if reservation is None or self.attempt_budget is None:
-                return
-            try:
-                self.attempt_budget.close_unknown(reservation, failure_kind)
-            except Exception as close_error:
-                # The reservation already consumes its full allowance; keep the
-                # failure log free of request, response, credential, and URL data.
-                logger.error("Provider budget attempt close failed (%s)", type(close_error).__name__)
-            reservation = None
+            nonlocal reservation, ordinary_reservation
+            if reservation is not None and self.attempt_budget is not None:
+                try:
+                    self.attempt_budget.close_unknown(reservation, failure_kind)
+                except Exception as close_error:
+                    logger.error("Provider budget attempt close failed (%s)", type(close_error).__name__)
+                reservation = None
+            if ordinary_reservation is not None and self.ordinary_budget is not None:
+                try:
+                    self.ordinary_budget.close_unknown(ordinary_reservation, failure_kind)
+                except Exception as close_error:
+                    logger.error("Ordinary provider budget close failed (%s)", type(close_error).__name__)
+                ordinary_reservation = None
 
         try:
             normalized_messages = _validate_messages(messages)
             normalized_tools = _validate_tools(tools)
+            if self.ordinary_budget is not None:
+                try:
+                    ordinary_reservation = self.ordinary_budget.reserve(
+                        model=self.model,
+                        messages=normalized_messages,
+                        tools=normalized_tools,
+                        max_output_tokens=self.max_output_tokens,
+                    )
+                except OrdinaryBudgetLimitExceeded as err:
+                    raise ProviderError(
+                        code="ORDINARY_BUDGET_EXCEEDED",
+                        message=f"The ordinary provider daily {err.limit} allowance is exhausted.",
+                        status_code=429,
+                    ) from None
+                except OrdinaryBudgetHalted as err:
+                    raise ProviderError(
+                        code="ORDINARY_BUDGET_HALTED",
+                        message=f"The ordinary provider daily ledger is halted ({err.reason}).",
+                        status_code=429,
+                    ) from None
+                except OrdinaryOwnerUnavailable:
+                    raise ProviderError(
+                        code="ORDINARY_OWNER_UNAVAILABLE",
+                        message="This server no longer owns ordinary provider dispatch; restart it to recover.",
+                        status_code=503,
+                    ) from None
             if self.attempt_budget is not None:
                 try:
                     reservation = self.attempt_budget.reserve(
@@ -165,12 +246,18 @@ class AgentProvider:
                         max_output_tokens=self.max_output_tokens,
                     )
                 except BudgetLimitExceeded as err:
+                    if ordinary_reservation is not None and self.ordinary_budget is not None:
+                        self.ordinary_budget.release_unstarted(ordinary_reservation)
+                        ordinary_reservation = None
                     raise ProviderError(
                         code="BUDGET_EXCEEDED",
                         message=f"The live provider {err.limit} allowance is exhausted.",
                         status_code=429,
                     ) from None
                 except BudgetHalted as err:
+                    if ordinary_reservation is not None and self.ordinary_budget is not None:
+                        self.ordinary_budget.release_unstarted(ordinary_reservation)
+                        ordinary_reservation = None
                     raise ProviderError(
                         code="BUDGET_HALTED",
                         message=f"The live provider ledger is halted ({err.reason}).",
@@ -185,9 +272,30 @@ class AgentProvider:
             if normalized_tools:
                 kwargs["tools"] = normalized_tools
                 kwargs["tool_choice"] = "auto"
+            dispatched = True
             async with asyncio.timeout(self.timeout):
                 resp = await self._client.chat.completions.create(**kwargs)
             parsed = _parse_provider_response(resp, expected_model=self.model)
+            if ordinary_reservation is not None and self.ordinary_budget is not None:
+                try:
+                    self.ordinary_budget.settle(
+                        ordinary_reservation, parsed.usage, parsed.provider_request_id
+                    )
+                except OrdinaryBudgetBoundExceeded:
+                    ordinary_reservation = None
+                    raise ProviderError(
+                        code="ORDINARY_BUDGET_EXCEEDED",
+                        message="Provider usage exceeded its ordinary daily reservation; the daily ledger is halted and actual usage is charged.",
+                        status_code=502,
+                    ) from None
+                except OrdinaryBudgetUsageInvalid:
+                    close_unknown("invalid_usage")
+                    raise ProviderError(
+                        code="PROVIDER_INVALID_RESPONSE",
+                        message="Provider usage was missing or invalid; the ordinary daily ledger is halted.",
+                        status_code=502,
+                    ) from None
+                ordinary_reservation = None
             if reservation is not None and self.attempt_budget is not None:
                 try:
                     self.attempt_budget.settle(
@@ -275,8 +383,9 @@ class AgentProvider:
                 status_code=503,
                 raw_error=str(err),
             ) from None
-        except ProviderError:
+        except ProviderError as err:
             close_unknown("provider_error")
+            err.dispatched = dispatched
             raise
         except (ValueError, TypeError, KeyError, AttributeError, IndexError, json.JSONDecodeError) as err:
             close_unknown("invalid_usage")
@@ -286,6 +395,7 @@ class AgentProvider:
                 message="Provider returned an invalid response or the request exceeded configured bounds.",
                 status_code=502,
                 raw_error=type(err).__name__,
+                dispatched=dispatched,
             ) from None
         except Exception as err:
             close_unknown("provider_error")
@@ -295,6 +405,7 @@ class AgentProvider:
                 message="Provider request failed. Please try again later.",
                 status_code=502,
                 raw_error=type(err).__name__,
+                dispatched=dispatched,
             ) from None
 
 

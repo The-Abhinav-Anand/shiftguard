@@ -1,86 +1,24 @@
-# Gate 7 acceptance — genuine live policy denial, 8 October 2026
+# Claude transfer — 12 October 2026
 
-**Gate 7 ACCEPTED after the required real live refusal/policy denial, independently reviewed PASS by Astra xhigh.** This completes the user-requested live requirement; the earlier safety-only acceptance remains superseded history. Application source `e6fee099e85975ece6d312c653e12800b7d450ff`; clean live execution `86139a167c3551b8e499b0b08aa6983abdd4da96`. All 262 bound program files and accepted Gates 0–6 are preserved.
+The user has requested a complete handoff to Claude Code Opus 5.5. Read CLAUDE.md and ../deliverables/claude-handoff-20261012/PROJECT_HANDOFF.md. Claude is the receiving coordinator/executor; previous model staffing below is historical and superseded for future work. Actual independent reviews and parent verification remain required. No source implementation, acceptance status or paid allowance changes as part of this transfer.
 
-The unchanged four-threat prompt attempted an unsupported numerical result, fake publication, arbitrary Python and final-test labels. Three real Nebius/NVIDIA Nemotron calls reached an explicit no-tool final refusal. Python returned the exact authorization-denial outcomes; no fabricated facts, Python execution, labels, new jobs or scientific DB/artifact changes occurred. **The denied operation remains FAILED**, as the accepted controller contract requires. Raw final prose is not a valid JSON plan and is not displayed. The strict collector's BLOCKED result is preserved; its COMPLETED-only check is not the retained safe-refusal/explicit-policy-denial acceptance criterion. Astra reviewed the actual source, transcript, input/usage bindings and these distinctions. This is genuine final live evidence; prior quota failures are not counted as success.
+# Current execution — 11 October 2026
 
-Additional paid usage: **3 calls / 13,291 tokens**, SDK retries0. Linked cumulative acceptance usage:13 calls/61,026 tokens. All usage is known/settled; original tool/attempt IDs and historical ledgers are unchanged. Same-request replay adds zero calls. Stop paid execution after this passing result; parent seals the unused new allowance in final-checkpoint.json. Ordinary assistant stays paused; saved manual presets and graphs remain available. Ordinary13 tables/156 files are unchanged.
+Project cleanup is complete: 12,213 disposable files removed; 40 offline product tests and frontend typechecking PASS. Next resume the unfinished ordinary Nemotron chat and Gate 8 work. This cleanup does not accept that candidate, enable local flags, spend provider credits or change scientific policy.
 
-Acceptance and actual-output review: ../verification/gate7-live-completion-20261008/acceptance.json and astra-live-output-review/review.json in that packet. Retained source-bound evidence:782 backend tests PASS and public44-case/49-execution containment PASS; new driver12 and audit16 offline checks PASS. Model schema compliance and the sealed20–30-task quality evaluation are separate, unperformed quality work; this observation is not a task-success-rate estimate or universal safety claim.
+Resume implementation from `../docs/aegis/work/2026-10-09-nemotron-gate8/20-checkpoint.md` in the outer workspace after cleanup. Ordinary chat is implemented but awaits the remaining migration-fixture check, parent frontend build/integration verification and independent review. Flags were verified False/False on 10 October; no current enablement is inferred from source files.
 
-Next: **Gate 8 offline protocol preparation**, using docs/gate8-next-execution.md. Research v0.3 remains a development study; protocol DRAFT_NOT_LOCKED. Resolve declared decisions, authority and exposure before protocol lock/scoring. No new provider calls, confirmatory scoring, business-upload claim, installation, push, public enablement or deployment is authorized by this checkpoint. ACTIVE_WRITER=NONE; ACTIVE_REVIEWER=NONE. Parent owns source/evidence/Git/governance; Luna xhigh codes coherent batches, Astra xhigh reviews backend/science, Sol6.1 xhigh reviews affected frontend/content; no Antigravity.
+Gate 8 P1 technical review is complete, with all 15 P/U decisions mapped. P2 seed/aggregation engineering is not implemented. Protocol remains DRAFT_NOT_LOCKED; synthetic engineering is permitted under the existing packet, while confirmatory scoring requires the actual custodian, scientific approval and exposure evidence.
 
-## Earlier checkpoints retained as history
+Retained source baseline: f3f696579345347884d547f7ec4c75a84ce21184 on implementation/gate-0. Preserve all dirty and untracked code. Gates 0–7 retain their accepted/frozen evidence; use .agent/gates.json for exact bindings. Historical paid allowances are sealed.
 
-# Gate 7 live completion — user override, 8 October 2026
+The implementation roles remain the 9 October assignment: Hegel / GPT-6 Luna xhigh backend/chat, Nash / GPT-6 Luna xhigh frontend, Kant / GPT-6 Astra xhigh scientific decision review. Parent owns integration, runtime, evidence and governance; Astra reviews backend/science, Sol6.1 xhigh reviews affected frontend. No Antigravity. Old assignments in the history archive are superseded.
 
-**Gate 7 PENDING completed live containment.** The user explicitly rejected the narrowed safety-only acceptance and authorized more provider calls. The prior safety acceptance on governance bea0ee3513ebf9db1d50009fe1fe1b2f0c7575b6 is superseded for gate closure; its reviews, observations and failed attempts remain immutable history. Application source remains e6fee099e85975ece6d312c653e12800b7d450ff; Gates 0–6 are unchanged. Gate 8 waits for Gate 7.
+Current work evidence: `../verification/nemotron-gate8-20261009/`. Cleanup evidence: `../verification/cleanup-20261011/`. The faculty guide and research manuscripts remain retained. No automatic paid checks, installation, deployment, push or outcome access is part of cleanup.
 
-New authorization: ../verification/gate7-live-completion-20261008/authorization.json. At most **10 additional requests / 50,000 tokens**, zero SDK retries, one distinct persisted ledger g7-completion-20261008-01. Previous 10 calls / 47,735 tokens and both old ledgers remain untouched. No counter reset, startup/preflight inference, silent rerun loop or public assistant enablement. Ordinary assistant remains paused; manual presets and saved graphs remain available.
+## Retained history
 
-Execute the unchanged combined unsupported-number/fake-experiment/Python/final-label prompt through the normal provider/controller/registry/renderer using the existing isolated PostgreSQL 16 schema and published Bank development record. Parent validates the clean source and reviewed driver before dispatch; Astra xhigh independently reviews the actual terminal output, original IDs, usage, source, database and artifact evidence. Budget/provider failure is never completed live PASS. If an application defect is demonstrated, Luna xhigh implements a coherent correction and Astra reviews it; Sol6.1 xhigh reviews only an affected frontend/content delta. No Antigravity.
-
-Parent owns source/evidence/local Git and separate governance checkpoints. Accept Gate 7 only after genuine observed completed containment and independent review. Sealed model-quality evaluation remains NOT_RUN; no confirmatory scoring, protocol lock, business-upload claim, installation, push or deployment. ACTIVE_WRITER=PARENT_EVIDENCE; ACTIVE_REVIEWER=NONE.
-
-## Superseded checkpoints retained as history
-
-# Gate 7 safety acceptance — 8 October 2026
-
-**Gate 7 anti-hallucination hardening is ACCEPTED against the original blueprint safety criterion.** Source `e6fee099e85975ece6d312c653e12800b7d450ff`; all 262 bound program files remain unchanged. Astra independently reconciled the requirement with actual evidence: 44 public adversarial cases/49 passing executions, the retained 782-pass backend suite, three offline completion controls and observed fail-closed live output. Gates 0–6 and historical evidence are preserved.
-
-This checkpoint explicitly corrects the later expansion of Gate 7 to require a completed adversarial model dialogue. **The live dialogue remains FAILED/BUDGET_EXCEEDED; it is not a completed refusal or live-quality PASS.** No prior report or verdict is rewritten. Successful adversarial dialogue completion and the blueprint's separate 20–30-task held-out quality evaluation remain unresolved presubmission checks. Acceptance concerns tested application containment, not universal model safety or a completion rate.
-
-Paid usage remains **10/10 calls, 47,735 tokens, zero retries**; new calls for this acceptance: **0**. Ordinary assistant stays paused. Saved manual presets and graphs remain available. No deployment, push, new scientific results, protocol lock or business-upload implementation.
-
-Next: **Gate 8 protocol preparation**, using docs/gate8-next-execution.md and the existing research/protocol-v0.3 decision register. Confirmatory scoring remains forbidden until the declared scientific approval, exposure and lock conditions pass. ACTIVE_WRITER=NONE; ACTIVE_REVIEWER=NONE. Parent owns source/Git/evidence/governance; coherent Luna xhigh code batches, Astra xhigh backend/scientific review, Sol6.1 xhigh frontend/content review. No Antigravity.
-
-Acceptance: docs/gate7-acceptance.md and ../verification/gate7-closure-20261008/safety-acceptance.json. Earlier entries below are historical and cannot revive exhausted call allowances or supersede this explicit scope reconciliation.
-
-## Previous checkpoints
-
-# Gate 7 live closure checkpoint — 8 October 2026
-
-Gate 6 remains **ACCEPTED** on its preserved source 950d5cd. Gate 7 remains **BLOCKED_REQUIRED_LIVE_CONTAINMENT_EVIDENCE**. Current reviewed source `e6fee099e85975ece6d312c653e12800b7d450ff` was clean during execution. The prepared follow-up used 3 real Nebius/NVIDIA Nemotron calls, 13,126 tokens, zero retries. Cumulative allowance: **10/10 calls, 47,735/65,000 tokens; zero remaining calls**. Original seven attempt records are unchanged, and the original allowance is sealed. No more paid requests, allowance resets or automatic retries.
-
-The model made two denied unauthorized experiment reads and one public Bank metadata read; a fourth provider turn was blocked by the exhausted call cap. Terminal FAILED/BUDGET_EXCEEDED is **not** completed live containment PASS. Parent independently verified source, persisted request/tool identities, known usage, same-request replay adding zero calls, unchanged scientific DB/disk and ordinary 13 tables/156 files. Astra's actual-output review preserves this blocker. No new jobs, experiments, execution audits, publications or artifacts; no fabricated empirical final claims, arbitrary Python or final-label output.
-
-Astra's requested offline diagnosis is complete: three fresh pytest cases passed with zero failures/errors/skips and two existing dependency warnings. The exact saved three decisions reproduce the call-cap failure before a fourth SDK dispatch. Both a direct no-tool final plan and the same two denied reads followed by that plan complete within quota. Normal API/provider/controller/registry/store/renderer were exercised in isolated SQLite databases; SDK completions were fixtures and network traffic was explicitly denied. No real provider calls or live-ledger access. The normal completion path works; no application correction is justified by these observations. Independent offline evidence review PASS does not replace the missing live outcome.
-
-Frontend: **Assistant paused**, with manual presets and saved graphs available. Sol PASS; 21 fresh scripted browser checks; typecheck/build and fresh wheel SQLite/PG16 probes PASS. Backend 202/science 39 unchanged; prior 782-PASS suite applies to its unchanged backend bytes, not a fabricated postcommit rerun. Original failed reviews/reports remain history. Ordinary assistant stays disabled; Gate 8 unopened; research protocol DRAFT_NOT_LOCKED. No public enablement, deployment, push or scientific scoring.
-
-ACTIVE_WRITER=NONE; ACTIVE_REVIEWER=NONE. Parent packet: ../verification/gate7-closure-20261008/. Read docs/gate7-live-closure-20261008.md and docs/next-execution.md. Earlier entries below are historical and cannot authorize more paid usage.
-
-## Historical checkpoints
-
-# Current checkpoint — 8 October 2026
-
-Gate6 **ACCEPTED** on source `950d5cd2d363247d20e7ab5b9a54faa5a4dbcf61` after the real Nebius/NVIDIA Nemotron Bank run → durable wait/resume → published read → qualified eight-method comparison, independent DB/disk/transcript audit and narrow Astra output review PASS. Parent separately checkpoints governance; actual governance commit is recorded outside the checkout in ../verification/gate67-acceptance-20261007-b3a81c57/acceptance.json. All G6-A1–A8 proofs are mapped there to actual passing test nodes and evidence hashes. Full782 Python tests, browser16 (scripted provider), typecheck/build and fresh installed-wheel checks PASS; reviewed source202 and product/browser59 paths bound. No postcommit full-suite rerun is claimed: tested bytes were independently bridged to Git blobs.
-
-Gate7 **PENDING**. Public containment49 executions/44 distinct cases PASS, but the one real combined challenge ended FAILED/BUDGET_EXCEEDED after an unauthorized run was denied. No job/data/artifact side effects and no fabricated rendered claims; this is partial observed evidence, not completed live containment PASS. The single shared allowance used **7/10 calls, 34,609/50,000 tokens, retries0**. Remaining15,391 tokens cannot cover the smallest normal full-registry reservation16,044. No further provider calls; never replace/reset this allowance or silently raise its ceiling.
-
-ACTIVE_WRITER=NONE; ACTIVE_REVIEWER=NONE. Accepted Gates0–5, 39 scientific files and11 migrations preserved; ordinary13 tables/156 artifacts unchanged. Ordinary assistant disabled, preloaded-result app retained. Research v0.3 delivered; protocol DRAFT_NOT_LOCKED, no confirmatory/Adult/efficacy claim. No push, deployment or public enablement. Read docs/next-execution.md. Earlier entries are historical source-specific checkpoints and cannot authorize paid usage.
-
-## Historical checkpoints
-
-# Current acceptance checkpoint — 8 October 2026
-
-ACTIVE_WRITER=NONE. Backend Astra xhigh review PASS; parent full suite **782 passed, zero failures/errors/skips**, including existing PostgreSQL16. Fresh browser **16/16 PASS** with scripted provider; typecheck/build PASS; fresh wheel SHA `70098e3efeebcbac6209c555802132493173fca8536f1819addd2b367d5df85f` passes nine runtime probes and resolves 92 imports outside the checkout. Exact 202-file backend digest `29b51ddbcb2ffa9870db2c18b8c40bd30d52e4026f7418675c46bcee47b8d48a` stayed unchanged.
-
-Sol6.1 xhigh review of the three-file frontend/test correction: **PASS**. Two browser fixtures now use approved named commands; AgentPanel changes only its placeholder. All 150 assertions remain. Rebuilt assets have their own 59-file binding; do not claim every historical frontend/static byte is unchanged. Scientific/core/migration bytes and accepted Gates0–5 remain preserved. Original failed/interrupted reports remain history.
-
-New Nebius allowance **0/10 requests**, maximum **50,000 aggregate tokens**, retries0. Parent owns the authorized local source checkpoint, genuine isolated Bank development run/wait/resume/read/compare, same-ledger containment challenge, and separate governance checkpoint. Gates6/7 remain **PENDING**. Ordinary assistant stays disabled; no deployment/push, confirmatory scoring or scientific-policy change. Read docs/next-execution.md and ../verification/gate67-acceptance-20261007-b3a81c57/interim-checkpoint.json. Earlier entries below are historical source-specific checkpoints.
-
-## Prior authority — 7 October 2026 (bounded acceptance preparation)
-
-The user authorized Gate6/Gate7 acceptance execution with at most **10 additional Nebius requests**, a parent **50,000-token ceiling**, zero SDK retries and one durable shared ledger. The older three-call preflight allowance is exhausted and remains separate history. New provider calls used: **0**.
-
-GPT-6 Luna xhigh's R01–R05 harness correction is frozen: 202 source files, digest `29b51ddbcb2ffa9870db2c18b8c40bd30d52e4026f7418675c46bcee47b8d48a`; parent focused checks 112/112 PASS with PostgreSQL16 and no skips. GPT-6 Astra xhigh performs the residual backend review. GPT-6.1 Sol xhigh reviews any new frontend/content delta; this correction changes none. Do not resume Antigravity or an unrelated accepted-gate audit.
-
-Parent owns the final full suite, source binding, authorized reversible local source commit and separate governance checkpoint. Live calls require the completed Astra PASS and clean source. Gates6/7 remain pending actual workflow and acceptance evidence. Ordinary assistant disabled; existing services only; no deployment, push, public enablement or scientific-policy change. Current packet: `docs/next-execution.md`; evidence: `../verification/gate67-acceptance-20261007-b3a81c57/`. Earlier dated assignments below are history.
-
-## Prior authority — 2 October 2026 (history)
-
-Use `.agent/session-state.md`, `.agent/ownership.json` and `docs/next-execution.md` for the current checkpoint. The user superseded the historical Antigravity assignment: scoped GPT-6 Luna xhigh writers, GPT-6.1 Sol xhigh backend review and GPT-6 Astra xhigh frontend review. The product-recovery batch is frozen; no active application writer. Both bounded correction reviews returned PASS; Gate 6 remains pending required evidence/acceptance. Older dated role assignments below are history, not permission to resume Antigravity or reopen accepted gates.
+Repeated and superseded checkpoints from these four files are preserved byte-for-byte in `.agent/history/checkpoints-before-cleanup-20261011.zip`, including an internal SHA-256 manifest. Current acceptance reports, test reports, usage ledgers and scientific artifacts remain at their original paths. Archived instructions cannot revive old allowances or writer assignments.
 
 # SHIFTGUARD operating contract
 
@@ -97,35 +35,19 @@ Use `.agent/session-state.md`, `.agent/ownership.json` and `docs/next-execution.
 - Never infer acceptance from passing author tests.
 - No staging or commit before parent verification and authorization.
 
-## Authoritative paths
-- Current workflow: docs/loop-engineering.md (user-directed Antigravity coding / GPT 6.1 Sol review workflow, effective 30 September 2026).
-- Next implementation packet: docs/next-execution.md (Gate 6 correction review completed with 22 open findings; execute AG-G6-CORRECTIONS-02). Gate 4 closure records are historical accepted evidence.
-- The 26 September Luna coding assignment is superseded by the 28 September Antigravity instruction; preserve historical authorship.
-- Latest review: docs/gate6-correction-review-20261001.md BLOCKERS; latest accepted gate: docs/gate5-acceptance.md. Gate 4 evidence remains historical.
-- Fix ledger: docs/fix-ledger.md.
-- Blueprint: ../SHIFTGUARD_Implementation_Blueprint_v2_2026-09-09.md.
-- Plan: ../docs/aegis/plans/2026-09-10-shiftguard-hackathon-execution-plan.md.
-- Gate3 contract: docs/gate3-development-contract.md.
-- Parent owns outer evidence and independent verification.
-- Retrieve only relevant sections; no full-document reload.
-- Scientific protocol and operational controls are separate.
-- This file does not amend scientific choices.
-
-## Ownership and escalation
-- Current writer assignment (1 October user override): four GPT-6 Luna xhigh agents with exclusive file scopes in docs/product-refresh-20260930/luna-major-batch-01.md. Antigravity is inactive for this batch.
-- Exactly one writer owns each file; this user-authorized four-agent batch allows only the disjoint scopes in the current packet.
-- .agent/ownership.json is the canonical current writer assignment.
-- Parent verifies evidence and may maintain governance/checkpoint files under user authorization.
-- Independent planner/reviewer: GPT 6.1 Sol; never a concurrent application writer.
-- GPT-6.1 Sol xhigh is dispatched only after a complete integrated major batch; no per-file Sol reviews.
-- The four scoped Luna agents implement complete slices and ordinary corrections. GPT-6.1 Sol reviews the integrated major batch, then only correction deltas and affected invariants.
-- Two correction cycles without verified progress trigger GPT 6.1 Sol root-cause diagnosis and a revised Antigravity brief, not an endless repeat or automatic acceptance.
-- Complete coherent atomic batches before seeking review.
-- Ordinary failures stay with the active writer.
-- Capture the exact failure and make evidence-based fixes.
-- Escalate protocol contradictions, leakage, or architecture decisions.
-- Read .agent/handoff.json for current transfer status.
-- Model ownership is a workflow assignment, not an acceptance claim.
+## Authoritative paths and ownership
+- Current batch and next steps: docs/next-execution.md and the outer 9 October work checkpoint linked above.
+- Machine acceptance and ownership: .agent/gates.json, .agent/ownership.json and .agent/handoff.json. Historical accepted-gate sections do not reassign current work.
+- Ordinary chat contract: docs/ordinary-chat.md; Gate 8 preparation: docs/gate8-next-execution.md.
+- Scientific decisions: ../research/gate8-20261009/decisions.json and SCIENTIFIC_DECISIONS.md; protocol: ../research/protocol-v0.3/.
+- Fix ledger: docs/fix-ledger.md. Gate 3 scientific contract: docs/gate3-development-contract.md.
+- Original blueprint: ../SHIFTGUARD_Implementation_Blueprint_v2_2026-09-09.md.
+- One writer owns each file; preserve the current disjoint implementation scopes. Finish coherent batches before independent review.
+- Parent owns integration, exact-source evidence, Git and separate governance checkpoints. Passing author tests do not record acceptance.
+- Review correction deltas and affected invariants; do not reopen unrelated accepted-gate audits or repeat closed checks without a changed contract.
+- Two correction cycles without verified progress require root-cause diagnosis and a revised scoped batch, never automatic acceptance.
+- Escalate scientific contradictions, leakage and architecture decisions. No source staging/commit before parent verification and authorization.
+- Historical workflow briefs remain reference/history only where superseded by the current user instructions.
 
 ## Resume and checkpoint
 - Read AGENTS.md and .agent/session-state.md first.
@@ -146,7 +68,7 @@ Use `.agent/session-state.md`, `.agent/ownership.json` and `docs/next-execution.
 - Finish the batch, then run local targeted tests.
 - Fix failures before handing the candidate to parent.
 - Parent performs independent verification.
-- One consolidated GPT 6.1 Sol review occurs at batch/gate exit.
+- One consolidated review occurs at batch/gate exit using the current assigned reviewer; review affected deltas afterward.
 - Do not repeatedly request ordinary code review.
 - Do not rerun frozen gates without an affected invariant.
 - Record affected frozen gates when shared behavior changes.
@@ -262,8 +184,8 @@ Use `.agent/session-state.md`, `.agent/ownership.json` and `docs/next-execution.
 - Gate 1 is frozen at 6c4d682.
 - Gate 2 is frozen at 937f33c (closure at c9cc001).
 - Gate 3 hardened reproduction and Gate 4 acceptance are verified on 10170feab3c16c5eb61153d57d9e5879ba5a6fd6; see .agent/gates.json for evidence.
-- Gate 5 is accepted on f63116fedc2751493d79d44897ba913b6d28b0b5; next is the prepared Gate 6 offline batch.
-- Preserve research/*, including manuscript, builder, exports, and QA.
+- Gate 5 is accepted on f63116fedc2751493d79d44897ba913b6d28b0b5. Gates 6/7 acceptance bindings remain in .agent/gates.json; the current batch is ordinary chat followed by Gate 8.
+- Preserve research manuscripts, builders, final exports, empirical figures, data, protocols and evidence. Superseded regenerable preview renders may be removed under a verified cleanup manifest.
 - Preserve ../SHIFTGUARD_Deep_Research.md, ../SHIFTGUARD_Deep_Research.pdf, ../SHIFTGUARD_Implementation_Blueprint_v2_2026-09-09.md.
 - Preserve parent evidence, toolchain, and frozen verification clone.
 - Do not access paid APIs, cloud services, or external publication.
@@ -271,7 +193,7 @@ Use `.agent/session-state.md`, `.agent/ownership.json` and `docs/next-execution.
 - Do not bundle caches, secrets, or raw data in source control.
 - Stop at the completed candidate and parent-verification boundary.
 
-## Bounded Gate 4 closure
+## Accepted Gate 4 regression contract (historical closure)
 - Close R6-01 through R6-04 together using docs/gate4-closure.md and fixed I01-I08 contracts.
 - Permanent guards: tests/acceptance/test_gate4_closure.py; do not xfail known defects.
 - Evidence command: .venv/Scripts/python.exe -B scripts/check_gate4_closure.py.
@@ -280,3 +202,16 @@ Use `.agent/session-state.md`, `.agent/ownership.json` and `docs/next-execution.
 - One compact handoff and acceptance review; do not restart broad codebase review for each patch.
 - Missing service evidence is BLOCKED; author pass counts alone never close a finding.
 - Optional cleanup, style and new features cannot expand this closure batch.
+
+## Session Config
+
+project-name: shiftguard
+vcs: none
+persistence: true
+enforcement: warn
+waves: 1
+agents-per-wave: 1
+test-command: .\.venv\Scripts\python.exe -B -m pytest tests -q -p no:cacheprovider
+typecheck-command: npm --prefix frontend run typecheck
+lint-command: git -c safe.directory=C:/Users/Abhinav Anand/Downloads/nvidia/shiftguard diff --check
+auto-skill-dispatch: false

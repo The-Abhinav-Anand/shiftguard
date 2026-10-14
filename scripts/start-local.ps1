@@ -41,7 +41,6 @@ $sgStdout = Join-Path $sgRuntime "server-$sgAttempt.stdout.log"
 $sgStderr = Join-Path $sgRuntime "server-$sgAttempt.stderr.log"
 $sgEnvironment = @{
     SHIFTGUARD_EMBEDDED_WORKER = 'true'
-    SHIFTGUARD_AGENT_ENABLED = 'false'
     PYTHONDONTWRITEBYTECODE = '1'
     OPENBLAS_NUM_THREADS = '1'
     OMP_NUM_THREADS = '1'
@@ -72,7 +71,7 @@ $sgRecord = @{
     url = $sgUrl
     started_at = (Get-Date).ToString('o')
     embedded_worker = $true
-    agent_enabled = $false
+    agent_enabled = $null
     state = 'STARTING'
     stdout = $sgStdout
     stderr = $sgStderr
@@ -99,5 +98,8 @@ if (-not $sgReady) {
     throw "SHIFTGUARD did not become ready within 60 seconds. Inspect $sgStderr; process ID $($sgProcess.Id)."
 }
 $sgRecord.state = 'READY'
+$sgAssistantStatus = Invoke-RestMethod -Uri "$sgUrl/api/v1/agent/status" -TimeoutSec 5
+$sgRecord.agent_enabled = [bool]$sgAssistantStatus.enabled
+$sgRecord.general_chat_enabled = [bool]$sgAssistantStatus.general_chat_enabled
 $sgRecord | ConvertTo-Json | Set-Content -LiteralPath $sgRecordPath
 Write-Output "SHIFTGUARD is ready at $sgUrl with its experiment worker running."

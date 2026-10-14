@@ -4,6 +4,8 @@ import type { JobStatus, SessionCredentials } from "./types";
 export interface AgentStatus {
   enabled: boolean;
   available: boolean;
+  general_chat_enabled?: boolean;
+  ordinary_budget?: Record<string, unknown> | null;
   model: string;
   max_turns: number;
   max_calls: number;

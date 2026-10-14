@@ -114,7 +114,7 @@
     "live_A7": "BLOCKED_NOT_RUN",
     "checkpoint_type": "Separate parent governance after frozen-source verification; no code changes"
   },
-  "current_user_authorization": "User8October: do anything but complete it; complete blueprint Gate7 scope and preserve existing ten-call limit. No new paid authorization inferred.",
+  "current_user_authorization": "User9October: enable ordinary Nemotron general use, then continue Gate8; old acceptance ledgers sealed.",
   "review_snapshot": "verification/product-execution-20261001/frontend-cleanup-major-01/frozen-g6-source",
   "frontend_cleanup_dispatch": {
     "parent_owners": [
@@ -522,5 +522,16 @@
     "ordinary_assistant_enabled": false,
     "scope_reconciliation": "Completed live refusal was an additional liveness criterion in later governance. Blueprint safety is accepted from bound adversarial guards plus actual fail-closed observations; the failed live result and original BLOCKERS remain unchanged and unresolved as dialogue-completion evidence."
   },
-  "outer_driver_writer": "NONE"
+  "outer_driver_writer": "NONE",
+  "current_batch_20261009": {
+    "status": "IMPLEMENTING",
+    "backend_writer": "01a1214e-9cde-79b3-b4d7-999377df3688",
+    "frontend_writer": "01a1214e-a4a8-7643-9d50-5f425a73d9b4",
+    "science_reviewer": "01a1214e-aaac-7cc0-bf69-6d0ab3a96988",
+    "runtime_owner": "PARENT",
+    "protocol_locked": false,
+    "confirmatory_dispatch_permitted": false,
+    "source_acceptance": "PENDING",
+    "evidence": "../verification/nemotron-gate8-20261009/"
+  }
 }

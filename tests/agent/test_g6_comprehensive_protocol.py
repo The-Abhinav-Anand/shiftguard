@@ -167,7 +167,7 @@ def test_call_id_migration_widens_preserves_and_downgrades_without_loss(protocol
         })
 
     command.upgrade(config, "head")
-    assert _revision(env["engine"]) == "0011_gate6_call_id_capacity"
+    assert _revision(env["engine"]) == "0012_ordinary_chat_and_budget"
     assert _column_length(env["engine"], "agent_requests", "active_tool_call_id") == 256
     assert _column_length(env["engine"], "agent_tool_executions", "tool_call_id") == 256
     with env["engine"].connect() as conn:
@@ -188,7 +188,22 @@ def test_call_id_migration_widens_preserves_and_downgrades_without_loss(protocol
         })
     with pytest.raises(RuntimeError, match="Cannot downgrade call-ID capacity"):
         command.downgrade(config, "0010_gate6_protocol_hardening")
-    assert _revision(env["engine"]) == "0011_gate6_call_id_capacity"
+    # PostgreSQL rolls the whole rejected downgrade back; SQLite DDL is not
+    # transactional, so its completed 0012 step stays applied.
+    transactional = env["engine"].dialect.name == "postgresql"
+    expected_revision = (
+        "0012_ordinary_chat_and_budget"
+        if transactional
+        else "0011_gate6_call_id_capacity"
+    )
+    assert _revision(env["engine"]) == expected_revision
+    ordinary_tables = {
+        "shiftguard_chat_conversations", "shiftguard_chat_messages",
+        "shiftguard_chat_receipts", "ordinary_budget_daily", "ordinary_budget_calls",
+    }
+    assert ordinary_tables & set(inspect(env["engine"]).get_table_names()) == (
+        ordinary_tables if transactional else set()
+    )
     assert _column_length(env["engine"], "agent_requests", "active_tool_call_id") == 256
     assert _column_length(env["engine"], "agent_tool_executions", "tool_call_id") == 256
     with env["engine"].connect() as conn:
@@ -218,7 +233,7 @@ def test_call_id_migration_widens_preserves_and_downgrades_without_loss(protocol
             "SELECT tool_call_id FROM agent_tool_executions WHERE request_id=:id"
         ), {"id": request.id}).scalar_one() == call_id
     command.upgrade(config, "head")
-    assert _revision(env["engine"]) == "0011_gate6_call_id_capacity"
+    assert _revision(env["engine"]) == "0012_ordinary_chat_and_budget"
 
 
 def test_call_ids_at_utf8_byte_boundaries_round_trip_storage(protocol_env):
