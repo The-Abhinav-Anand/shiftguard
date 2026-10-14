@@ -65,6 +65,18 @@ Only after a specific live allowance has been authorized:
 Once the day's allowance is used, both assistants answer with a cap message until the next
 UTC day. The manual workbench, saved results and charts keep working without the model.
 
+## Measured on the local Linux stack (15 October 2026)
+
+- One bank-stress job (400 conditions) on the release image: worker peaked at 315 MiB,
+  API at 161 MiB and PostgreSQL at 37 MiB. The compose limits (2 GB worker, 1 GB API)
+  leave ample headroom, so any VM with 2 GB or more fits.
+- The job survived an abrupt worker kill and an API restart, and was published once.
+- A second provider-enabled API on the same database refused to start
+  (`OrdinaryOwnerUnavailable`) and left the first one serving.
+- No database password or URL appeared in any container log.
+
+Evidence: `verification/gate10-image-20261014T184638Z-e606f2d016c8/` in the outer workspace.
+
 ## What `/health/ready` checks
 
 - Database connectivity.

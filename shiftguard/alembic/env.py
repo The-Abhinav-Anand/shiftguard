@@ -10,7 +10,9 @@ from shiftguard.storage.db import create_engine_for_settings
 
 config = context.config
 if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+    # The API and worker migrate in-process at startup; keep their existing loggers
+    # (uvicorn errors, provider and worker failures) enabled.
+    fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 
 def run_migrations_offline() -> None:
