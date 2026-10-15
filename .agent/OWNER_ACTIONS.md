@@ -1,0 +1,21 @@
+# Owner actions (only these need you; everything else is automated)
+
+Do them in any order, whenever you have 10 minutes. Write "DONE" next to each one you finish.
+The autopilot checks this file every run.
+
+1. **GitHub sign-in (2 min):** open a terminal on this PC and run `gh auth login`. Choose
+   GitHub.com → HTTPS → "Login with a web browser", and approve in the browser. If `gh` is
+   missing, install GitHub CLI from https://cli.github.com first. Status:
+2. **Hosting VM (15 min, free):**
+   - Sign up at https://www.oracle.com/cloud/free/ (needs a card for identity checks; Always Free costs $0).
+   - Create a Compute instance: Ampere A1 shape, Ubuntu 24.04, 2 OCPU / 12 GB.
+   - When it asks for an SSH key, paste the contents of `C:\Users\Abhinav Anand\.ssh\id_ed25519.pub`.
+   - In the VCN security list, allow inbound TCP 80 and 443.
+   - Write the VM's public IP here:
+3. **Free domain (3 min):**
+   - Sign in at https://www.duckdns.org.
+   - Create a subdomain (e.g. `shiftguard`) and set its IP to the VM IP.
+   - Write the domain here (e.g. `shiftguard.duckdns.org`):
+4. **API key on the server (1 min, after the VM is up):** either write "copy key: yes" here, so the autopilot copies `NEBIUS_API_KEY` from this PC's `.env` to the VM over SSH without displaying it, or put it in `deploy/judge.env` on the VM yourself. Status:
+5. **Video upload (5 min, when the autopilot says it is ready):** upload `docs/submission/media/shiftguard-demo.webm` to YouTube as Public. Paste the link here:
+6. **Submit (5 min, on 29–30 Oct):** paste `docs/submission/DEVPOST_FORM.md` into the Devpost form and press Submit.
