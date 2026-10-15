@@ -33,6 +33,30 @@ must stay reachable until **16 Dec 2026 01:30 IST**.
 
 ## Queue (priority order; skip blocked items, come back later)
 
+**Status 15 Oct 2026, 16:45 IST:** live at https://shiftguard.duckdns.org (Oracle E2.1.Micro, 130.210.3.156; repo checkout at `/opt/shiftguard`; image loaded from this PC and bootstrap run with `SHIFTGUARD_SKIP_BUILD=1`; both assistants enabled).
+- Hosted probe: PASS for all three presets.
+- Hosted logs and bundle: secret-free.
+- Live check: general chat PASS; Results assistant FAILED. It explored tools for 6 turns, made one call with wrong arguments (`inspect_missingness` without scenario/experiment_id) and hit the 6-turn limit before answering. It used 7 calls and 28,657 tokens.
+- Evidence: `../verification/gate10-hosted-*`.
+
+0. **Results assistant reliability (top priority, do first):**
+   - Reproduce the failure offline with the scripted provider and the captured tool sequence.
+   - Fix it so a Results question about a saved experiment finishes in about 4 calls or fewer. Likely levers:
+     - a clearer system/tool prompt saying "for a saved experiment, call `read_experiment_results` and/or `generate_result_summary`, then answer";
+     - stricter, better-described tool arguments;
+     - the final turn reserved for answering, so it never hits the limit mid-exploration.
+   - Keep every Gate 7 invariant (closed registry, Python-rendered numbers, authority checks, `scripts/check_gate7_candidate.py` protected comparisons; extend its authorized deltas only with tests).
+   - Run the Opus xhigh review.
+   - Redeploy: copy changed files or rebuild locally, then `docker save`, resumable upload and `docker load`.
+   - Then one more bounded live Results check on a fresh UTC day (at most 8 calls).
+   - Also correct the docs: a Results question used about 28k tokens, so about 3 fit in the 100,000-token day, not 6. Measure again after the fix and update JUDGE_GUIDE, SUBMISSION and DEVPOST_FORM.
+
+0b. **Hosted operations:**
+   - Fill the live URL and measured hosted times into README, JUDGE_GUIDE, SUBMISSION and DEVPOST_FORM: baseline about 12 s, outage-50 about 15 s, stress about 5.5 min on the 1-OCPU VM.
+   - On the VM, repeat the restart/persistence and second-owner checks.
+   - Add a nightly `pg_dump` plus an artifact tarball backup (cron, keeping the last 7) under `/opt/shiftguard-backups`.
+   - Mark RELEASE_CHECKLIST items 5–7, 10 and 14 accordingly.
+
 1. **Hosting scaffold:**
    - add a `caddy` HTTPS service and `deploy/Caddyfile` to `deploy/compose.judge.yaml`, using `SHIFTGUARD_DOMAIN`;
    - add `deploy/bootstrap-vm.sh`. On Ubuntu 22.04/24.04 it installs Docker Engine and the compose plugin from Docker's apt repository, clones or pulls the repo, builds the image, generates `judge.env` and `postgres.env` with random passwords if absent, copies the dataset, then runs `docker compose up -d`. It must work on ARM64.

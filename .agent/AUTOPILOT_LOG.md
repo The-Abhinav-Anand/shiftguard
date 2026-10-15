@@ -21,3 +21,14 @@ Blocked:
 Paid model calls this run: 0. Retained WSL dockerd was started for the Caddy/download checks and stopped afterwards.
 
 Next: once published, set repo topics/homepage; once a VM IP is recorded, repoint DuckDNS, run bootstrap over SSH, hosted probe, restart/second-owner checks, secret scan, live check (≤9 calls). Fallback decision for no VM is due 26 Oct (queue 7).
+
+## 2026-10-15 16:45 IST (interactive session, deploy)
+- Repo published: https://github.com/The-Abhinav-Anand/shiftguard (main = implementation/gate-0). History scan before the push: 38 commits, 0 hits for the Nebius key or DuckDNS token, no .env/db files.
+- VM: Oracle E2.1.Micro (Ampere out of capacity in Mumbai), 130.210.3.156, Ubuntu 24.04 x86_64. Docker, swap and firewall via `deploy/oracle-cloud-init.sh` over SSH. DuckDNS repointed.
+- Image built locally from e249b72 and uploaded resumably (two resets; 3 corrupted 8 MB chunks re-sent; SHA-256 match). Bootstrap run with SHIFTGUARD_SKIP_BUILD=1 and --dataset-from (dataset hash 0e685060… verified).
+- Live: https://shiftguard.duckdns.org, Let's Encrypt certificate valid to 2027-01-13. Hosted probe PASS for baseline (12 s), outage-50 (15 s) and stress (325 s); experiment IDs identical to the local runs.
+- NEBIUS_API_KEY copied over SSH stdin (judge.env mode 600, never displayed); both assistants enabled.
+- Live check: general chat PASS (1 call, 199 tokens). Results assistant FAILED (6 turns, 6 calls, hit the turn limit after a wrong-argument tool call; no fabricated numbers). Ledger after: 7/50 calls, 28,657/100,000 tokens, not halted.
+- Hosted secret scan: 0 key, password or DB-URL hits in the api, worker, postgres and caddy logs; 0 in served assets.
+- Evidence: verification/gate10-hosted-20261015T100844Z
+- Next: runbook queue item 0 (Results assistant reliability), then 0b.
