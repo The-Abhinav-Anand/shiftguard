@@ -25,3 +25,20 @@ The autopilot checks this file every run.
    to YouTube: youtube.com → Create → Upload video → select the file → title "SHIFTGUARD: calibration under missing inputs"
    → "No, it's not made for kids" → Next ×3 → Visibility **Public** → Publish. Paste the link here:
 6. **Submit (5 min, on 29–30 Oct):** paste `docs/submission/DEVPOST_FORM.md` into the Devpost form and press Submit.
+
+7. **Publish the repository (2 min) — NEW, needed first:** the autopilot's session is not
+   permitted to create a public repository (Claude Code's auto-mode safety check blocked it on
+   15 Oct). The history secret scan passed on 15 Oct (37 commits: no API key, DuckDNS token,
+   `.env` or database files). Note: commits show your name and `abhinav05005@gmail.com`. Either
+   - run these in a terminal on this PC:
+     ```
+     cd "C:\Users\Abhinav Anand\Downloads\nvidia\shiftguard"
+     gh repo create The-Abhinav-Anand/shiftguard --public --description "Calibration under missing inputs: rehearse input-field outages on a tabular model and measure calibration, decision loss and recovery cost."
+     git remote add origin https://github.com/The-Abhinav-Anand/shiftguard.git
+     git push origin implementation/gate-0:main
+     ```
+     then write "published" here; or
+   - write "publish: allowed" here and add a Claude Code permission rule allowing `gh repo create`
+     and `git push` for this project, and the next run publishes it.
+   The VM bootstrap clones from this repository, so it is needed before deployment.
+   Status:
