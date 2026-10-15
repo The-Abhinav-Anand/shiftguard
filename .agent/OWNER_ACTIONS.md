@@ -11,7 +11,7 @@ The autopilot checks this file every run.
    - Create a Compute instance: Ampere A1 shape, Ubuntu 24.04, 2 OCPU / 12 GB.
    - When it asks for an SSH key, paste the contents of `C:\Users\Abhinav Anand\.ssh\id_ed25519.pub`.
    - In the VCN security list, allow inbound TCP 80 and 443.
-   - Write the VM's public IP here:
+   - Write the VM's public IP here: DONE (15 Oct): `130.210.3.156` (VM.Standard.E2.1.Micro, x86_64, 1 GB; Ampere was out of capacity in Mumbai). SSH as `ubuntu` with this PC's key works; DuckDNS repointed.
 3. **Free domain (3 min):**
    - Sign in at https://www.duckdns.org.
    - Create a subdomain (e.g. `shiftguard`) and set its IP to the VM IP.

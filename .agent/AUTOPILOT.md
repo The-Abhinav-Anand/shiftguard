@@ -25,6 +25,12 @@ must stay reachable until **16 Dec 2026 01:30 IST**.
 5. Append a dated entry to `.agent/AUTOPILOT_LOG.md`: done, verified (exact counts), blocked, next. Update `.agent/session-state.md` only for milestone changes.
 6. Notify the owner (PushNotification) only when he must act, or when a milestone completes: live URL up, repo public, video ready, submission ready. Never for routine progress.
 
+## Subagents (owner's rule, 15 Oct 2026)
+
+- Writing code and running checks: use subagents on **Haiku** (small, mechanical edits and searches) or **Sonnet** (features and fixes). Give each one disjoint file ownership and a self-contained brief.
+- Reviewing: one **Opus** reviewer at **xhigh** effort per batch, reviewing the finished diff and its evidence before you commit or deploy. Act on its findings; a review is never skipped to save time.
+- The run itself integrates, verifies, commits and logs. Report the reviewer's verdict in `AUTOPILOT_LOG.md` as a model review, not as human acceptance.
+
 ## Queue (priority order; skip blocked items, come back later)
 
 1. **Hosting scaffold:**

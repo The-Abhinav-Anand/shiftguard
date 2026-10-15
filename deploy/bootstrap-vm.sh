@@ -6,7 +6,8 @@
 # Steps, each safe to repeat:
 #   1. install Docker Engine and the compose plugin from Docker's apt repository;
 #   2. clone the repository into SHIFTGUARD_DIR, or fast-forward an existing checkout;
-#   3. build the image on this machine (so it matches the VM's CPU architecture);
+#   3. build the image on this machine (so it matches the VM's CPU architecture), or use a
+#      preloaded one when SHIFTGUARD_SKIP_BUILD=1;
 #   4. create deploy/judge.env and deploy/postgres.env with a random database password,
 #      only if they do not exist yet (an existing NEBIUS_API_KEY is never touched);
 #   5. place the verified Bank dataset in deploy/datasets/ (copied from --dataset-from,
@@ -86,9 +87,15 @@ fi
 cd "$APP_DIR"
 log "source commit $(git rev-parse HEAD)"
 
-# 3. Image, built natively for this architecture.
-log "building $IMAGE for $(dpkg --print-architecture)"
-docker build --quiet -t "$IMAGE" . >/dev/null
+# 3. Image, built natively for this architecture. On a small VM (about 1 GB of RAM) the frontend
+#    build can run out of memory; load an image built elsewhere for the same architecture
+#    (docker save | ssh ... docker load) and set SHIFTGUARD_SKIP_BUILD=1.
+if [ "${SHIFTGUARD_SKIP_BUILD:-0}" = "1" ] && docker image inspect "$IMAGE" >/dev/null 2>&1; then
+  log "using the preloaded image $IMAGE (SHIFTGUARD_SKIP_BUILD=1)"
+else
+  log "building $IMAGE for $(dpkg --print-architecture)"
+  docker build --quiet -t "$IMAGE" . >/dev/null
+fi
 log "image $(docker image inspect --format '{{.Id}}' "$IMAGE")"
 
 # 4. Secrets, created once and readable by root only.
