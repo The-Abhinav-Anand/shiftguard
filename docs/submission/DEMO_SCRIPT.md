@@ -17,3 +17,22 @@ Before recording, check:
 - The saved result in the shot is the release-build experiment ID listed in RELEASE_CHECKLIST.
 - `/api/v1/agent/status` shows enough remaining allowance for at least three provider calls.
 - The video is uploaded as public or unlisted-public on YouTube and is under 3:00.
+
+## Recorded version (15 October 2026)
+
+`docs/submission/media/shiftguard-demo.webm`: 2:07, 1280×800, captions instead of a voice-over,
+sha256 `4f05fcf7…12ca`. Regenerate it with:
+
+```bash
+cd frontend
+SG_GATE5_ATTEMPT_DIR=<fresh dir under ../verification> npx playwright test --config playwright.demo.config.ts
+```
+
+It follows the table above against the scripted local harness (`tests/demo/record_demo.demo.ts`):
+real Bank runs and saved records; the Results assistant is driven by the scripted test provider,
+and every assistant shot carries the on-screen badge "Recorded with test data · scripted
+assistant, not a live Nemotron reply". No paid model call is made. General chat is shown but no
+message is sent. The same run writes the PNG screenshots in `docs/submission/media/`.
+
+A live-model version, if wanted, is recorded on the hosted app after the live check, within the
+daily allowance; the owner may add a voice-over.

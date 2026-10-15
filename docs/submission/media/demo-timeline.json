@@ -1,0 +1,33 @@
+{
+  "marks": [
+    {
+      "at_seconds": 0,
+      "shot": "about"
+    },
+    {
+      "at_seconds": 15,
+      "shot": "workbench"
+    },
+    {
+      "at_seconds": 35.7,
+      "shot": "stress"
+    },
+    {
+      "at_seconds": 87.8,
+      "shot": "assistant"
+    },
+    {
+      "at_seconds": 106,
+      "shot": "general-chat"
+    },
+    {
+      "at_seconds": 119.2,
+      "shot": "close"
+    },
+    {
+      "at_seconds": 127.2,
+      "shot": "end"
+    }
+  ],
+  "total_seconds": 127.167
+}

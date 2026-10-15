@@ -57,6 +57,17 @@ Beta maps lower mean Brier score against a zero-label source comparator in 4 of 
 cells each, but raise log loss in all 8. The answer depends on the metric, and the app reports
 the adverse results too.
 
+## Screenshots
+
+| Workbench | Budget curve |
+|---|---|
+| ![Bank calibration workbench](docs/submission/media/02-workbench.png) | ![Probability quality by label budget](docs/submission/media/04-budget-curve.png) |
+| **Results assistant** (scripted test harness) | **Pattern versus rate** |
+| ![Results assistant answer with grounded numbers](docs/submission/media/07-results-assistant.png) | ![History block versus matched-rate loss](docs/submission/media/06-pattern-rate.png) |
+
+A 2-minute captioned walkthrough, recorded against the scripted local harness, is in
+[docs/submission/media/shiftguard-demo.webm](docs/submission/media/shiftguard-demo.webm).
+
 ## Quickstart
 
 Needs Python 3.13 and [uv](https://docs.astral.sh/uv/). The built frontend is committed, so
