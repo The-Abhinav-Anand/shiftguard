@@ -1,7 +1,38 @@
 cff-version: 1.2.0
-message: "If you use SHIFTGUARD, please cite the repository and this file."
-title: "SHIFTGUARD"
-version: "0.1.0"
-date-released: 2026-09-10
+message: "If you use SHIFTGUARD, please cite it using these metadata."
+type: software
+title: "SHIFTGUARD: calibration under input-field outages"
+abstract: >-
+  A reproducible workbench that rehearses input-field outages on a tabular model
+  (random cell loss, structured history-block loss and rate-matched loss) and measures
+  calibration, decision loss and the label budget needed to recalibrate, on the UCI Bank
+  Marketing data. Results in this release are single-seed development evidence.
+authors:
+  - given-names: Abhinav
+    family-names: Anand
+repository-code: "https://github.com/The-Abhinav-Anand/shiftguard"
 license: Apache-2.0
-abstract: "Gate0 bootstrap for a calibration-shift research engine."
+version: "0.1.0"
+date-released: 2026-10-30
+keywords:
+  - calibration
+  - distribution shift
+  - missing data
+  - tabular machine learning
+  - recalibration
+  - benchmark
+references:
+  - type: dataset
+    title: "Bank Marketing"
+    authors:
+      - family-names: Moro
+        given-names: S.
+      - family-names: Rita
+        given-names: P.
+      - family-names: Cortez
+        given-names: P.
+    year: 2014
+    doi: 10.24432/C5K306
+    publisher:
+      name: "UCI Machine Learning Repository"
+    license: CC-BY-4.0
