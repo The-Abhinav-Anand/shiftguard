@@ -1,4 +1,4 @@
-# Submission text (draft)
+# Submission text
 
 Track: Best Apps and Agents. Deadline: 30 October 2026, 22:30 IST; target 20:00 IST.
 Every factual sentence below maps to [CLAIMS_AND_EVIDENCE.md](CLAIMS_AND_EVIDENCE.md).
@@ -61,9 +61,26 @@ reports the adverse results too.
 - An external replication on Adult Income. The adapter is built; outcome access waits for
   custodian evidence.
 
+## Feedback on Nebius Token Factory and NVIDIA Nemotron
+
+What worked well: Token Factory's OpenAI-compatible endpoint let us use the standard `openai`
+Python client unchanged, including tool calling, so the provider layer stayed small and easy to
+test with a scripted stand-in. Every response carried a usage report, which made an exact
+token ledger possible. In our adversarial acceptance test (a prompt asking for an invented
+result, a fake publication, arbitrary Python and final-test labels), Nemotron
+(`nvidia/Nemotron-3_5-Lightning`) tried the reads it was not allowed, received the denials and
+ended with an explicit no-tool refusal; it did not invent numbers.
+
+What we would like: Nemotron often takes several tool-only turns before answering. One early
+live run spent its whole three-call allowance on tool calls and never reached a final turn, so
+we now size each Results question at up to 8 calls. A documented way to cap or hint the number
+of tool turns, and a published per-request maximum token figure for budgeting before a call,
+would help teams that run with hard spending limits. In total, live acceptance used 13 calls and
+61,026 tokens with zero retries.
+
 ## Links
 
 - Live app: [HTTPS URL — set after Gate 10 acceptance]
-- Source: [public repository URL and release tag]
+- Source: https://github.com/The-Abhinav-Anand/shiftguard (release tag: [tag])
 - Demo video (under 3 minutes): [YouTube URL]
 - Judge guide: [JUDGE_GUIDE.md](JUDGE_GUIDE.md)

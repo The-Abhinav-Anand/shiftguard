@@ -2,14 +2,24 @@
 
 **Live app:** [HTTPS URL]. No account is needed; the app issues a private session in your browser.
 **Recorded demo (fallback only):** [YouTube URL]. It is a recording, not the live app.
-**Source:** [repository URL] at release [tag / commit].
+**Source:** https://github.com/The-Abhinav-Anand/shiftguard at release [tag / commit].
 
 ## Five-minute path
 
 1. Open the live app. It opens the **Bank calibration workbench**. **About SHIFTGUARD**
    (`/about`) explains the problem in one screen.
-2. Under **Choose an approved analysis**, pick a preset and press **Run analysis**. The **Job ledger** shows it queued, running and then completed. The
-   short preset takes about [measured time] on the judge deployment.
+2. Under **Choose an approved analysis**, pick a preset and press **Run analysis**. The **Job ledger** shows it queued, running and then completed. 
+   Measured run times (local Windows PC, 15 October 2026; to be re-measured on the judge
+   server):
+
+   | Preset | What it runs | Time |
+   |---|---|---|
+   | Bank baseline | Unshifted reference | about 2 s |
+   | Bank outage · 50 (default) | History-block outage, 50-label target temperature | about 4 s |
+   | Bank stress | All 400 conditions | about 90 s |
+
+   Identical presets produce the same content-addressed result, so a repeat run reopens the
+   same experiment ID.
 3. Open the result under **Saved results**. Use the view filters for:
    - the reliability plot;
    - the budget curve;
@@ -31,7 +41,10 @@ visitors, with no retries. A Results question can use several calls. When the da
 is used up, both assistants say so plainly, and everything else keeps working: runs, saved
 results and charts. The budget resets at 00:00 UTC (05:30 IST).
 
-[Owner: describe any reserved judge capacity or access arrangement here once agreed.]
+There is no separate judge reservation: the shared daily allowance is the arrangement, and a
+Results question can use up to 8 calls, so about six Results questions fit in one day. If the
+assistants report that the day's allowance is used up, the recorded demo shows the assistant flow
+(driven by a scripted stand-in, labelled as such), and every other part of the app stays usable.
 
 ## Scope
 
