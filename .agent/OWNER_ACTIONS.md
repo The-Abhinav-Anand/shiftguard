@@ -15,7 +15,11 @@ The autopilot checks this file every run.
 3. **Free domain (3 min):**
    - Sign in at https://www.duckdns.org.
    - Create a subdomain (e.g. `shiftguard`) and set its IP to the VM IP.
-   - Write the domain here (e.g. `shiftguard.duckdns.org`):
+   - Write the domain here (e.g. `shiftguard.duckdns.org`): DONE (15 Oct): `shiftguard.duckdns.org`. It currently points at
+     152.59.59.155, which is the owner's own internet connection, not a server. The DuckDNS token
+     is stored outside the repo in `../.tools/duckdns.token`, so the autopilot repoints the domain
+     to the VM IP itself (`https://www.duckdns.org/update?domains=shiftguard&token=<token>&ip=<VM IP>`).
+     Never commit or print the token.
 4. **API key on the server (1 min, after the VM is up):** either write "copy key: yes" here, so the autopilot copies `NEBIUS_API_KEY` from this PC's `.env` to the VM over SSH without displaying it, or put it in `deploy/judge.env` on the VM yourself. Status:
 5. **Video upload (5 min, when the autopilot says it is ready):** upload `docs/submission/media/shiftguard-demo.webm` to YouTube as Public. Paste the link here:
 6. **Submit (5 min, on 29–30 Oct):** paste `docs/submission/DEVPOST_FORM.md` into the Devpost form and press Submit.
