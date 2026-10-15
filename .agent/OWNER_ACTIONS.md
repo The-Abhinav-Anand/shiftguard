@@ -5,7 +5,7 @@ The autopilot checks this file every run.
 
 1. **GitHub sign-in (2 min):** open a terminal on this PC and run `gh auth login`. Choose
    GitHub.com → HTTPS → "Login with a web browser", and approve in the browser. If `gh` is
-   missing, install GitHub CLI from https://cli.github.com first. Status:
+   missing, install GitHub CLI from https://cli.github.com first. Status: DONE (15 Oct): signed in as `The-Abhinav-Anand` (scopes include repo and workflow). gh is at `C:\Program Files\GitHub CLI\gh.exe`.
 2. **Hosting VM (15 min, free):**
    - Sign up at https://www.oracle.com/cloud/free/ (needs a card for identity checks; Always Free costs $0).
    - Create a Compute instance: Ampere A1 shape, Ubuntu 24.04, 2 OCPU / 12 GB.
@@ -20,6 +20,6 @@ The autopilot checks this file every run.
      is stored outside the repo in `../.tools/duckdns.token`, so the autopilot repoints the domain
      to the VM IP itself (`https://www.duckdns.org/update?domains=shiftguard&token=<token>&ip=<VM IP>`).
      Never commit or print the token.
-4. **API key on the server (1 min, after the VM is up):** either write "copy key: yes" here, so the autopilot copies `NEBIUS_API_KEY` from this PC's `.env` to the VM over SSH without displaying it, or put it in `deploy/judge.env` on the VM yourself. Status:
+4. **API key on the server (1 min, after the VM is up):** either write "copy key: yes" here, so the autopilot copies `NEBIUS_API_KEY` from this PC's `.env` to the VM over SSH without displaying it, or put it in `deploy/judge.env` on the VM yourself. Status: DONE (15 Oct): owner wrote "copy key: yes". Copy NEBIUS_API_KEY from this PC's `.env` over SSH once the VM exists; never display it.
 5. **Video upload (5 min, when the autopilot says it is ready):** upload `docs/submission/media/shiftguard-demo.webm` to YouTube as Public. Paste the link here:
 6. **Submit (5 min, on 29–30 Oct):** paste `docs/submission/DEVPOST_FORM.md` into the Devpost form and press Submit.
