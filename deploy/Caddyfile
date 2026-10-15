@@ -1,0 +1,13 @@
+# HTTPS front for the judge stack. Caddy obtains and renews a Let's Encrypt certificate
+# for SHIFTGUARD_DOMAIN (set in deploy/.env) and forwards everything to the single API.
+# Ports 80 and 443 must be reachable from the internet for the ACME challenge.
+{$SHIFTGUARD_DOMAIN:localhost} {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+	reverse_proxy api:8000
+}

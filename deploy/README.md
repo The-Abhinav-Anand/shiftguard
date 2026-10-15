@@ -10,6 +10,32 @@ repository `Dockerfile`.
 | `migrate` | `shiftguard status` | Runs Alembic to head once, then exits |
 | `api` | `uvicorn … --workers 1` | Starts after `migrate` succeeds; embedded worker off |
 | `worker` | `shiftguard worker --poll-interval 0.5 --recovery-interval 5` | Starts after `api` is healthy, so schema checks never run concurrently |
+| `caddy` | `caddy:2` with `deploy/Caddyfile` | The only public service (80/443). Gets a Let's Encrypt certificate for `SHIFTGUARD_DOMAIN` and proxies to `api:8000`. Certificates persist in `caddy_data` |
+
+## One-command VM setup
+
+On a fresh Ubuntu 22.04 or 24.04 VM (amd64 or arm64, 2 GB RAM or more) with TCP 80 and 443
+open in the cloud firewall, and a DNS name pointing at the VM:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/The-Abhinav-Anand/shiftguard/main/deploy/bootstrap-vm.sh -o bootstrap-vm.sh
+sudo SHIFTGUARD_DOMAIN=shiftguard.duckdns.org bash bootstrap-vm.sh
+```
+
+`deploy/bootstrap-vm.sh` is safe to rerun. It:
+
+1. installs Docker Engine and the compose plugin from Docker's apt repository;
+2. clones the repository into `/opt/shiftguard`, or fast-forwards it (never resets);
+3. builds the image on the VM, so it matches the CPU architecture;
+4. creates `deploy/judge.env` and `deploy/postgres.env` with a random password, mode 600, only if
+   they are missing (it never overwrites an existing `NEBIUS_API_KEY`);
+5. writes `deploy/.env` with `SHIFTGUARD_DOMAIN` and both assistant flags set to `false`;
+6. copies the Bank dataset from `--dataset-from DIR`, or downloads it from UCI and checks it
+   against `data/manifests/bank.json` (the clean CSV must hash to the frozen digest);
+7. runs `docker compose up -d` and waits for `/health/ready`.
+
+It opens 80/443 in the host's iptables `INPUT` chain only when that chain has a reject rule
+(Oracle's Ubuntu images ship one). It never prints the password, database URL or API key.
 
 ## Do not scale
 
@@ -48,8 +74,8 @@ separate worker. It never sends a model request.
 python scripts/check_hosted_release.py --base-url https://<host> --output <evidence>/probe.json
 ```
 
-The API listens on `127.0.0.1:8000` only. Put a TLS-terminating proxy or the hosting
-platform's HTTPS ingress in front of it. Keep proxy timeouts short: experiments run as
+The API listens on `127.0.0.1:8000` only; the `caddy` service is the HTTPS front. On a
+platform with its own HTTPS ingress, drop `caddy` and point the ingress at the API instead. Keep proxy timeouts short: experiments run as
 durable jobs, so no request needs to wait for one to finish.
 
 ## Enabling the model

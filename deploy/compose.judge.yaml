@@ -1,5 +1,6 @@
 # SHIFTGUARD judge deployment: PostgreSQL 16, one migration step, one API process
 # (single Uvicorn worker, the only ordinary-provider owner) and one experiment worker.
+# Caddy terminates HTTPS for SHIFTGUARD_DOMAIN (deploy/.env) and proxies to the API.
 # Secrets live only in the untracked judge.env / postgres.env beside this file.
 # Do not scale `api` or `worker`: the ordinary model budget allows one dispatching
 # API process per database and the API refuses to start as a second owner.
@@ -82,6 +83,29 @@ services:
         limits:
           memory: 2g
 
+  caddy:
+    image: caddy:2
+    environment:
+      SHIFTGUARD_DOMAIN: ${SHIFTGUARD_DOMAIN:-localhost}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api:
+        condition: service_started
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+
 volumes:
   pgdata:
   artifacts:
+  caddy_data:
+  caddy_config:

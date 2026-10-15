@@ -26,3 +26,4 @@ deploy/secrets
 *.db-wal
 *.db-shm
 *.ordinary-owner.lock
+deploy/.env

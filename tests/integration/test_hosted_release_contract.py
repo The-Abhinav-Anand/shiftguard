@@ -17,6 +17,8 @@ from shiftguard.settings import Settings
 
 APP_ROOT = Path(__file__).resolve().parents[2]
 COMPOSE = APP_ROOT / "deploy" / "compose.judge.yaml"
+CADDYFILE = APP_ROOT / "deploy" / "Caddyfile"
+BOOTSTRAP = APP_ROOT / "deploy" / "bootstrap-vm.sh"
 
 
 @pytest.fixture
@@ -100,7 +102,7 @@ def _compose() -> dict:
 
 def test_compose_runs_one_api_one_worker_after_a_single_migration_step():
     services = _compose()["services"]
-    assert set(services) == {"postgres", "migrate", "api", "worker"}
+    assert set(services) == {"postgres", "migrate", "api", "worker", "caddy"}
     assert services["migrate"]["command"] == ["shiftguard", "status"]
     assert services["migrate"]["restart"] == "no"
     assert services["api"]["command"] == [
@@ -146,7 +148,74 @@ def test_compose_shares_durable_artifacts_and_mounts_data_read_only():
         assert "artifacts:/app/var/artifacts" in volumes
         assert "${SHIFTGUARD_DATASET_DIR:-./datasets}:/app/var/datasets:ro" in volumes
     assert "pgdata:/var/lib/postgresql/data" in services["postgres"]["volumes"]
-    assert set(compose["volumes"]) == {"artifacts", "pgdata"}
+    assert set(compose["volumes"]) == {"artifacts", "pgdata", "caddy_data", "caddy_config"}
+
+
+def test_caddy_terminates_https_for_the_configured_domain_in_front_of_the_single_api():
+    services = _compose()["services"]
+    caddy = services["caddy"]
+    assert caddy["image"].startswith("caddy:2")
+    assert caddy["environment"]["SHIFTGUARD_DOMAIN"] == "${SHIFTGUARD_DOMAIN:-localhost}"
+    assert {"80:80", "443:443"} <= set(caddy["ports"])
+    assert "./Caddyfile:/etc/caddy/Caddyfile:ro" in caddy["volumes"]
+    # Certificates persist across restarts, so Let's Encrypt rate limits are never hit.
+    assert "caddy_data:/data" in caddy["volumes"]
+    assert "env_file" not in caddy  # the proxy never sees the database URL or the API key
+    assert caddy["depends_on"]["api"]["condition"] == "service_started"
+    # Only Caddy is public; the API stays on loopback and PostgreSQL is unpublished.
+    for name, service in services.items():
+        if name != "caddy":
+            assert all(str(port).startswith("127.0.0.1:") for port in service.get("ports", [])), name
+
+    caddyfile = CADDYFILE.read_text(encoding="utf-8")
+    assert "{$SHIFTGUARD_DOMAIN:localhost} {" in caddyfile
+    assert "reverse_proxy api:8000" in caddyfile
+    assert "Strict-Transport-Security" in caddyfile
+
+
+def test_bootstrap_script_installs_docker_builds_natively_and_never_echoes_secrets():
+    raw = BOOTSTRAP.read_bytes()
+    assert b"\r\n" not in raw, "the VM runs this with bash; CRLF line endings break it"
+    script = raw.decode("utf-8")
+    assert script.startswith("#!/usr/bin/env bash\n")
+    assert "set -euo pipefail" in script
+    # Docker Engine and the compose plugin from Docker's apt repository, for any architecture.
+    assert "https://download.docker.com/linux/ubuntu" in script
+    assert "arch=$(dpkg --print-architecture)" in script
+    assert "docker-compose-plugin" in script
+    # Clone or fast-forward only; never a reset or force.
+    assert "git clone" in script and "merge --ff-only" in script
+    for forbidden in ("reset --hard", "push", "--force", "clean -"):
+        assert forbidden not in script, forbidden
+    # Built on the VM, so the image matches its CPU.
+    assert 'docker build --quiet -t "$IMAGE" .' in script
+    # Env files: created only when absent, random password, private permissions.
+    assert "openssl rand -hex 24" in script
+    assert "umask 077" in script
+    assert "[ ! -f deploy/postgres.env ] || [ ! -f deploy/judge.env ]" in script
+    assert "NEBIUS_API_KEY=" in script and "NEBIUS_API_KEY=$" not in script
+    # Assistants stay off unless the operator turns them on.
+    assert "SHIFTGUARD_AGENT_ENABLED=false" in script
+    assert "SHIFTGUARD_GENERAL_CHAT_ENABLED=false" in script
+    # The dataset comes from a copy or from the hash-checked UCI download.
+    assert "--dataset-from" in script
+    assert "/src/scripts/download_datasets.py --dataset bank" in script
+    assert "bank-additional-full.csv" in script and "bank-marketing.manifest.json" in script
+    assert "docker compose -f deploy/compose.judge.yaml up -d" in script
+    # The password is only ever written into the two env files, never to the terminal.
+    for line in script.splitlines():
+        if "$password" in line and "password=" not in line:
+            assert line.rstrip().endswith(("> deploy/postgres.env", "> deploy/judge.env")), line
+        if line.strip().startswith(("log ", "echo ")):
+            for marker in ("$password", "SHIFTGUARD_DB_URL", "NEBIUS_API_KEY", "postgresql://"):
+                assert marker not in line, line
+
+
+def test_compose_interpolation_file_and_secrets_stay_out_of_git_and_the_image():
+    ignored = (APP_ROOT / ".dockerignore").read_text(encoding="utf-8").split()
+    assert "deploy/.env" in ignored
+    gitignore = (APP_ROOT / ".gitignore").read_text(encoding="utf-8").split()
+    assert ".env" in gitignore  # matches deploy/.env too
 
 
 def test_dockerfile_runs_nonroot_single_worker_and_excludes_local_state():
