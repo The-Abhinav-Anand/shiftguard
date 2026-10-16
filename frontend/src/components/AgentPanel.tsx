@@ -359,7 +359,9 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({
           {/* Grounded Final Response */}
           {finalResponse && !(guidance && status === "COMPLETED") && (
             <div className="agent-final-response">
-              <h3 className="final-title">{finalResponse.title}</h3>
+              {typeof finalResponse.title === "string" && finalResponse.title.trim() !== "" && (
+                <h3 className="final-title">{finalResponse.title}</h3>
+              )}
               <p className="final-summary">{finalResponse.summary}</p>
 
               {/* Claims Table */}
@@ -447,9 +449,11 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({
               )}
 
               {/* Single seed disclaimer */}
-              <div className="agent-disclaimer">
-                <small>{finalResponse.disclaimer}</small>
-              </div>
+              {finalResponse.disclaimer && (
+                <div className="agent-disclaimer">
+                  <small>{finalResponse.disclaimer}</small>
+                </div>
+              )}
             </div>
           )}
 

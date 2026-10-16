@@ -178,7 +178,7 @@ test("[simulated] a COMPLETED guidance response shows a neutral Not answered not
 test("[simulated] a FAILED guidance response keeps the failure summary and labels the notice as advice", async ({ page }) => {
   const summary = "One or more requested operations failed or were cancelled.";
   await askAndAnswer(page, (sessionId) => agentRecord(sessionId, "FAILED", {
-    status: "FAILED", title: "Request failed", summary, claims: [], evidence_references: [], disclaimer: "",
+    status: "FAILED", summary, claims: [], evidence_references: [], disclaimer: "",
     outcomes: [{ tool_name: "read_experiment_results", status: "error", code: "UNAUTHORIZED_EXPERIMENT_REFERENCE" }],
     guidance: { code: "EXPERIMENT_NOT_SELECTED", message: GUIDANCE_MESSAGE },
   }, { code: "FAILED", message: summary }));
@@ -190,7 +190,7 @@ test("[simulated] a FAILED guidance response keeps the failure summary and label
   await expect(page.locator(".agent-active-card .status-pill")).toHaveText("FAILED");
   await expect(page.locator(".agent-active-card .status-pill.status-failed")).toHaveCount(1);
   await expect(page.locator(".agent-panel .notice-error")).toContainText(summary);
-  await expect(page.locator(".agent-final-response .final-title")).toHaveText("Request failed");
+  await expect(page.locator(".agent-final-response .final-title")).toHaveCount(0);
   await expect(page.locator(".agent-final-response .final-summary")).toHaveText(summary);
   await expect(page.locator(".claims-table")).toHaveCount(0);
 });
@@ -198,7 +198,7 @@ test("[simulated] a FAILED guidance response keeps the failure summary and label
 test("[simulated] a CANCELLED guidance response keeps the cancellation summary and labels the notice as advice", async ({ page }) => {
   const summary = "The request was cancelled before it could be answered.";
   await askAndAnswer(page, (sessionId) => agentRecord(sessionId, "CANCELLED", {
-    status: "CANCELLED", title: "Request cancelled", summary, claims: [], evidence_references: [], disclaimer: "",
+    status: "CANCELLED", summary, claims: [], evidence_references: [], disclaimer: "",
     guidance: { code: "EXPERIMENT_NOT_SELECTED", message: GUIDANCE_MESSAGE },
   }));
   const notice = page.locator(".agent-guidance");

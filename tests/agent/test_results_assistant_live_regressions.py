@@ -539,13 +539,27 @@ def test_large_summary_result_is_digested_and_keeps_the_token_reservation_small(
     bound, _ = input_token_upper_bound(model="m", messages=provider_copy, tools=tools, max_output_tokens=1024)
     # The fixed overhead (system prompt, tool schemas, prompt) is large; measure only the tool pair.
     base_bound, _ = input_token_upper_bound(model="m", messages=messages[:2], tools=tools, max_output_tokens=1024)
-    # The bound is len(json bytes) + 256 per message/tool, so the added pair costs at most the
-    # capped tool message, the assistant tool-call message bytes, and 2 messages of framing.
-    assistant_bytes = len(json.dumps(messages[2], ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
-    margin = MAX_MODEL_TOOL_MESSAGE_BYTES + assistant_bytes + 2 * 256
+    # Measured: growth of the input-token upper bound from the two provider-copy messages after
+    # the first two. The bound counts the JSON-encoded request (ensure_ascii=False, compact
+    # separators), so the tool message content (itself JSON text) is counted escaped. The growth
+    # must equal exactly the encoded bytes of those two messages, plus one "," separator each,
+    # plus 256 framing bytes per message.
+    assert provider_copy[:2] == messages[:2]
+    pair = provider_copy[2:]
+    assert len(pair) == 2
+    exact_pair_bytes = sum(
+        len(json.dumps(message, ensure_ascii=False, separators=(",", ":")).encode("utf-8")) + 1
+        for message in pair
+    )
+    margin = exact_pair_bytes + 2 * 256
+    growth = bound - base_bound
+    # Independent ceiling: 2x covers worst-case JSON escaping of the capped content, and 2 KiB
+    # covers the assistant tool-call message, the envelopes, the commas and 512 framing bytes.
+    ceiling = 2 * MAX_MODEL_TOOL_MESSAGE_BYTES + 2 * 1024
     assert raw_bound > 45_000
     assert bound < raw_bound / 2
-    assert bound - base_bound <= margin
+    assert growth == margin
+    assert growth <= ceiling
     sent = json.loads(provider_copy[-1]["content"])
     assert sent["data_truncated"] is True
     assert len(provider_copy[-1]["content"].encode()) <= MAX_MODEL_TOOL_MESSAGE_BYTES
@@ -780,6 +794,15 @@ def test_prompt_experiment_id_prefers_the_id_after_the_word_experiment():
     pick = controller_module._prompt_experiment_id
     assert pick(f"Why did condition {_COND} fail in experiment {_EXP}?") == _EXP
     assert pick(f"condition {_COND} of Experiment: #{_EXP.upper()}") == _EXP
+    assert pick(f"condition {_COND} in experiment id {_EXP}") == _EXP
+    assert pick(f"Experiment ID: {_EXP.upper()} condition {_COND}") == _EXP
+    assert pick(f"condition {_COND} in experiment id #{_EXP}") == _EXP
+    assert pick(f"condition {_COND} in experimentid {_EXP}") == _EXP
+    assert pick(f"condition {_COND} in experiment id{_EXP}") == _EXP
+    assert pick(f"condition {_COND} experiment_id={_EXP}") == _EXP
+    assert pick(f"condition {_COND} experiment-id: {_EXP}") == _EXP
+    for word in ("identifier", "idle", "ids"):
+        assert controller_module._PROMPT_NAMED_EXPERIMENT_ID.search(f"experiment {word} {_COND}") is None
     message = controller_module._not_selected_message(pick(f"condition {_COND} of experiment {_EXP}"))
     assert _EXP in message and _COND not in message
 

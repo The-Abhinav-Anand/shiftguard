@@ -52,7 +52,7 @@ EXPERIMENT_NOT_SELECTED = "EXPERIMENT_NOT_SELECTED"
 EXPERIMENT_NOT_PUBLISHED = "EXPERIMENT_NOT_PUBLISHED"
 _PROMPT_EXPERIMENT_ID = re.compile(r"(?<![0-9a-fA-F])[0-9a-fA-F]{24}(?![0-9a-fA-F])")
 _PROMPT_NAMED_EXPERIMENT_ID = re.compile(
-    r"(?i:experiment)[\s:#]*(?<![0-9a-fA-F])([0-9a-fA-F]{24})(?![0-9a-fA-F])"
+    r"(?i:experiment)(?:[\s:#_=-]*(?i:id)(?![g-zG-Z_])[\s:#=]*|[\s:#]*(?<![0-9a-fA-F]))([0-9a-fA-F]{24})(?![0-9a-fA-F])"
 )
 _NOT_SELECTED_ID_PLACEHOLDER = "<24-hex id>"
 _EXPERIMENT_ID = re.compile(r"[a-f0-9]{24}")

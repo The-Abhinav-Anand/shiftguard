@@ -87,3 +87,24 @@ Next: once published, set repo topics/homepage; once a VM IP is recorded, repoin
 - Not done because of the block: live checks (Summarize and Compare), the questions-per-day figure, the reviewed backup on the VM (row 6), and the full static scan in the image (row 10).
 - Paid calls this run: 0.
 - Next: once item 8 is done, verify readiness and the image ID on the VM, then run the live checks (≤17 calls), the hosted Playwright smoke and the docs figures. Code follow-ups from the delta review: accept "experiment id X"; give FAILED/CANCELLED final answers a title; tighten the test margin comment.
+
+## 2026-10-16 20:10–21:15 IST (autopilot run 3, scheduled)
+- Orientation: the tree was clean, so the concurrency guard did not apply. Live readiness is `ready` on the 15 Oct image (e249b72). OWNER_ACTIONS item 8 (redeploy) has no status yet, so the deploy and its live checks stay blocked. They were not retried, per the runbook. The keep-awake tool is not available in this session; noted, and the run went ahead.
+- Done: the three delta-review follow-ups from run 2 (Sonnet worker; Opus xhigh review).
+  - "experiment id X", "experiment_id=X", "experiment-id: X" and the glued "id<hex>" now name the experiment id in typed guidance. "identifier", "idle" and "ids" are not treated as "id".
+  - The panel renders the final-answer title (and the disclaimer) only when present. FAILED/CANCELLED answers have neither. `agent.ts` types are now optional for these fields. The e2e FAILED/CANCELLED payloads match the backend (no title) and assert that there is no `.final-title`.
+  - The token-bound test pins the exact growth (2909 bytes) and adds an independent ceiling (14,336).
+  - The frontend was rebuilt into `shiftguard/static`, and all 8 hashed chunks were renamed. 7 are byte-identical apart from hash names; the BenchmarkWorkbench chunk differs only by the two guards (checked by the reviewer).
+- Opus xhigh review: CORRECTIONS_REQUIRED (1 medium: the margin assert was tautological; 2 low: glued "id<hex>" and an untested untitled path). All three were acted on. Delta review: ACCEPT. This is a model review, not human acceptance.
+- Verified (evidence in `verification/autopilot-20261016-run3/`):
+  - tests/agent SQLite: 431 passed, 124 skipped (PG-only).
+  - Regression file: PostgreSQL 50 passed; SQLite 37 passed, 13 skipped.
+  - `npm run typecheck` clean; `npm run build` OK.
+  - Playwright agent specs (agent_flow, agent_surface_corrections, results_assistant_suggestions, job_errors, general_chat): 21 passed.
+  - The full PostgreSQL tests/agent run and the full Playwright suite were not rerun for this small batch.
+- Secret scan of the diff and the bundle: 0 hits.
+- Paid calls: 0.
+- Note: the image already uploaded to the VM (`/tmp/sg-55e75c4.tar.gz`) does not contain these follow-ups. OWNER_ACTIONS item 8 is still valid as written. The next image rebuild (at the latest for the Gate 11 freeze) carries them.
+- Deferred: the hosted Playwright smoke test. It waits for the redeploy so that it tests the judged build. It also needs a spec list that can make no paid calls against the live, provider-enabled server.
+- Blocked: OWNER_ACTIONS item 8 (redeploy), and with it the live checks, the questions-per-day figure, checklist rows 6 and 10.
+- Next: verify the redeploy once item 8 is done. Then the live checks (≤17 calls), the hosted smoke test, and the docs figures. The F08 flake is still open.

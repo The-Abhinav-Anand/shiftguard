@@ -67,13 +67,13 @@ export interface FallbackConditionAnalysis {
 export type FallbackAnalysis = Record<string, FallbackConditionAnalysis>;
 
 export interface GroundedFinalResponse {
-  title: string;
+  title?: string | null;
   summary: string;
-  claims: EmpiricalClaim[];
+  claims?: EmpiricalClaim[];
   fallback_analysis?: FallbackAnalysis | null;
   decision_loss_points?: Array<Record<string, unknown>> | null;
-  evidence_references: string[];
-  disclaimer: string;
+  evidence_references?: string[];
+  disclaimer?: string;
   provider_narrative?: string;
   budget_limit_reached?: string;
 }
