@@ -41,6 +41,9 @@ def main() -> int:
     parser.add_argument("--base-url", required=True)
     parser.add_argument("--experiment-id", required=True)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--results-prompt", default=None,
+                        help="Results question; defaults to the exact selection command 'Summarize experiment <id>'")
+    parser.add_argument("--skip-chat", action="store_true", help="only run the Results question")
     args = parser.parse_args()
     if args.output.exists():
         parser.error("refusing to overwrite the report")
@@ -54,7 +57,7 @@ def main() -> int:
     _, session = call(base, "POST", "/api/v1/agent/sessions", {})
     headers = {"X-Session-ID": session["session_id"], "X-Session-Token": session["capability_token"]}
 
-    code, chat = call(base, "POST", "/api/v1/chat/messages", {
+    code, chat = (None, None) if args.skip_chat else call(base, "POST", "/api/v1/chat/messages", {
         "prompt": "In two sentences, what is probability calibration and why can missing input fields affect it?",
         "idempotency_key": "live-check-chat-" + uuid4().hex,
     }, headers)
@@ -65,9 +68,11 @@ def main() -> int:
         "error_code": ((chat or {}).get("error") or (chat or {}).get("detail", {}).get("error") or {}).get("code") if isinstance(chat, dict) else None,
     }
 
+    # Saved results are readable only through an exact selection command (Gate 7 authority).
+    results_prompt = args.results_prompt or f"Summarize experiment {args.experiment_id}"
+    report["results_prompt"] = results_prompt
     code, results = call(base, "POST", "/api/v1/agent/requests", {
-        "prompt": f"For saved experiment {args.experiment_id}, summarize the budget-50 comparison between "
-                  "target temperature and the source-only comparator. Use only the saved record.",
+        "prompt": results_prompt,
         "idempotency_key": "live-check-results-" + uuid4().hex,
     }, headers, timeout=600)
     results = results or {}
@@ -79,15 +84,33 @@ def main() -> int:
         "evidence_refs": results.get("evidence_refs"),
         "final_excerpt": json.dumps(final)[:600],
         "error": results.get("error"),
+        "guidance": final.get("guidance"),
+        "claim_count": len(final.get("claims") or []),
+        "final_response_bytes": len(json.dumps(final)),
     }
     _, status_after = call(base, "GET", "/api/v1/agent/status")
     report["ledger_after"] = status_after.get("ordinary_budget")
+    before, after = report["ledger_before"] or {}, report["ledger_after"] or {}
+    # Ledger delta: per-question cost only with --skip-chat, and only if no other visitor used
+    # the shared allowance meanwhile.
+    report["cost"] = {"calls": (after.get("calls_used") or 0) - (before.get("calls_used") or 0),
+                      "tokens": (after.get("tokens_committed") or 0) - (before.get("tokens_committed") or 0),
+                      "scope": "results question only" if args.skip_chat else "general chat + results question"}
     report["finished_utc"] = datetime.now(timezone.utc).isoformat()
-    report["pass"] = bool(report["general_chat"]["http_status"] == 200
-                          and report["results_assistant"]["status"] == "COMPLETED")
+    # A grounded answer: completed, no refusal guidance, the selected experiment bound as
+    # evidence and referenced by the rendered response, and at least one rendered claim.
+    grounded = bool(
+        report["results_assistant"]["status"] == "COMPLETED"
+        and not final.get("guidance")
+        and results.get("evidence_refs") == [args.experiment_id.lower()]
+        and args.experiment_id.lower() in (final.get("evidence_references") or [])
+        and final.get("claims")
+    )
+    report["results_grounded"] = grounded
+    report["pass"] = bool((args.skip_chat or report["general_chat"]["http_status"] == 200) and grounded)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
-    print(json.dumps({k: report[k] for k in ("pass", "ledger_before", "ledger_after")}, indent=2))
+    print(json.dumps({k: report[k] for k in ("pass", "results_grounded", "cost", "ledger_after")}, indent=2))
     print(json.dumps({"chat": report["general_chat"], "results": report["results_assistant"]}, indent=2)[:2500])
     return 0 if report["pass"] else 1
 

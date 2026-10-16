@@ -80,7 +80,7 @@ would help teams that run with hard spending limits. In total, live acceptance u
 
 ## Links
 
-- Live app: [HTTPS URL — set after Gate 10 acceptance]
+- Live app: https://shiftguard.duckdns.org
 - Source: https://github.com/The-Abhinav-Anand/shiftguard (release tag: [tag])
 - Demo video (under 3 minutes): [YouTube URL]
 - Judge guide: [JUDGE_GUIDE.md](JUDGE_GUIDE.md)

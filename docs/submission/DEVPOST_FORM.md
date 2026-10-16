@@ -26,7 +26,7 @@ python, fastapi, sqlalchemy, alembic, postgresql, sqlite, scikit-learn, numpy, s
 
 ## Try it out (links)
 
-- Live app: [https://shiftguard.duckdns.org — filled after the hosted release check passes]
+- Live app: https://shiftguard.duckdns.org
 - Source code: https://github.com/The-Abhinav-Anand/shiftguard
 - Judge guide: https://github.com/The-Abhinav-Anand/shiftguard/blob/main/docs/submission/JUDGE_GUIDE.md
 

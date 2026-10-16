@@ -469,6 +469,11 @@ export default function BenchmarkWorkbench() {
           onRetryQuery={() => { void agent.retryQuery(); }}
           onReconnect={() => { void workbench.reconnect(); }}
           onSelectExperiment={(experimentId) => { void workbench.loadPublished(experimentId); }}
+          openExperiment={storedResult ? {
+            experimentId: storedResult.experiment_id,
+            canCompare: experiment !== null
+              && Object.keys(experiment.payload.conditions).some((key) => key.startsWith("logistic_regression__history_block_0_50__b50__")),
+          } : null}
           onClear={agent.clearRequest}
         />
       </div>

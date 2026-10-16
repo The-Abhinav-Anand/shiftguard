@@ -1,5 +1,13 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import type { AgentRequestRecord, AgentStatus, ToolTraceEntry } from "../api/agent";
+import "../styles/agent-suggestions.css";
+
+/** The saved experiment currently open in the workbench, as far as the frontend can tell. */
+export interface OpenExperimentView {
+  experimentId: string;
+  /** True only when the open result is known to contain the budget-50 history-block condition. */
+  canCompare: boolean;
+}
 
 interface RecoveryIntentView {
   ownerSessionId: string;
@@ -23,13 +31,38 @@ interface AgentPanelProps {
   onRetryQuery?: () => void;
   onReconnect?: () => void;
   onSelectExperiment?: (experimentId: string) => void;
+  openExperiment?: OpenExperimentView | null;
   onClear: () => void;
 }
+
+// The backend only reads a saved experiment for these exact commands, with a 24-hex lowercase id.
+const EXPERIMENT_ID = /^[0-9a-f]{24}$/;
+const COMPARE_SUFFIX = "calibrators predictor logistic_regression scenario history_block_0_50 budget 50";
+const PROMPT_PLACEHOLDER =
+  "Saved results are read through commands: use the buttons above or type Summarize experiment <id>. "
+  + "Run commands: Run bank-baseline, Run bank-stress or Run bank-outage-50. Dataset facts: Inspect bank dataset.";
+const NO_RESULT_HINT = "Open a saved result to ask about it, or type: Summarize experiment <id>";
 
 const PUBLIC_ERROR_CODE = /^[A-Z0-9_]{1,48}$/;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+interface ResponseGuidance {
+  code: string;
+  message: string;
+}
+
+// Read defensively: the shared response type does not declare `guidance`.
+function responseGuidance(response: unknown): ResponseGuidance | null {
+  if (!isRecord(response) || !isRecord(response.guidance)) return null;
+  const { code, message } = response.guidance;
+  if (typeof message !== "string" || !message.trim()) return null;
+  return {
+    code: typeof code === "string" && PUBLIC_ERROR_CODE.test(code) ? code : "NOT_ANSWERED",
+    message: message.trim().slice(0, 600),
+  };
 }
 
 function recordedText(value: unknown): string {
@@ -79,9 +112,11 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({
   onRetryQuery,
   onReconnect,
   onSelectExperiment,
+  openExperiment,
   onClear,
 }) => {
   const [promptText, setPromptText] = useState("");
+  const promptRef = useRef<HTMLTextAreaElement>(null);
   const [showTrace, setShowTrace] = useState(true);
 
   const isConfigured = agentStatus?.enabled && agentStatus?.available;
@@ -92,7 +127,23 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({
     onSubmitQuery(promptText.trim());
   };
 
+  const inputDisabled = isSubmitting || !isConfigured || Boolean(sessionExpired) || Boolean(storageError);
+  const suggestionId = openExperiment && EXPERIMENT_ID.test(openExperiment.experimentId) ? openExperiment.experimentId : null;
+  const suggestions: Array<{ key: string; command: string }> = suggestionId
+    ? [
+        { key: "summarize", command: `Summarize experiment ${suggestionId}` },
+        ...(openExperiment?.canCompare ? [{ key: "compare", command: `Compare experiment ${suggestionId} ${COMPARE_SUFFIX}` }] : []),
+      ]
+    : [];
+
+  // Insert only: sending would spend the shared paid allowance, so the user must press Submit.
+  const insertCommand = (command: string) => {
+    setPromptText(command);
+    promptRef.current?.focus();
+  };
+
   const finalResponse = activeRequest?.final_response;
+  const guidance = responseGuidance(finalResponse);
   const fallbackAnalysis = finalResponse?.fallback_analysis;
   const fallbackEntries = isRecord(fallbackAnalysis) ? Object.entries(fallbackAnalysis) : [];
   const toolTrace = activeRequest?.tool_trace || [];
@@ -166,6 +217,28 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({
       )}
 
       {/* Query Input Form */}
+      {suggestions.length > 0 ? (
+        <div className="agent-suggestions" role="group" aria-label="Ask about this result">
+          <span className="agent-suggestions__label" aria-hidden="true">Ask about this result</span>
+          <div className="agent-suggestions__buttons">
+            {suggestions.map((suggestion) => (
+              <button
+                key={suggestion.key}
+                type="button"
+                className="btn btn-secondary agent-suggestion-btn"
+                disabled={inputDisabled}
+                onClick={() => insertCommand(suggestion.command)}
+              >
+                {suggestion.command}
+              </button>
+            ))}
+          </div>
+          <p className="agent-suggestions__note">Inserts the command only. Press Submit Query to send it.</p>
+        </div>
+      ) : (
+        <p className="agent-suggestions__hint">{NO_RESULT_HINT}</p>
+      )}
+
       <form onSubmit={handleSubmit} className="agent-form">
         <label htmlFor="agent-prompt" className="agent-input-label">
           Inquiry or Instruction:
@@ -175,8 +248,9 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({
             id="agent-prompt"
             name="prompt"
             className="agent-textarea"
+            ref={promptRef}
             rows={2}
-            placeholder="Read-only: Inspect bank dataset or ask about published results. Run commands: Run bank-outage-50, Run bank-stress, or Run bank-baseline."
+            placeholder={PROMPT_PLACEHOLDER}
             value={promptText}
             onChange={(e) => setPromptText(e.target.value)}
             disabled={isSubmitting || !isConfigured || sessionExpired || Boolean(storageError)}
@@ -257,8 +331,19 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({
                 <span className="badge badge-warning">Repairs: {activeRequest.repair_count}/1</span>
               )}
             </div>
-            <span className={`status-pill status-${status?.toLowerCase()}`}>{status}</span>
+            {guidance && status === "COMPLETED" ? (
+              <span className="status-pill status-not-answered">NOT ANSWERED</span>
+            ) : (
+              <span className={`status-pill status-${status?.toLowerCase()}`}>{status}</span>
+            )}
           </div>
+
+          {/* Guidance: the request was understood but deliberately not answered */}
+          {guidance && (
+            <div className="agent-guidance" role="status" data-guidance-code={guidance.code}>
+              <strong>{status === "COMPLETED" ? "Not answered:" : "How to ask:"}</strong> {guidance.message}
+            </div>
+          )}
 
           {/* Job Waiting State */}
           {status === "WAITING_FOR_JOB" && (
@@ -272,7 +357,7 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({
           )}
 
           {/* Grounded Final Response */}
-          {finalResponse && (
+          {finalResponse && !(guidance && status === "COMPLETED") && (
             <div className="agent-final-response">
               <h3 className="final-title">{finalResponse.title}</h3>
               <p className="final-summary">{finalResponse.summary}</p>

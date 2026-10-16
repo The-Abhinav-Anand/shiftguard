@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import math
@@ -19,6 +20,7 @@ from shiftguard.agent.policy import (
 from shiftguard.agent.prompts import build_system_message
 from shiftguard.agent.execution_authority import authorized_execution_presets
 from shiftguard.agent.provider import (
+    MAX_TRANSCRIPT_BYTES as MAX_PROVIDER_TRANSCRIPT_BYTES,
     ProviderClient, ProviderDisabledError, ProviderError,
 )
 from shiftguard.agent.registry import ToolRegistry, safe_arguments_for_storage, safe_tool_error
@@ -38,6 +40,34 @@ MAX_ACCEPTED_TOOL_CALLS = 12
 MAX_PROVIDER_ARGUMENT_BYTES = 8 * 1024
 MAX_PROVIDER_CONTENT_BYTES = 16 * 1024
 MAX_PROVIDER_DECISION_BYTES = 64 * 1024
+# Model-facing tool messages are bounded digests; the stored execution keeps the full result.
+MAX_MODEL_TOOL_MESSAGE_BYTES = 6 * 1024
+MIN_MODEL_TOOL_MESSAGE_BYTES = 1024
+# Bounds model context and the byte-based token reservation (input_token_upper_bound) of the
+# provider copy. It is NOT a provider limit: the provider only bounds the whole transcript.
+MODEL_TOOL_MESSAGE_TRIGGER_BYTES = 16 * 1024
+# Headroom under the provider's transcript bound for JSON string escaping and framing.
+MODEL_TRANSCRIPT_RESERVE_BYTES = 10 * 1024
+EXPERIMENT_NOT_SELECTED = "EXPERIMENT_NOT_SELECTED"
+EXPERIMENT_NOT_PUBLISHED = "EXPERIMENT_NOT_PUBLISHED"
+_PROMPT_EXPERIMENT_ID = re.compile(r"(?<![0-9a-fA-F])[0-9a-fA-F]{24}(?![0-9a-fA-F])")
+_PROMPT_NAMED_EXPERIMENT_ID = re.compile(
+    r"(?i:experiment)[\s:#]*(?<![0-9a-fA-F])([0-9a-fA-F]{24})(?![0-9a-fA-F])"
+)
+_NOT_SELECTED_ID_PLACEHOLDER = "<24-hex id>"
+_EXPERIMENT_ID = re.compile(r"[a-f0-9]{24}")
+_MODEL_TRUNCATION_NOTE = (
+    "Result truncated for the model: the full result is stored server-side and Python renders "
+    "all facts. Do not request more data; return the final JSON plan."
+)
+# (identifier-prefix items, string characters, inline-value bytes, top-level fields)
+_DIGEST_LEVELS = (
+    (16, 160, 512, 64),
+    (8, 96, 256, 48),
+    (4, 48, 128, 32),
+    (2, 24, 0, 16),
+    (0, 16, 0, 8),
+)
 _EXPLICIT_EXPERIMENT_SELECTION = re.compile(
     r"[ \t]*(?:please[ \t]+)?(?:read|show|inspect|summari[sz]e|compare|analy[sz]e)"
     r"[ \t]+(?:(?:the[ \t]+)?results?[ \t]+of[ \t]+)?"
@@ -86,6 +116,172 @@ def _selected_experiment_id(prompt: str) -> str | None:
     return None
 
 
+def _utf8_len(text: str) -> int:
+    return len(text.encode("utf-8", "replace"))
+
+
+def _clip(text: str, limit: int) -> str:
+    return text if len(text) <= limit else text[:limit] + "\u2026"
+
+
+def _clip_key(key: Any, limit: int = 64) -> str:
+    """Clip a key for the digest; a clipped key gets a short hash so clipped keys stay distinct."""
+    text = str(key)
+    if len(text) <= limit:
+        return text
+    return text[: limit - 9] + "~" + hashlib.sha256(text.encode("utf-8", "replace")).hexdigest()[:8]
+
+
+def _is_scalar(value: Any) -> bool:
+    return value is None or isinstance(value, (str, bool, int, float))
+
+
+def _digest_scalar(value: Any, string_limit: int) -> Any:
+    if isinstance(value, str):
+        return _clip(value, string_limit)
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    return value
+
+
+def _inline_value(value: Any, limit: int) -> tuple[bool, Any]:
+    """Return a canonical copy of a small container, or (False, None)."""
+    if limit <= 0:
+        return False, None
+    try:
+        encoded = json.dumps(
+            value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False,
+        )
+    except (TypeError, ValueError, RecursionError):
+        return False, None
+    if _utf8_len(encoded) > limit:
+        return False, None
+    try:
+        return True, json.loads(encoded)
+    except (ValueError, RecursionError):
+        return False, None
+
+
+def _digest_container(value: Any, prefix: int, string_limit: int) -> dict[str, Any]:
+    if isinstance(value, dict):
+        keys = sorted(value, key=str)
+        digest: dict[str, Any] = {"item_count": len(keys)}
+        head = keys[:prefix]
+        ids = {
+            _clip_key(key): _clip(value[key]["condition_id"], 64)
+            for key in head
+            if isinstance(value[key], dict) and isinstance(value[key].get("condition_id"), str)
+        }
+        if ids:
+            digest["condition_ids_prefix"] = ids
+        elif head:
+            digest["keys_prefix"] = [_clip_key(key) for key in head]
+        return digest
+    digest = {"list_length": len(value)}
+    head = value[:prefix]
+    ids = [
+        _clip(item["condition_id"], 64) for item in head
+        if isinstance(item, dict) and isinstance(item.get("condition_id"), str)
+    ]
+    keys = [
+        _clip(item["condition_key"], 64) for item in head
+        if isinstance(item, dict) and isinstance(item.get("condition_key"), str)
+    ]
+    scalars = [_digest_scalar(item, string_limit) for item in head if _is_scalar(item)]
+    if ids:
+        digest["condition_ids_prefix"] = ids
+    if keys:
+        digest["condition_keys_prefix"] = keys
+    if scalars:
+        digest["first_items"] = scalars
+    return digest
+
+
+def _digest_data(data: Any, level: int) -> Any:
+    """Compact, order-independent digest of one tool result's data."""
+    if data is None:
+        return None
+    prefix, string_limit, inline_limit, max_fields = _DIGEST_LEVELS[level]
+    if not isinstance(data, dict):
+        return {"value_type": type(data).__name__}
+    keys = sorted(data, key=str)
+    ordered = [k for k in keys if _is_scalar(data[k])] + [k for k in keys if not _is_scalar(data[k])]
+    fields: dict[str, Any] = {}
+    for key in ordered[:max_fields]:
+        value = data[key]
+        name = _clip_key(key)
+        if _is_scalar(value):
+            fields[name] = _digest_scalar(value, string_limit)
+            continue
+        if isinstance(value, (dict, list)):
+            inline, canonical = _inline_value(value, inline_limit)
+            fields[name] = canonical if inline else _digest_container(value, prefix, string_limit)
+        else:
+            fields[name] = None
+    digest: dict[str, Any] = {"key_count": len(keys), "fields": fields}
+    omitted = ordered[max_fields:]
+    if omitted:
+        digest["omitted_key_count"] = len(omitted)
+        if prefix:
+            digest["omitted_keys"] = [_clip_key(key) for key in omitted[:prefix]]
+    return digest
+
+
+def _bounded_error(error: Any) -> Any:
+    if isinstance(error, str):
+        return _clip(error, 300)
+    if isinstance(error, dict):
+        return {
+            _clip_key(key, 32): _clip(value, 256) if isinstance(value, str) else None
+            for key, value in sorted(error.items(), key=lambda item: str(item[0]))[:4]
+        }
+    return None
+
+
+def project_tool_result_for_model(
+    result_data: dict[str, Any], max_bytes: int = MAX_MODEL_TOOL_MESSAGE_BYTES,
+) -> str:
+    """Return the model-facing tool message content, never more than 6 KB of UTF-8.
+
+    Results that already fit are serialized exactly as before. Larger results keep
+    their identity, status, error and side-effect fields but replace ``data`` by a
+    deterministic digest. The caller stores the full result separately, and Python
+    renders every empirical fact from that stored copy.
+    """
+    limit = max(MIN_MODEL_TOOL_MESSAGE_BYTES, min(int(max_bytes), MAX_MODEL_TOOL_MESSAGE_BYTES))
+    encoded = json.dumps(result_data, ensure_ascii=False)
+    if _utf8_len(encoded) <= limit:
+        return encoded
+
+    def message(data: Any) -> str:
+        tool_name = result_data.get("tool_name")
+        job_id = result_data.get("job_id")
+        return json.dumps({
+            "tool_name": _clip(tool_name, 64) if isinstance(tool_name, str) else None,
+            "tool_call_id": result_data.get("tool_call_id"),
+            "status": result_data.get("status"),
+            "data": data,
+            "error": _bounded_error(result_data.get("error")),
+            "is_side_effect": bool(result_data.get("is_side_effect", False)),
+            "job_id": _clip(job_id, 128) if isinstance(job_id, str) else None,
+            "data_truncated": True,
+            "note": _MODEL_TRUNCATION_NOTE,
+        }, ensure_ascii=False, allow_nan=False)
+
+    raw_data = result_data.get("data")
+    for level in range(len(_DIGEST_LEVELS)):
+        candidate = message(_digest_data(raw_data, level))
+        if _utf8_len(candidate) <= limit:
+            return candidate
+    candidate = message(None if raw_data is None else {"omitted": True})
+    if _utf8_len(candidate) <= limit:
+        return candidate
+    return json.dumps({
+        "tool_call_id": result_data.get("tool_call_id"), "status": result_data.get("status"),
+        "data_truncated": True,
+    }, ensure_ascii=False)
+
+
 def _same_canonical_arguments(left: dict[str, Any], right: dict[str, Any]) -> bool:
     try:
         return json.dumps(
@@ -117,6 +313,46 @@ def _sanitize_trace_arguments(args: dict[str, Any]) -> dict[str, Any]:
         else:
             safe[name] = "[rejected]"
     return safe
+
+
+def _not_selected_message(experiment_id: str | None) -> str:
+    reference = experiment_id if experiment_id and _EXPERIMENT_ID.fullmatch(experiment_id) else _NOT_SELECTED_ID_PLACEHOLDER
+    return (
+        "Saved experiments are readable only through an exact command. "
+        f"Ask exactly: Summarize experiment {reference}. "
+        "You can also use the suggestion buttons under the saved result."
+    )
+
+
+def _not_published_message(experiment_id: str) -> str:
+    return (
+        f"Experiment {experiment_id} is not a published result on this server. "
+        "Open a saved result and use its buttons."
+    )
+
+
+def _prompt_experiment_id(prompt: str) -> str | None:
+    """The experiment id named in the user's own prompt; never a model-chosen id.
+
+    Condition ids are also 24-hex, so a token right after the word "experiment" wins. Without
+    one, a lone 24-hex token is used; several ambiguous tokens yield None (guidance omits an id).
+    """
+    if not isinstance(prompt, str):
+        return None
+    named = _PROMPT_NAMED_EXPERIMENT_ID.search(prompt)
+    if named:
+        return named.group(1).lower()
+    tokens = {m.group(0).lower() for m in _PROMPT_EXPERIMENT_ID.finditer(prompt)}
+    return next(iter(tokens)) if len(tokens) == 1 else None
+
+
+def _error_code(error: Any) -> str | None:
+    if isinstance(error, dict):
+        code = error.get("code")
+        return code if isinstance(code, str) else None
+    if isinstance(error, str):
+        return error.split(":", 1)[0].strip() or None
+    return None
 
 
 def _safe_public_error(error: Any) -> str | dict[str, Any] | None:
@@ -446,6 +682,110 @@ class AgentController:
             evidence_refs=req.evidence_refs, prompt=req.prompt,
         )
 
+    @staticmethod
+    def _messages_for_provider(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Build the model-facing copy of the stored transcript, deterministically each turn.
+
+        The stored transcript keeps every full tool result. A transcript whose tool messages
+        are all within MODEL_TOOL_MESSAGE_TRIGGER_BYTES and that is within the provider's
+        MAX_TRANSCRIPT_BYTES is returned byte-identical. Otherwise a tool message over the
+        trigger, or one that would push the transcript past that bound less a reserve, becomes
+        a digest, and, only if the copy is still too large, assistant prose is clipped.
+
+        When a projection runs, the persisted transcript prefix differs from the dispatched
+        provider copy, so an auditor recomputing the input fingerprint must apply this (pure,
+        deterministic) function to the stored prefix before hashing.
+        """
+        def size(value: Any) -> int:
+            return len(json.dumps(value, ensure_ascii=False, separators=(",", ":")).encode("utf-8", "replace"))
+
+        def over_trigger(message: Any) -> bool:
+            content = message.get("content") if isinstance(message, dict) else None
+            return (
+                isinstance(message, dict) and message.get("role") == "tool"
+                and isinstance(content, str) and _utf8_len(content) > MODEL_TOOL_MESSAGE_TRIGGER_BYTES
+            )
+
+        if size(messages) <= MAX_PROVIDER_TRANSCRIPT_BYTES and not any(over_trigger(m) for m in messages):
+            return list(messages)
+        budget = MAX_PROVIDER_TRANSCRIPT_BYTES - MODEL_TRANSCRIPT_RESERVE_BYTES
+        out: list[dict[str, Any]] = []
+        used = 0
+        for message in messages:
+            if isinstance(message, dict) and message.get("role") == "tool" and isinstance(message.get("content"), str):
+                # Only results that the provider would reject are projected; the model then sees a
+                # deterministic digest, the stored transcript keeps the full result, and Python
+                # renders from the stored execution.
+                if over_trigger(message) or used + size(message) > budget:
+                    try:
+                        parsed = json.loads(message["content"])
+                    except (ValueError, RecursionError):
+                        parsed = None
+                    if isinstance(parsed, dict):
+                        message = {**message, "content": project_tool_result_for_model(parsed, max_bytes=budget - used)}
+            out.append(message)
+            used += size(message) + 1
+        # Safety net: assistant prose can be up to 16 KB per turn; clip it (oldest first) only
+        # while the provider copy is still over the transcript bound.
+        for index, message in enumerate(out):
+            if size(out) <= MAX_PROVIDER_TRANSCRIPT_BYTES:
+                break
+            content = message.get("content") if isinstance(message, dict) else None
+            if isinstance(message, dict) and message.get("role") == "assistant" and isinstance(content, str) and len(content) > 256:
+                out[index] = {**message, "content": content[:256] + "\u2026"}
+        return out
+
+    def _unselected_experiment_attempts(self, req) -> list[Any]:
+        """Executions that named a saved experiment the user never selected.
+
+        Empty when evidence is bound or when the prompt is an explicit run command: a run
+        command legitimately proceeds past a speculative read.
+        """
+        if req.evidence_refs or authorized_execution_presets(req.prompt):
+            return []
+        return [
+            execution for execution in self.store.list_tool_executions(req.id)
+            if _error_code((execution.result or {}).get("error"))
+            == AgentErrorCode.UNAUTHORIZED_EXPERIMENT_REFERENCE
+        ]
+
+    def _finish_experiment_not_selected(self, req, generation, worker_id, nonce):
+        selected = _selected_experiment_id(req.prompt)
+        if selected is not None:
+            guidance = {
+                "code": EXPERIMENT_NOT_PUBLISHED,
+                "message": _not_published_message(selected.lower()),
+            }
+        else:
+            guidance = {
+                "code": EXPERIMENT_NOT_SELECTED,
+                "message": _not_selected_message(_prompt_experiment_id(req.prompt)),
+            }
+        # Failed or cancelled operations keep their terminal status; the guidance rides along.
+        # Otherwise keep the renderer's response shape (empty claims, typed tool errors,
+        # disclaimer). Provider prose is never used, and the id comes only from the prompt.
+        response = self._final_answer(req)
+        if response.get("status") in ("FAILED", "CANCELLED"):
+            response["guidance"] = guidance
+            status, error = _terminal_request_outcome(response)
+        else:
+            response.update({
+                "status": "COMPLETED",
+                "title": "Experiment not published on this server"
+                if guidance["code"] == EXPERIMENT_NOT_PUBLISHED else "Saved experiment not selected",
+                "summary": guidance["message"], "provider_narrative": guidance["message"],
+                "claims": [], "guidance": guidance, "evidence_refs": [],
+            })
+            status, error = "COMPLETED", None
+        try:
+            _, _, updated = self.store.finish_request(
+                req.id, generation, worker_id, status, response, error,
+                nonce, self._response_factory,
+            )
+            return updated
+        except LeaseLostError:
+            return self._get_required_request(req.id)
+
     def _finish_budget(self, req, generation, worker_id, nonce):
         response = self._final_answer(req)
         response["budget_limit_reached"] = (
@@ -501,6 +841,13 @@ class AgentController:
 
                 decision = req.accepted_decision
                 if decision is None:
+                    # A completed decision hit an unselected saved experiment and the request
+                    # binds no evidence: no further provider turn can legitimately read it.
+                    attempts = self._unselected_experiment_attempts(req)
+                    if attempts:
+                        return self._finish_experiment_not_selected(
+                            req, generation, worker_id, continuation_nonce,
+                        )
                     if req.turn_count >= MAX_TURNS or req.call_count >= MAX_TOOL_CALLS:
                         return self._finish_budget(req, generation, worker_id, continuation_nonce)
                     messages = list(req.messages)
@@ -516,7 +863,7 @@ class AgentController:
                         return self._get_required_request(request_id)
                     try:
                         response = await self.provider.chat(
-                            messages=messages,
+                            messages=self._messages_for_provider(messages),
                             tools=self.registry.get_openai_tool_definitions(),
                         )
                     except ProviderDisabledError as err:
