@@ -108,3 +108,28 @@ Next: once published, set repo topics/homepage; once a VM IP is recorded, repoin
 - Deferred: the hosted Playwright smoke test. It waits for the redeploy so that it tests the judged build. It also needs a spec list that can make no paid calls against the live, provider-enabled server.
 - Blocked: OWNER_ACTIONS item 8 (redeploy), and with it the live checks, the questions-per-day figure, checklist rows 6 and 10.
 - Next: verify the redeploy once item 8 is done. Then the live checks (≤17 calls), the hosted smoke test, and the docs figures. The F08 flake is still open.
+
+## 2026-10-17 (autopilot run 4, scheduled)
+- Orientation: the tree was clean, so the concurrency guard did not apply. Live readiness is `ready`, but the site still serves the 15 Oct bundle (`index-oNasIWcL.js`), not 55e75c4 or f98c1ce. OWNER_ACTIONS item 8 (redeploy) has no status yet, so the deploy and its live checks stay blocked; not retried. The keep-awake tool is not available in this session.
+- Done: the F08 flake is fixed (commit `53020b0`).
+  - Root cause: `scriptAssets()` is cumulative per page. The reduced-motion toggle inside a live desktop /about document (real fine pointer) legitimately starts the scene import (`SceneFrame.tsx`), and the later coarse-pointer assertion saw it. This is a test race, not an app bug; the failure snapshot confirms the final document did not request the scene.
+  - Fix: the coarse-pointer visit starts from `about:blank` and checks only its own scripts. It now also waits for "View 3D illustration" and requires a non-empty script slice. After the toggle, the test asserts no canvas and the reduced-motion caption.
+- Done: Batch H prep, a hosted smoke config with no paid calls (`frontend/playwright.hosted.config.ts`, same commit).
+  - It selects 64 exact titles in 15 files. Excluded: "[real agent]", 9 luna3 tests that use real POSTs, bank-stress, normal_product and 2 suggestion tests. The run creates 3 live Bank jobs.
+  - The URL guard accepts only a bare https origin and rejects loopback and credentials.
+  - Hosted-only backstops: `fixtures.ts` aborts and fails on any non-GET to `agent/requests*` or `chat/messages`. A globalSetup tripwire (`scripts/hosted-budget-tripwire.ts`) fails the run if the live ordinary budget (calls or tokens) changes. It refuses `verification/gate5` and a reused folder.
+  - Rules: no `--retries` or `--repeat-each`; exactly 64 tests.
+- Review: Opus xhigh returned ACCEPT with 2 medium findings (no backstop; whole-file allowlists) and minor ones. All were acted on. Delta review: ACCEPT, with 1 minor and 3 nits. I applied the control character in the header, the trailing-slash regex, and enforcing the gate5 folder rule; the trailing-dot `localhost.` and file/title-anchored grep nits were left. These are model reviews, not human acceptance.
+- Verified (evidence in `verification/autopilot-20261017-run4/`):
+  - `npm run typecheck` clean.
+  - F08 with `--repeat-each 10`: 10/10, on both the first and the strengthened version.
+  - test_product_refresh: 9/9 (twice).
+  - test_job_errors (local, fixtures.ts consumer): 3/3 (twice).
+  - Hosted `--list`: 64 tests in 15 files.
+  - The reviewer notes the pre-fix spec also passed 3/3 when rerun alone, so the fix rests on the code reading and the snapshot, not on the 10/10.
+  - The hosted guard's page-mock precedence was checked from the Playwright source, not by a run.
+- Secret scan of the batch: 0 hits. Paid calls: 0.
+- Not run: the hosted smoke itself. It waits for the redeploy (item 8) so that it tests the judged build. The command for that run:
+  `SG_E2E_BASE_URL=https://shiftguard.duckdns.org SG_GATE5_ATTEMPT_DIR=../verification/gate10-hosted-smoke-<date> npx playwright test -c playwright.hosted.config.ts`
+- Blocked: OWNER_ACTIONS item 8 (redeploy), and with it the live checks, the questions-per-day figure, the hosted smoke, and checklist rows 6 and 10.
+- Next: after item 8, verify the image on the VM, then the live checks (≤17 calls) and the hosted smoke. Otherwise start Batch S8 preparation: record the authorization and run the resource preflight on fabricated rows.
