@@ -134,7 +134,13 @@ test("F08 reduced motion and coarse pointer retain static chapters without loadi
   await page.emulateMedia({ reducedMotion: "reduce" });
   await chapterButton(page, 3).click();
   await expect(chapterButton(page, 3)).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("canvas")).toHaveCount(0);
+  await expect(page.getByText("Static illustration shown because reduced motion is enabled.", { exact: true })).toBeVisible();
 
+  // Leave the live /about document first: toggling motion preference there (real fine pointer)
+  // may legitimately start the scene import, and scriptAssets() is cumulative per page.
+  await page.goto("about:blank");
+  const scriptsBeforeCoarseVisit = (await scriptAssets(page)).length;
   await page.addInitScript(() => {
     const original = window.matchMedia.bind(window);
     window.matchMedia = ((query: string) => {
@@ -155,7 +161,11 @@ test("F08 reduced motion and coarse pointer retain static chapters without loadi
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto("/about");
   await expect(chapterButton(page, 1)).toBeVisible();
-  expect((await scriptAssets(page)).some((asset) => asset.module === "scene")).toBe(false);
+  // A visible manual control proves the coarse-pointer path settled as eligible but not desktop.
+  await expect(page.getByRole("button", { name: "View 3D illustration" })).toBeVisible();
+  const coarseVisitScripts = (await scriptAssets(page)).slice(scriptsBeforeCoarseVisit);
+  expect(coarseVisitScripts.length).toBeGreaterThan(0);
+  expect(coarseVisitScripts.some((asset) => asset.module === "scene")).toBe(false);
 });
 
 test("F09 responsive overview and workbench reflow from 320px through 1440px and at 200% equivalent width", async ({ page }) => {

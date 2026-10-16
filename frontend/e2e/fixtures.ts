@@ -10,7 +10,18 @@ export const test = base.extend({
       if (testInfo.title.includes("[simulated]") && message.text().startsWith("Failed to load resource:")) return;
       consoleErrors.push(message.text());
     });
+    const hostedSmoke = (testInfo.config.metadata as { hostedSmoke?: boolean }).hostedSmoke === true;
+    const blockedPaidRequests: string[] = [];
+    if (hostedSmoke) {
+      await page.context().route(/\/api\/v1\/(?:agent\/requests(?:\/[^?#]*)?|chat\/messages\/?)(?:[?#].*)?$/, async (route) => {
+        const request = route.request();
+        if (request.method() === "GET") return route.fallback();
+        blockedPaidRequests.push(`${request.method()} ${request.url()}`);
+        await route.abort("blockedbyclient");
+      });
+    }
     await use(page);
+    expect(blockedPaidRequests, "hosted smoke must never send a paid-endpoint request").toEqual([]);
     expect(pageErrors, "Uncaught browser exceptions").toEqual([]);
     expect(consoleErrors, "Unexpected browser console errors").toEqual([]);
   },
