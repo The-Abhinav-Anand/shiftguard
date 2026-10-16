@@ -41,4 +41,30 @@ The autopilot checks this file every run.
    - write "publish: allowed" here and add a Claude Code permission rule allowing `gh repo create`
      and `git push` for this project, and the next run publishes it.
    The VM bootstrap clones from this repository, so it is needed before deployment.
+   Status: DONE (15 Oct, interactive session): published as https://github.com/The-Abhinav-Anand/shiftguard.
+
+8. **Redeploy the fixed Results assistant to the VM (5 min) — NEW, 16 Oct:** the autopilot built
+   and uploaded the image, but Claude Code's auto-mode safety check blocked the production deploy
+   step ("Production Deploy"), so it was not retried. Commit `55e75c4` is pushed. The image
+   `sha256:e10541032e38…` (amd64) is uploaded to the VM as `/tmp/sg-55e75c4.tar.gz`, and its
+   SHA-256 matched after the upload: `69999977309f6b22ce778605d35574bdb48199c831fc4262cfe62607f3e2e4c4`.
+   Do one of these:
+   - **Run it yourself:** in a terminal on this PC, run
+     `ssh -i "C:\Users\Abhinav Anand\.ssh\id_ed25519" ubuntu@130.210.3.156`, then on the VM:
+     ```
+     cd /opt/shiftguard
+     sudo mkdir -p /root/pre-review && sudo mv deploy/backup.sh /root/pre-review/backup.sh.untracked-e249b72
+     sudo git -c safe.directory=/opt/shiftguard pull --ff-only
+     sudo bash deploy/backup.sh --install
+     sudo docker tag shiftguard:judge shiftguard:judge-prev-e249b72
+     gunzip -c /tmp/sg-55e75c4.tar.gz | sudo docker load
+     sudo docker compose -f deploy/compose.judge.yaml up -d --remove-orphans
+     ```
+     Then write "redeployed" here. The second line moves aside an untracked pre-review copy that
+     would otherwise block the pull. The backup line takes a pre-deploy backup with the reviewed
+     script and reinstalls the nightly cron. The next run verifies the result and does the live
+     checks, at most 17 paid calls within the daily cap.
+     Rollback: `sudo docker tag shiftguard:judge-prev-e249b72 shiftguard:judge`, then the same `up -d` command.
+   - **Or allow the autopilot to deploy:** add a Claude Code permission rule for this project that
+     allows SSH deploy commands to `ubuntu@130.210.3.156`, and write "deploy: allowed" here.
    Status:

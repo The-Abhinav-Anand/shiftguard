@@ -80,3 +80,10 @@ Next: once published, set repo topics/homepage; once a VM IP is recorded, repoin
   - Full Playwright: 76 passed, 1 failed, 3 skipped. The failure was F08 (`/about` scene chunk under reduced motion), which the panel change does not touch; a rerun of the spec ×3 gave 27/27, so it is flaky. Not fixed.
 - Pre-push secret scan of the diff and new files: 0 hits for the API key, base URL or DuckDNS token; no DB URLs with passwords; no forbidden files. The only match was the public model name.
 - Paid calls so far this run: 0.
+- Commit and push: `55e75c4` pushed to main (`b37b019..55e75c4`).
+- Image: built from `git archive 55e75c4` on the WSL daemon (legacy builder, `--network host` because this daemon has no container networking; the first attempt failed at `npm ci` without it). Result `shiftguard:judge` `sha256:e10541032e38…`, amd64. The bundle in the image has the same content-hashed asset names as the commit; `index.html` differs only in trailing whitespace on one line.
+- Upload: `shiftguard-judge-55e75c4.tar.gz` (180,482,975 bytes, sha256 `69999977…e4c4`) sent to the VM as `/tmp/sg-55e75c4.tar.gz` in 8 MB chunks, each hash-checked. Final SHA-256 match, 0 corrupted chunks.
+- BLOCKED: the production deploy step (pull, backup, `docker load`, `up -d`) was denied by Claude Code's auto-mode classifier ("Production Deploy"). Per the runbook it was not retried or routed around, and later reads of the VM state were blocked too. OWNER_ACTIONS item 8 now lists the exact commands, or the alternative of allowing autopilot deploys. The live site is still the 15 Oct image (e249b72) and healthy; ledger 0/50 calls today.
+- Not done because of the block: live checks (Summarize and Compare), the questions-per-day figure, the reviewed backup on the VM (row 6), and the full static scan in the image (row 10).
+- Paid calls this run: 0.
+- Next: once item 8 is done, verify readiness and the image ID on the VM, then run the live checks (≤17 calls), the hosted Playwright smoke and the docs figures. Code follow-ups from the delta review: accept "experiment id X"; give FAILED/CANCELLED final answers a title; tighten the test margin comment.
