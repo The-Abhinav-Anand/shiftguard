@@ -133,3 +133,27 @@ Next: once published, set repo topics/homepage; once a VM IP is recorded, repoin
   `SG_E2E_BASE_URL=https://shiftguard.duckdns.org SG_GATE5_ATTEMPT_DIR=../verification/gate10-hosted-smoke-<date> npx playwright test -c playwright.hosted.config.ts`
 - Blocked: OWNER_ACTIONS item 8 (redeploy), and with it the live checks, the questions-per-day figure, the hosted smoke, and checklist rows 6 and 10.
 - Next: after item 8, verify the image on the VM, then the live checks (≤17 calls) and the hosted smoke. Otherwise start Batch S8 preparation: record the authorization and run the resource preflight on fabricated rows.
+
+## 2026-10-17 (autopilot run 5, scheduled)
+- Orientation: tree clean; concurrency guard not applied. Live readiness `ready`, still on the 15 Oct bundle (`index-oNasIWcL.js`). Certificate valid to 2027-01-13. OWNER_ACTIONS item 8 (redeploy) has no status, so the deploy, live checks, hosted smoke and checklist rows 6/10 stay blocked; not retried. The keep-awake tool is not available in this session.
+- Done: Batch S8 prep.
+  - Authorization record (new file, outside git): `../research/gate8-20261009/AUTHORIZATION-20261017-bank-development-repeats.md`.
+    - It says plainly that this is the agent's decision under the owner's general delegation, not an owner sign-off and not scientific approval.
+    - While SCI-03 is unresolved, the primary estimate is expected to be MissingEvidence by construction. Relabelling qualification to obtain a number is forbidden.
+    - The per-coordinate store is evaluator-private and label-equivalent: local `var/` only, never git, verification, the VM or backups.
+    - Five preconditions, including an owner veto (OWNER_ACTIONS item 9; no real coordinate before 20 Oct).
+  - R1 resource preflight: `scripts/gate8_resource_preflight.py` (sha256 `3d2d1155…7e35`). It uses fabricated rows only (binding `synthetic_fabricated`) and writes no label-derived value.
+    - Evidence: `../verification/gate8-preflight-20261017b/` (the first-pass folder `gate8-preflight-20261017` is kept as history).
+    - 41,188 rows, one full-grid coordinate (400 conditions):
+      | Fixture | Evaluation groups | Execute | Peak working set (execute / with serialization) | Artifact | Estimate, 5×10 sequential |
+      |---|---|---|---|---|---|
+      | default 500-profile | 444 | 64.1 s | 255.5 / 377.8 MiB | 74.6 MB | 0.90 h |
+      | high-cardinality `row` | 8,005 | 117.8 s | 379.3 / 534.5 MiB | 90.4 MB | 1.64 h |
+    - Per-group scoring takes 2.6% and 22.1% (26 s) of execute time. The 8,005-group case is near the ceiling for an 8,238-row evaluation set. R1's optimisation rule is not triggered, so scoring is not optimised.
+    - Artifact: 58 copies of a 1.275 MB plan-owned context per coordinate. The store must reference plan-owned data by digest; the floor is about 0.35 / 2.2 MB per coordinate (precondition 4).
+- Review: Opus xhigh returned CORRECTIONS_REQUIRED (2 major: the MissingEvidence expectation and fixture representativeness; 5 medium; minor ones and nits). All were acted on, by a script rewrite, a rerun and a record rewrite. The delta review returned CORRECTIONS_REQUIRED with text-only items (D1 store-digest scope, D2 veto as a checklist precondition, D3 the optimisation decision); all were applied. These are model reviews, not human acceptance.
+  - Deferred to the next script edit, because the change would alter the evidence hash: D4 (reword the pandas-import environment note; that cost is real wall time in both passes) and D5 nits (`--profiles 0`/`0500` validation, use BANK_FEATURES, a single `git status` call).
+- Verified: `tests/repeats_adapter` 49 passed, 0 failed (first pass; the rewrite changed nothing it imports). The script hash matches all four evidence files. The default fixture reproduces the artifact byte-for-byte across both passes.
+- Secret scan of the batch (3 secret values plus DB-URL pattern, compared in memory): 0 hits. Paid calls: 0.
+- Blocked: OWNER_ACTIONS item 8 (redeploy). New owner item 9 (Gate 8 veto, no action needed unless he objects); notified once.
+- Next: S8 precondition 2 (adapter accepts the verified Bank binding, with a typed SCI-03 reason code and the validator reconciled), then precondition 4 (digest-referencing restartable store), then the frozen run manifest. Real coordinates no earlier than 20 Oct. After item 8: verify the image on the VM, the live checks (≤17 calls) and the hosted smoke.

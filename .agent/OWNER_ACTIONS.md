@@ -68,3 +68,12 @@ The autopilot checks this file every run.
    - **Or allow the autopilot to deploy:** add a Claude Code permission rule for this project that
      allows SSH deploy commands to `ubuntu@130.210.3.156`, and write "deploy: allowed" here.
    Status:
+
+9. **Gate 8 real-Bank repeats: no action needed unless you object (17 Oct):** under your general
+   delegation, the autopilot decided to run the declared 5×10 Gate 8 repeat schedule on real Bank.
+   It is development tier only, labelled "Bank outcomes previously inspected; not confirmatory",
+   and the labels stay on this PC. The record is
+   `..\research\gate8-20261009\AUTHORIZATION-20261017-bank-development-repeats.md`. While SCI-03 is
+   unresolved, the primary estimate is expected to come out as "missing evidence" by design.
+   Real data will not be touched before 20 Oct. To stop it, write "gate8: no" here.
+   Status:
