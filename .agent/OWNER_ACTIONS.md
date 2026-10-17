@@ -72,6 +72,11 @@ The autopilot checks this file every run.
    SSH worked on 15–16 Oct from the earlier connection (152.59.x, likely the phone hotspot). When the PC is
    on a network that allows port 22, the interactive session deploys at once (the owner authorized deploys
    in chat; the auto-mode block applies only to unattended runs).
+   Update (17 Oct, 20:15 IST, autopilot run 8): port 22 to the VM is reachable again from this PC.
+   A read-only check found `/tmp/sg-55e75c4.tar.gz` intact (SHA-256 matches). The VM still runs the
+   15 Oct image. **Open an interactive Claude session and say "deploy now"**, or run the commands
+   above yourself. Note: that image lacks the `f98c1ce` follow-ups; the interactive session may
+   rebuild from HEAD first.
 
 9. **Gate 8 real-Bank repeats: no action needed unless you object (17 Oct):** under your general
    delegation, the autopilot decided to run the declared 5×10 Gate 8 repeat schedule on real Bank.

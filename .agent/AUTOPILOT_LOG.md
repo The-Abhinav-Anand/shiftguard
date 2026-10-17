@@ -192,3 +192,45 @@ Next: once published, set repo topics/homepage; once a VM IP is recorded, repoin
 - Item 8 (redeploy) attempted interactively and BLOCKED BY NETWORK. This PC's current connection (public IP 117.240.x) blocks outgoing TCP 22 (github.com:22 also times out; 443 works). The VM is healthy: readiness `ready`, ports 80/443 open. It still runs the 15 Oct image.
 - The deploy runs as soon as the PC is on a network that allows port 22, in an interactive session (the owner authorized deploys in chat). Unattended runs must not deploy until the owner adds a permission rule; never route around the classifier.
 - Next for unattended runs: Gate 8 precondition 4 (digest-referencing restartable store), now unblocked because item 10 landed. Then precondition 3 (the frozen run manifest).
+
+## 2026-10-17 20:10–21:40 IST (autopilot run 8, scheduled)
+- Orientation: the tree was clean, so the concurrency guard did not apply. Live readiness `ready`, still on the 15 Oct bundle (`index-oNasIWcL.js`). Certificate valid to 2027-01-13. The keep-awake tool is not available in this session.
+  - Port 22 to the VM is reachable again from this PC. A read-only SSH check found `/tmp/sg-55e75c4.tar.gz` intact (SHA-256 matches) and the VM still on `e249b72`.
+  - Unattended runs still must not deploy, so OWNER_ACTIONS item 8 now asks the owner to open an interactive session and say "deploy now". Note that the uploaded image lacks `f98c1ce`.
+- Done: **Gate 8 precondition 4**, the restartable digest-referencing development store. Sonnet worker; Opus xhigh reviewer.
+  - New files:
+    - `shiftguard/repeats/development_store.py`
+    - `tests/repeats_adapter/test_development_store.py` (52 tests)
+    - `scripts/gate8_store_preflight.py`
+    - No existing file changed; `models.py`, the synthetic store and the engine owners are untouched.
+  - Plan-owned data is rebuilt from the plan on reopen and bound by `plan_owned_digest` in the envelope. It covers each context's `evaluation_ids`/`group_map`/dataset fields, the cell `group_ids`/`n_by_group`, the repeat id and the seed map.
+  - Stored per coordinate:
+    - the acquisition order, as pool positions;
+    - per-context masks and predictor id;
+    - conditions;
+    - compact cells with sparse sums (sign of zero preserved);
+    - validated-pair digests.
+  - Encode checks plan-owned equality, then validates and self-decodes with a bit-exact comparison. `load` and `inventory()` deep-verify every coordinate; any failure is `CORRUPT_COMPLETION` and is never counted as completed. A light-read conflict is deep-checked before it is reported.
+  - Atomic publication, as in the synthetic store; the marker is published by an exclusive link too.
+  - Evaluator-private guard:
+    - development stores must sit strictly inside `var/gate8-private/`;
+    - no `verification` path component is allowed;
+    - junctions and symlinks in the root or its subdirectories are refused;
+    - the repr hides the sums.
+  - Record versions: `gate8-dev-repeat-store-v1` and `gate8-dev-coordinate-v1` (compact cell/context/pair v1).
+- Measurement (fabricated rows, 41,188, synthetic binding; `../verification/gate8-store-preflight-20261017b/`, script sha256 `b5a24fa6…7330`):
+
+  | Fixture | Compact artifact | Full layout | Restart verify | tracemalloc peak | Child peak working set |
+  |---|---|---|---|---|---|
+  | 500-profile | 371,519 B | 74.6 MB | 3.85 s | 4.6 MiB | 177.8 MiB |
+  | high-cardinality `row` | 1,999,222 B | 90.4 MB | 5.03 s | 11.7 MiB | 199.1 MiB |
+
+  The earlier folder `gate8-store-preflight-20261017/` (script `9fb00beb…`) is the superseded pre-digest shape, kept as history.
+- Review (Opus xhigh, model reviews, not human acceptance):
+  - First review: CORRECTIONS_REQUIRED (2 medium: commit misclassified a deep-corrupt record; rebuilt values not digest-bound; plus minor items and nits). All applied.
+  - Delta: CORRECTIONS_REQUIRED (1 minor: a junctioned subdirectory was adopted; 4 nits). All applied.
+  - Delta-3: ACCEPT. Two optional nits were deferred: a per-commit layout re-check (TOCTOU window), and allowing only `*.marker` files in staging on adoption. An info item became a precondition note: confirm that no host-level backup covers `var/gate8-private/`.
+- Verified: `tests/repeats` + `tests/repeats_adapter` 417 passed, 0 failed (my run; log `../verification/autopilot-20261017-run8/pytest-repeats-final.txt`). The reviewer ran the new file alone and reversed: 52/52 each.
+- Secret scan of the batch (4 secret values plus DB-URL and key patterns, in memory): 0 hits. Paid calls: 0.
+- Authorization record (outside git): precondition 2 ticked (`f71c42d`), precondition 4 status and the backup check added.
+- Next: precondition 3, the frozen run manifest (source commit, dataset hashes, configuration, roles, schedule), committed before any real coordinate. Then a restartable driver that uses `inventory()`. No real coordinate before 20 Oct (precondition 5 veto check). The deploy waits for an interactive session.
