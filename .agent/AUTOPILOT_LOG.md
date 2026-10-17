@@ -157,3 +157,38 @@ Next: once published, set repo topics/homepage; once a VM IP is recorded, repoin
 - Secret scan of the batch (3 secret values plus DB-URL pattern, compared in memory): 0 hits. Paid calls: 0.
 - Blocked: OWNER_ACTIONS item 8 (redeploy). New owner item 9 (Gate 8 veto, no action needed unless he objects); notified once.
 - Next: S8 precondition 2 (adapter accepts the verified Bank binding, with a typed SCI-03 reason code and the validator reconciled), then precondition 4 (digest-referencing restartable store), then the frozen run manifest. Real coordinates no earlier than 20 Oct. After item 8: verify the image on the VM, the live checks (≤17 calls) and the hosted smoke.
+
+## 2026-10-17 10:10–~12:30 IST (autopilot run 6, scheduled)
+- Orientation: the tree was clean, so the concurrency guard did not apply. Live readiness was `ready`, still on the 15 Oct bundle (`index-oNasIWcL.js`). OWNER_ACTIONS items 8 (redeploy) and 9 (Gate 8 veto) had no status, so item 8 stays blocked and was not retried. The keep-awake tool is not available in this session.
+- Done (verified, NOT committed): **Gate 8 precondition 2**, the adapter accepts the verified Bank development binding. Sonnet worker; Opus xhigh reviewer.
+  - Gate: `planning.require_authorized_source` admits synthetic fixtures, or `development_exposed` with the verified Bank dataset, release, raw and clean digests (from `datasets/bank.py`). The clean rows are re-hashed.
+  - Refusals: everything else is `SYNTHETIC_ONLY`. A synthetic binding carrying any verified Bank identity, or rows that hash to the verified clean digest, is `SYNTHETIC_MISLABEL`.
+  - Qualification: Bank stays `unknown_authority`, with the typed reason `sci03_authority_unresolved` on every completed condition and scored cell. The validator enforces placement and exact cell reasons (failed-side codes on unscored cells). Any qualified record on a Bank plan raises `QUALIFICATION_UPGRADE`, in both `_collect` and the inventory.
+  - Identity: Bank uses `execution_mode="bank_development"` and its own claim scope. Synthetic plan digests and repeat IDs are unchanged (pinned; the reviewer cross-checked them against a HEAD export). The Bank seed map equals the golden digest.
+  - Downstream: store, completion, aggregation and uncertainty stay synthetic-only. `aggregate_primary` on a Bank plan returns MissingEvidence or raises.
+  - Inventory: fallback slots are now counted regardless of qualification.
+  - No real Bank data was loaded; fabricated rows only. Engine owners are unchanged.
+- Review: Opus xhigh returned CORRECTIONS_REQUIRED (2 major, 4 medium, 2 minor, plus nits).
+  - Major: the downstream synthetic gate had leaked through `plan_repeats`; a synthetic label could carry the verified Bank identity (pre-existing hole).
+  - Medium: module-scoped monkeypatch leak (order-dependent failure reproduced); vacuous aggregate assertion; fallback slots dropped for `unknown_authority`; spec `execution_mode` and docstrings said synthetic.
+  - All were acted on. Delta review: ACCEPT, with 2 minor and 6 nits, all applied. Delta-3: ACCEPT; I applied the docstring nit and left one test nit (a synthetic-path case for the exact-field check). These are model reviews, not human acceptance.
+- Verified: `tests/repeats` + `tests/repeats_adapter`: 365 passed, 0 failed, 0 skipped (my run; log in `verification/autopilot-20261017-run6/pytest-repeats.txt`). The reviewer's reverse-order and isolation runs all passed.
+- Secret scan of the diff and the new file (4 secret values plus DB-URL pattern, in memory): 0 hits. Paid calls: 0.
+- BLOCKED: `git commit` was denied by Claude Code's auto-mode classifier ("Modify Shared Resources"). Not retried. New OWNER_ACTIONS item 10 has the exact commands; the message is in `verification/autopilot-20261017-run6/COMMIT_MESSAGE.txt`. The 10 uncommitted files are this run's reviewed batch, not an abandoned interactive session. Later runs should not re-review them or retry the commit until item 10 has a status. They may work on disjoint files.
+- Still blocked: item 8 (redeploy), and with it the live checks, the hosted smoke test, and checklist rows 6 and 10.
+- Next: precondition 4, the restartable digest-referencing store. It needs files in `shiftguard/repeats/` (a new store module), so it waits for item 10 to avoid mixing batches. Precondition 3 (frozen run manifest) comes after that. Real coordinates no earlier than 20 Oct.
+
+## 2026-10-17 15:10–15:25 IST (autopilot run 7, scheduled)
+- Orientation: the only uncommitted files are run 6's reviewed Gate 8 adapter batch (newest change 11:52 IST, 3.3 h old), which run 6 asked later runs not to re-review or re-commit until OWNER_ACTIONS item 10 has a status. It has none, so the commit was not retried. Item 8 (redeploy) also has no status; not retried. Item 9 (Gate 8 veto) has no status. The keep-awake tool is not available in this session.
+- Read-only checks: readiness `ready` (database connected, migration head, storage writable, dataset verified); live bundle still the 15 Oct one (`index-oNasIWcL.js`); certificate valid to 2027-01-13 09:07 GMT; ledger 2026-10-17: 0/50 calls, 0/100,000 tokens, not halted.
+- Done: the Gate 8 authorization record (outside git) now says precondition 2 is implemented, tested and reviewed but uncommitted, and stays unchecked until item 10 lands.
+- Not started: precondition 4 (the store) shares `shiftguard/repeats/` with the uncommitted batch, so it waits for item 10. Everything on the deploy path (live checks, questions-per-day figure, hosted smoke, checklist rows 6/10, the video re-record) waits for item 8. No other queue item was unblocked and worth starting.
+- Tests: none run (no code changed). Review: none (no commit or deploy). Paid calls: 0.
+- Tried to notify the owner once about items 8 and 10 (item 10 had not been notified in run 6); the push was not delivered (Remote Control inactive). Not retried.
+- Next: when item 10 says committed (or "commit: allowed"), start precondition 4; when item 8 says redeployed (or "deploy: allowed"), verify the image on the VM, then the live checks (≤17 calls) and the hosted smoke. Gate 11 freeze is 27–28 Oct, so item 8 is now on the critical path for the video.
+
+## 2026-10-17 (interactive session with the owner present)
+- OWNER_ACTIONS item 10 DONE: Gate 8 precondition 2 committed as `f71c42d` and pushed. It used run 6's message and evidence (365 passed; Opus ACCEPT after corrections).
+- Item 8 (redeploy) attempted interactively and BLOCKED BY NETWORK. This PC's current connection (public IP 117.240.x) blocks outgoing TCP 22 (github.com:22 also times out; 443 works). The VM is healthy: readiness `ready`, ports 80/443 open. It still runs the 15 Oct image.
+- The deploy runs as soon as the PC is on a network that allows port 22, in an interactive session (the owner authorized deploys in chat). Unattended runs must not deploy until the owner adds a permission rule; never route around the classifier.
+- Next for unattended runs: Gate 8 precondition 4 (digest-referencing restartable store), now unblocked because item 10 landed. Then precondition 3 (the frozen run manifest).

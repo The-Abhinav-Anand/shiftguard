@@ -67,7 +67,11 @@ The autopilot checks this file every run.
      Rollback: `sudo docker tag shiftguard:judge-prev-e249b72 shiftguard:judge`, then the same `up -d` command.
    - **Or allow the autopilot to deploy:** add a Claude Code permission rule for this project that
      allows SSH deploy commands to `ubuntu@130.210.3.156`, and write "deploy: allowed" here.
-   Status:
+   Status: BLOCKED BY NETWORK (17 Oct, interactive session): this PC's current internet connection
+   (public IP 117.240.x) blocks outgoing SSH on port 22, even to github.com. The VM is healthy over HTTPS.
+   SSH worked on 15–16 Oct from the earlier connection (152.59.x, likely the phone hotspot). When the PC is
+   on a network that allows port 22, the interactive session deploys at once (the owner authorized deploys
+   in chat; the auto-mode block applies only to unattended runs).
 
 9. **Gate 8 real-Bank repeats: no action needed unless you object (17 Oct):** under your general
    delegation, the autopilot decided to run the declared 5×10 Gate 8 repeat schedule on real Bank.
@@ -77,3 +81,20 @@ The autopilot checks this file every run.
    unresolved, the primary estimate is expected to come out as "missing evidence" by design.
    Real data will not be touched before 20 Oct. To stop it, write "gate8: no" here.
    Status:
+
+10. **Commit and push the reviewed Gate 8 adapter change (2 min) — NEW, 17 Oct:** Claude Code's
+    auto-mode safety check blocked `git commit` in the scheduled run ("Modify Shared Resources"),
+    so it was not retried. The change is tested (365 passed) and Opus-reviewed (ACCEPT after
+    corrections). The 10 changed files are all under `shiftguard/repeats/`, `tests/repeats/`
+    and `tests/repeats_adapter/`. The commit message is ready in
+    `..\verification\autopilot-20261017-run6\COMMIT_MESSAGE.txt`. In a terminal on this PC:
+    ```
+    cd "C:\Users\Abhinav Anand\Downloads\nvidia\shiftguard"
+    git add shiftguard/repeats tests/repeats tests/repeats_adapter .agent
+    git commit -F ..\verification\autopilot-20261017-run6\COMMIT_MESSAGE.txt
+    git push origin implementation/gate-0:main
+    ```
+    Then write "committed" here. Alternatively, add a Claude Code permission rule allowing
+    `git commit` and `git push` in this repository, and write "commit: allowed" here.
+    Until then, autopilot runs leave these files alone and do not retry the commit.
+    Status: DONE (17 Oct, interactive session): committed as `f71c42d` and pushed.
