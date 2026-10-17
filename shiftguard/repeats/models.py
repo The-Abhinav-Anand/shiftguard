@@ -1,8 +1,10 @@
-"""Immutable contracts for the synthetic Gate 8 repeat-engineering slice.
+"""Immutable contracts for the Gate 8 repeat-engineering slice.
 
-These types are prospective plumbing exercised with fabricated fixtures only.
-Nothing here imports a loader, runner, evaluator or provider, and constructing
-them neither locks the protocol nor permits confirmatory dispatch.
+These types are prospective plumbing. They are exercised with fabricated fixtures and,
+under a separate development-tier authorization, may describe the verified Bank release
+(``development_exposed``; outcomes previously inspected). Nothing here imports a loader,
+runner, evaluator or provider, and constructing them neither locks the protocol, grants
+SCI-03 authority nor permits confirmatory dispatch.
 """
 
 from __future__ import annotations
@@ -18,6 +20,10 @@ from typing import Any, NamedTuple
 
 SCHEMA_VERSION = "gate8-repeat-engineering-v1"
 EXECUTION_MODE = "synthetic_only"
+# Plans over the verified Bank release declare a distinct mode, so their repeat IDs can never
+# coincide with a synthetic plan's; the synthetic mode and its identities are unchanged.
+BANK_DEVELOPMENT_MODE = "bank_development"
+EXECUTION_MODES = (EXECUTION_MODE, BANK_DEVELOPMENT_MODE)
 PROTOCOL_VERSION = "shiftguard.research.protocol-draft.v0.3"
 SEED_ALGORITHM_VERSION = "gate8-nested-v1"
 NUMPY_VERSION = "2.5.3"
@@ -59,6 +65,11 @@ EXPOSURE_STATUSES = (
 )
 SYNTHETIC_EXPOSURE = "synthetic_fabricated"
 SYNTHETIC_CLAIM_SCOPE = "synthetic_engineering_fixture_not_a_research_finding"
+# The verified Bank release is development-tier only: its outcomes were already inspected.
+DEVELOPMENT_EXPOSURE = "development_exposed"
+BANK_DEVELOPMENT_CLAIM_SCOPE = "development_bank_outcomes_previously_inspected_not_confirmatory"
+# Typed SCI-03 reason attached wherever qualification is unknown_authority.
+SCI03_UNRESOLVED_REASON = "sci03_authority_unresolved"
 # Stored record versions. v1 of the paired cell carried no resolution accounting; nothing
 # may invent it on read, so only the current version is accepted.
 PAIRED_CELL_RECORD_VERSION = "gate8-paired-cell-v2"
@@ -252,7 +263,8 @@ class RepeatSpec:
 
     def __post_init__(self) -> None:
         _exact(self.schema_version, SCHEMA_VERSION, "SCHEMA_VERSION")
-        _exact(self.execution_mode, EXECUTION_MODE, "EXECUTION_MODE")
+        if type(self.execution_mode) is not str or self.execution_mode not in EXECUTION_MODES:
+            raise RepeatContractError("EXECUTION_MODE", repr(self.execution_mode))
         if self.confirmatory_dispatch_permitted is not False:
             raise RepeatContractError("CONFIRMATORY_DISPATCH_FORBIDDEN")
         _exact(self.protocol_version, PROTOCOL_VERSION, "PROTOCOL_VERSION")
@@ -744,10 +756,12 @@ class InventoryResult:
 
 @dataclass(frozen=True)
 class PairedGroupLossCell:
-    """Fabricated paired Brier-difference SUMS per evaluation group for one cell.
+    """Paired Brier-difference SUMS per evaluation group for one cell.
 
-    In any future authorized run these sums are evaluator-private outcome
-    information; this slice accepts fabricated values only.
+    The sums are evaluator-private outcome information. Fabricated fixtures supply them
+    in tests; the development adapter may supply them for the verified Bank release, where
+    qualification stays ``unknown_authority`` (SCI-03 unresolved) and the sums are never
+    confirmatory evidence.
     """
 
     context: PairContext

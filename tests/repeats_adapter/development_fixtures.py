@@ -1,4 +1,4 @@
-"""Fabricated Bank-shaped rows for the synthetic-gated development adapter tests.
+"""Fabricated Bank-shaped rows for the development adapter tests.
 
 Everything is generated here from a fixed seed. No file under var/datasets and
 no Adult artifact is read; the numbers are engineering fixtures, not findings.
@@ -10,13 +10,14 @@ import hashlib
 
 import numpy as np
 
-from shiftguard.datasets.bank import BANK_FEATURES, BankDataset
+from shiftguard.datasets.bank import BANK_FEATURES, BankDataset, hash_clean_rows
 from shiftguard.repeats.development_adapter import (
     plan_development_repeats,
     prepare_outer,
     execute_coordinate,
 )
 from shiftguard.repeats.models import (
+    BANK_DEVELOPMENT_MODE,
     RepeatSpec,
     SourceBinding,
     canonical_digest,
@@ -88,13 +89,42 @@ def fabricated_binding(dataset: BankDataset, **overrides) -> SourceBinding:
     return SourceBinding(**values)
 
 
+def pin_verified_bank(monkeypatch, binding: SourceBinding) -> None:
+    """Make the fabricated binding stand in for the verified Bank release (tests only)."""
+    from shiftguard.repeats import planning
+
+    monkeypatch.setattr(planning, "VERIFIED_BANK_DATASET", binding.dataset)
+    monkeypatch.setattr(planning, "VERIFIED_BANK_RELEASE", binding.release)
+    monkeypatch.setattr(planning, "VERIFIED_BANK_RAW_SHA256", binding.raw_sha256)
+    monkeypatch.setattr(planning, "VERIFIED_BANK_CLEAN_SHA256", binding.clean_sha256)
+
+
+def development_standin_dataset() -> BankDataset:
+    """Fabricated rows with their true canonical clean hash and a raw digest of their own."""
+    rows = fabricated_bank_dataset().rows
+    return BankDataset(rows, raw_hash=fake_digest("dev-raw"), clean_hash=hash_clean_rows(rows))
+
+
+def development_standin_binding(dataset: BankDataset, **overrides) -> SourceBinding:
+    """A development_exposed binding with names and digests distinct from the synthetic lab's."""
+    import dataclasses
+
+    return dataclasses.replace(
+        fabricated_binding(dataset, **overrides), dataset="dev-standin-bank",
+        release="dev-standin-v1", exposure_status="development_exposed")
+
+
 class Lab:
     """Caches the expensive pure steps so tests share one plan and one fit per outer."""
 
-    def __init__(self) -> None:
-        self.dataset = fabricated_bank_dataset()
-        self.binding = fabricated_binding(self.dataset)
-        self.spec = RepeatSpec()
+    def __init__(self, dataset: BankDataset | None = None, development: bool = False) -> None:
+        self.dataset = fabricated_bank_dataset() if dataset is None else dataset
+        if development:
+            self.binding = development_standin_binding(self.dataset)
+            self.spec = RepeatSpec(execution_mode=BANK_DEVELOPMENT_MODE)
+        else:
+            self.binding = fabricated_binding(self.dataset)
+            self.spec = RepeatSpec()
         self.plan = plan_development_repeats(self.dataset, self.binding, self.spec)
         self._prepared: dict[int, object] = {}
         self._results: dict[tuple, object] = {}

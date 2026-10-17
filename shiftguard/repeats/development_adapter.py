@@ -2,9 +2,13 @@
 
 Composes the existing deterministic Bank owners (splits, preprocessing, predictors,
 missingness, calibration, evaluator) under the gate8-nested-v1 seed map and reduces the
-result into the typed repeat contracts. It is synthetic-gated: any source binding whose
-exposure status is not ``synthetic_fabricated`` is refused, so real Bank execution needs
-a later, separately authorized step. Nothing here sets or implies confirmatory status.
+result into the typed repeat contracts. It is source-gated: it accepts fabricated
+``synthetic_fabricated`` fixtures and exactly one real source, the verified Bank release
+bound as ``development_exposed`` (see ``planning.require_authorized_source``); every other
+binding is refused. Bank outcomes were previously inspected, so nothing here sets or
+implies confirmatory status. While SCI-03 authority is unresolved, Bank cells and
+conditions stay ``unknown_authority`` and carry the typed SCI-03 reason; only the
+synthetic binding is ever ``qualified``.
 
 Final-test labels enter only ``_EvaluatorPrivateGroupScorer``, which keeps them inside
 ``FinalTestEvaluator`` instances. No label-derived row-level value is returned or logged.
@@ -33,7 +37,13 @@ from shiftguard.calibration.source_remask import (
     fit_source_remasked_temperature,
     generate_source_remasked_dataset,
 )
-from shiftguard.datasets.bank import BANK_FEATURES, TARGET_COLUMN, BankDataset
+from shiftguard.datasets.bank import (
+    BANK_FEATURES,
+    CLEAN_FIELDNAMES,
+    TARGET_COLUMN,
+    BankDataset,
+    hash_clean_rows,
+)
 from shiftguard.experiments.evaluator import FinalTestEvaluator
 from shiftguard.missingness.block import history_block_mask
 from shiftguard.missingness.mcar import (
@@ -64,6 +74,8 @@ from shiftguard.repeats.models import (
     PRIMARY_SOURCE_METHOD,
     PRIMARY_TARGET_METHOD,
     SCENARIOS,
+    BANK_DEVELOPMENT_CLAIM_SCOPE,
+    SCI03_UNRESOLVED_REASON,
     SYNTHETIC_CLAIM_SCOPE,
     SYNTHETIC_EXPOSURE,
     OuterRoleManifest,
@@ -84,11 +96,14 @@ from shiftguard.repeats.models import (
     identifier_tuple,
     immutable_tuple,
 )
+from shiftguard.repeats import planning
 from shiftguard.repeats.planning import (
     ensure_planned,
+    execution_mode_for,
     pair_context_for,
     plan_owned_mismatch,
     plan_repeats,
+    require_authorized_source,
 )
 from shiftguard.repeats.seeds import derive_repeat_seed_map
 from shiftguard.repeats.validation import (
@@ -116,19 +131,25 @@ _SAFE_CODE = re.compile(r"[^A-Za-z0-9_.-]")
 
 # ------------------------------------------------------------------ gating and validation
 
-def _require_synthetic(binding: object) -> SourceBinding:
-    if type(binding) is not SourceBinding:
-        raise RepeatContractError("REPEAT_SCHEMA", "binding")
-    # Real Bank development execution needs its own authorization; this adapter never runs it.
-    if binding.exposure_status != SYNTHETIC_EXPOSURE:
-        raise RepeatContractError("SYNTHETIC_ONLY", binding.exposure_status)
-    return binding
-
-
 def _qualification(binding: SourceBinding) -> str:
-    # SCI-03 authority is not approved, so a real source would be "unknown_authority". Only the
-    # synthetic binding may declare a cell "qualified", and only for engineering fixtures.
+    # SCI-03 authority is not approved, so any real source is "unknown_authority" and is never
+    # defaulted, relabelled or upgraded. Only the synthetic binding may declare a cell
+    # "qualified", and only for engineering fixtures.
     return "qualified" if binding.exposure_status == SYNTHETIC_EXPOSURE else "unknown_authority"
+
+
+def claim_scope_for(binding: SourceBinding) -> str:
+    """Synthetic fixtures claim nothing; Bank development results are explicitly non-confirmatory."""
+    require_authorized_source(binding)
+    if binding.exposure_status == SYNTHETIC_EXPOSURE:
+        return SYNTHETIC_CLAIM_SCOPE
+    return BANK_DEVELOPMENT_CLAIM_SCOPE
+
+
+def _completed_reasons(qualification: str, fallback: tuple[str, ...]) -> tuple[str, ...]:
+    if qualification != "unknown_authority":
+        return fallback
+    return (SCI03_UNRESOLVED_REASON,) + tuple(r for r in fallback if r != SCI03_UNRESOLVED_REASON)
 
 
 def source_row_id(binding: SourceBinding, row_id: int) -> str:
@@ -153,6 +174,19 @@ def _validated_rows(dataset: object, binding: SourceBinding) -> tuple[dict, dict
         raise RepeatContractError("DATASET_SCHEMA", "dataset")
     if dataset.raw_hash != binding.raw_sha256 or dataset.clean_hash != binding.clean_sha256:
         raise RepeatContractError("SOURCE_BINDING_MISMATCH", binding.dataset)
+    # For a real source the rows themselves must hash to the bound clean digest (a hash of the
+    # canonical rows only; no outcome is read into any result). The other binding fields are
+    # bound by the separate manifest precondition, not here.
+    fields = set(CLEAN_FIELDNAMES)
+    if any(type(row) is not dict or set(row) != fields for row in dataset.rows):
+        raise RepeatContractError("DATASET_SCHEMA", "row fields")
+    actual = hash_clean_rows(dataset.rows)
+    if binding.exposure_status != SYNTHETIC_EXPOSURE:
+        if actual != binding.clean_sha256:
+            raise RepeatContractError("SOURCE_BINDING_MISMATCH", binding.dataset)
+    elif actual == planning.VERIFIED_BANK_CLEAN_SHA256:
+        # Defense in depth: fabricated rows may not reproduce the verified release's content.
+        raise RepeatContractError("SYNTHETIC_MISLABEL", "synthetic rows hash to the verified Bank release")
     rows_by_id: dict[int, dict] = {}
     groups: dict[int, str] = {}
     for row in dataset.rows:
@@ -214,7 +248,7 @@ def build_outer_roles(
     dataset: BankDataset, binding: SourceBinding, spec: RepeatSpec
 ) -> tuple[OuterRoleManifest, ...]:
     """Ordered role manifests for the declared outer seeds. Labels stay inside the splitter."""
-    _require_synthetic(binding)
+    require_authorized_source(binding)
     if type(spec) is not RepeatSpec:
         raise RepeatContractError("REPEAT_SCHEMA", "spec")
     rows_by_id, groups = _validated_rows(dataset, binding)
@@ -225,8 +259,12 @@ def build_outer_roles(
 def plan_development_repeats(
     dataset: BankDataset, binding: SourceBinding, spec: RepeatSpec | None = None
 ) -> RepeatPlan:
-    _require_synthetic(binding)
-    spec = RepeatSpec() if spec is None else spec
+    mode = execution_mode_for(binding)  # also the source gate
+    # The default spec follows the binding's declared mode; an explicit spec must already match,
+    # and this is checked before any role is built from the dataset.
+    spec = RepeatSpec(execution_mode=mode) if spec is None else spec
+    if type(spec) is RepeatSpec and spec.execution_mode != mode:
+        raise RepeatContractError("EXECUTION_MODE", f"{spec.execution_mode} for {binding.exposure_status}")
     return plan_repeats(spec, binding, build_outer_roles(dataset, binding, spec))
 
 
@@ -320,7 +358,7 @@ def prepare_outer(dataset: BankDataset, plan: RepeatPlan, outer_seed: int) -> Pr
     """Fit each predictor once on this outer's training role; shared by every inner repeat."""
     if type(plan) is not RepeatPlan:
         raise RepeatContractError("REPEAT_SCHEMA", "plan")
-    binding = _require_synthetic(plan.binding)
+    binding = require_authorized_source(plan.binding)
     ensure_planned(plan)
     manifest = plan.roles(outer_seed)
     rows_by_id, groups = _validated_rows(dataset, binding)
@@ -539,7 +577,7 @@ def execute_coordinate(
     if type(prepared) is not PreparedOuter:
         raise RepeatContractError("REPEAT_SCHEMA", "prepared")
     plan = prepared.plan
-    binding = _require_synthetic(plan.binding)
+    binding = require_authorized_source(plan.binding)
     outer_seed = prepared.outer_seed
     declared_repeat(outer_seed, inner_id)
     scenarios = _scope(scenarios, SCENARIOS, "scenarios")
@@ -631,6 +669,8 @@ def execute_coordinate(
                         reasons = ("no_probabilities_resolved",)
                     fit_id = fit_identity(plan, context, method)
                     status = "failed" if failed else "completed"
+                    if not failed:
+                        reasons = _completed_reasons(qualification, reasons)
                     made[method] = TerminalCondition(
                         condition_id=condition_identity(
                             planned.repeat_id, context, method, fit_id,
@@ -652,7 +692,7 @@ def execute_coordinate(
 
     result = CoordinateResult(
         key=key, repeat_id=planned.repeat_id, seed_map=planned.seed_map,
-        execution_tier=EXECUTION_TIER, claim_scope=SYNTHETIC_CLAIM_SCOPE,
+        execution_tier=EXECUTION_TIER, claim_scope=claim_scope_for(binding),
         acquisition_order=order_ids, contexts=tuple(contexts), conditions=tuple(conditions),
         validated_pairs=tuple(validated), pair_cells=tuple(cells),
     )
@@ -695,13 +735,35 @@ def _paired_cell(prepared, context, resolutions, made, qualification, validated)
     sums = prepared._scorer.evaluator_private_paired_group_sums(
         plan.group_universe, target.probabilities, source.probabilities)
     return PairedGroupLossCell(
-        paired_loss_sum_by_group=sums, qualification=qualification, reasons=(), **common)
+        paired_loss_sum_by_group=sums, qualification=qualification,
+        reasons=(SCI03_UNRESOLVED_REASON,) if qualification == "unknown_authority" else (),
+        **common)
 
 
 # ------------------------------------------------------------------ joined coordinate validation
 
 def _coordinate_error(code: str, detail: str) -> RepeatContractError:
     return RepeatContractError(code, detail)
+
+
+def _scored_reasons(expected: str) -> tuple[str, ...]:
+    return (SCI03_UNRESOLVED_REASON,) if expected == "unknown_authority" else ()
+
+
+def _check_condition_qualification(condition: TerminalCondition, expected: str) -> None:
+    """A binding fixes its qualification; the SCI-03 reason appears exactly when it is unresolved."""
+    count = condition.reasons.count(SCI03_UNRESOLVED_REASON)
+    if condition.status == "failed":
+        if count:
+            raise _coordinate_error("COORDINATE_QUALIFICATION", "failed condition carries the SCI-03 reason")
+        return
+    if condition.qualification != expected:
+        raise _coordinate_error("COORDINATE_QUALIFICATION", f"{tuple(condition.slot)}")
+    if expected == "unknown_authority":
+        if count != 1 or condition.reasons[0] != SCI03_UNRESOLVED_REASON:
+            raise _coordinate_error("COORDINATE_QUALIFICATION", "SCI-03 reason missing or misplaced")
+    elif count:
+        raise _coordinate_error("COORDINATE_QUALIFICATION", "qualified condition carries the SCI-03 reason")
 
 
 def validate_coordinate_result(plan: RepeatPlan, result: CoordinateResult) -> None:
@@ -725,9 +787,10 @@ def validate_coordinate_result(plan: RepeatPlan, result: CoordinateResult) -> No
         result.repeat_id != planned.repeat_id
         or result.seed_map != planned.seed_map
         or result.execution_tier != EXECUTION_TIER
-        or result.claim_scope != SYNTHETIC_CLAIM_SCOPE
+        or result.claim_scope != claim_scope_for(plan.binding)
     ):
         raise _coordinate_error("COORDINATE_IDENTITY", f"{key.outer_seed}/{key.inner_id}")
+    expected = _qualification(plan.binding)
     manifest = plan.roles(key.outer_seed)
     order = identifier_tuple(result.acquisition_order, "acquisition_order")
     if len(set(order)) != len(order) or sorted(order) != sorted(manifest.target_pool_ids):
@@ -765,6 +828,7 @@ def validate_coordinate_result(plan: RepeatPlan, result: CoordinateResult) -> No
     previous = -1
     for condition in immutable_tuple(result.conditions, "conditions"):
         validate_condition_accounting(plan, condition)
+        _check_condition_qualification(condition, expected)
         if (condition.outer_seed, condition.inner_id) != (key.outer_seed, key.inner_id) or (
             condition.repeat_id != planned.repeat_id
         ):
@@ -829,12 +893,19 @@ def validate_coordinate_result(plan: RepeatPlan, result: CoordinateResult) -> No
         if cell.paired_loss_sum_by_group is None:
             if "failed" not in (target.status, source.status) or cell.qualification != "failed":
                 raise _coordinate_error("PAIR_BINDING", "unscored pair without a failed condition")
+            if cell.reasons != tuple(
+                code for code, condition in (
+                    ("target_prediction_failed", target), ("source_prediction_failed", source))
+                if condition.status == "failed"
+            ):
+                raise _coordinate_error("PAIR_BINDING", "unscored pair reasons differ from its conditions")
         else:
             if (
                 target.status != "completed" or source.status != "completed"
                 or cell.qualification != target.qualification
                 or cell.qualification != source.qualification
-                or cell.reasons
+                or cell.qualification != expected
+                or cell.reasons != _scored_reasons(expected)
             ):
                 raise _coordinate_error("PAIR_BINDING", "scored pair disagrees with its conditions")
             scored.append(cell)

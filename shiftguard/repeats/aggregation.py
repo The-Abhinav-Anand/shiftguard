@@ -3,7 +3,10 @@
 Contrast: target_temperature minus source_fraction_binned_temperature at budget
 50, binary Brier MSE. Original row mass is kept within each cell; the eight
 shifted cells, ten inner repeats and five outer repeats then weigh equally.
-Inputs are fabricated paired group sums. No labels, loaders or evaluators.
+Inputs are paired group sums. Fabricated sums can be reduced to a summary; cells of a
+verified-Bank development plan are accepted by ``aggregate_primary`` only to return typed
+MissingEvidence (they are never qualified, and a qualified one raises); ``prepare_group_sums``
+and the interval path refuse a Bank plan outright. No labels, loaders or evaluators.
 """
 
 from __future__ import annotations
@@ -14,6 +17,7 @@ import statistics
 
 from shiftguard.repeats.models import (
     OUTER_SEEDS,
+    SYNTHETIC_EXPOSURE,
     PRIMARY_BUDGET,
     PRIMARY_SCENARIOS,
     PRIMARY_SOURCE_METHOD,
@@ -28,7 +32,11 @@ from shiftguard.repeats.models import (
     immutable_tuple,
     strict_int,
 )
-from shiftguard.repeats.planning import ensure_planned, plan_owned_mismatch
+from shiftguard.repeats.planning import (
+    ensure_planned,
+    plan_owned_mismatch,
+    require_synthetic_plan,
+)
 
 
 PrimaryKey = tuple[int, int, str, str]
@@ -110,6 +118,8 @@ def _collect(
     plan: RepeatPlan, pairs: tuple[PairedGroupLossCell, ...]
 ) -> dict[PrimaryKey, PairedGroupLossCell] | MissingEvidence:
     ensure_planned(plan)
+    # A verified-Bank development plan is collected only to report typed missing evidence.
+    synthetic = plan.binding.exposure_status == SYNTHETIC_EXPOSURE
     cells: dict[PrimaryKey, PairedGroupLossCell] = {}
     for cell in immutable_tuple(pairs, "pairs"):
         if type(cell) is not PairedGroupLossCell:
@@ -119,6 +129,9 @@ def _collect(
             raise RepeatContractError("UNEXPECTED_PRIMARY_CELL", repr(cell.key))
         if cell.key in cells:
             raise RepeatContractError("DUPLICATE_PRIMARY_CELL", repr(cell.key))
+        if not synthetic and cell.qualification == "qualified":
+            # SCI-03 is unresolved: a non-synthetic cell can never be upgraded to qualified.
+            raise RepeatContractError("QUALIFICATION_UPGRADE", repr(cell.key))
         mismatch = plan_owned_mismatch(plan, context)
         if mismatch:
             raise RepeatContractError("PAIR_CONTEXT_MISMATCH", f"{cell.key}: {', '.join(mismatch)}")
@@ -175,6 +188,7 @@ def aggregate_primary(
     cells = _collect(plan, pairs)
     if isinstance(cells, MissingEvidence):
         return cells
+    require_synthetic_plan(plan)  # no summary is ever built for a non-synthetic plan
     spec = plan.spec
     inner_values: list[tuple[float, ...]] = []
     for outer in spec.outer_seeds:
@@ -226,6 +240,8 @@ def prepare_group_sums(
     pairs: tuple[PairedGroupLossCell, ...],
 ) -> PreparedAggregate | MissingEvidence:
     """Collapse the per-cell group sums once for the conditional group interval."""
+    # The conditional interval stays synthetic-only: refuse a non-synthetic plan outright.
+    require_synthetic_plan(plan)
     cells = _collect(plan, pairs)
     if isinstance(cells, MissingEvidence):
         return cells
@@ -302,7 +318,7 @@ def validate_prepared_aggregate(prepared: PreparedAggregate, plan: RepeatPlan) -
 
     Nothing is clipped, widened, dropped or renormalised: an impossible value is an error.
     """
-    ensure_planned(plan)
+    require_synthetic_plan(plan)
     if type(prepared) is not PreparedAggregate:
         raise RepeatContractError("REPEAT_SCHEMA", "prepared")
     # This slice handles fabricated sums only; real paired sums are evaluator-private.

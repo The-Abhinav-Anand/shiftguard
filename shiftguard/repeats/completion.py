@@ -23,7 +23,7 @@ from shiftguard.repeats.models import (
     identifier,
     immutable_tuple,
 )
-from shiftguard.repeats.planning import ensure_planned
+from shiftguard.repeats.planning import require_synthetic_plan
 
 
 TERMINAL_STATUSES = ("completed", "failed")
@@ -155,7 +155,7 @@ def build_completion(
     terminal_status: str,
 ) -> tuple[CompletionRecord, bytes]:
     """Bind fabricated content to its plan and repeat; returns the record and its bytes."""
-    ensure_planned(plan)
+    require_synthetic_plan(plan)
     if terminal_status not in TERMINAL_STATUSES:
         raise RepeatContractError("TERMINAL_STATUS", repr(terminal_status))
     if repeat_id not in {repeat.repeat_id for repeat in plan.repeats}:

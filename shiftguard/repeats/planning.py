@@ -1,8 +1,12 @@
-"""Pure planning of the fifty synthetic repeat identities."""
+"""Pure planning of the fifty repeat identities (synthetic fixtures or the verified Bank release)."""
 
 from __future__ import annotations
 
+from shiftguard.datasets.bank import FROZEN_BANK_SOURCE, FROZEN_CLEAN_DIGEST
 from shiftguard.repeats.models import (
+    BANK_DEVELOPMENT_MODE,
+    DEVELOPMENT_EXPOSURE,
+    EXECUTION_MODE,
     SYNTHETIC_EXPOSURE,
     OuterRoleManifest,
     PairContext,
@@ -17,6 +21,64 @@ from shiftguard.repeats.models import (
 )
 from shiftguard.repeats.seeds import INNER_LEAVES, derive_repeat_seed_map
 
+# The one real source this contract admits: the verified Bank release, development tier only.
+# Values come from the frozen dataset owner and are read at call time.
+VERIFIED_BANK_DATASET = FROZEN_BANK_SOURCE["dataset_id"]
+VERIFIED_BANK_RELEASE = FROZEN_BANK_SOURCE["source_version"]
+VERIFIED_BANK_RAW_SHA256 = FROZEN_BANK_SOURCE["raw_member_sha256"]
+VERIFIED_BANK_CLEAN_SHA256 = FROZEN_CLEAN_DIGEST
+
+
+def is_verified_bank_development(binding: object) -> bool:
+    """True only for a development-exposed binding of exactly the verified Bank release."""
+    return (
+        type(binding) is SourceBinding
+        and binding.exposure_status == DEVELOPMENT_EXPOSURE
+        and binding.dataset == VERIFIED_BANK_DATASET
+        and binding.release == VERIFIED_BANK_RELEASE
+        and binding.raw_sha256 == VERIFIED_BANK_RAW_SHA256
+        and binding.clean_sha256 == VERIFIED_BANK_CLEAN_SHA256
+    )
+
+
+def _carries_verified_identity(binding: SourceBinding) -> bool:
+    return (
+        binding.dataset == VERIFIED_BANK_DATASET
+        or binding.release == VERIFIED_BANK_RELEASE
+        or binding.raw_sha256 == VERIFIED_BANK_RAW_SHA256
+        or binding.clean_sha256 == VERIFIED_BANK_CLEAN_SHA256
+    )
+
+
+def require_authorized_source(binding: object) -> SourceBinding:
+    """The single source gate: synthetic fixtures or the verified Bank development binding.
+
+    A fabricated binding may not borrow any identity of the verified release.
+    """
+    if type(binding) is not SourceBinding:
+        raise RepeatContractError("REPEAT_SCHEMA", "binding")
+    if binding.exposure_status == SYNTHETIC_EXPOSURE:
+        if _carries_verified_identity(binding):
+            raise RepeatContractError("SYNTHETIC_MISLABEL", "synthetic binding carries a verified Bank identity")
+        return binding
+    if is_verified_bank_development(binding):
+        return binding
+    raise RepeatContractError("SYNTHETIC_ONLY", binding.exposure_status)
+
+
+def execution_mode_for(binding: object) -> str:
+    """The RepeatSpec execution mode a plan over this binding must declare."""
+    synthetic = require_authorized_source(binding).exposure_status == SYNTHETIC_EXPOSURE
+    return EXECUTION_MODE if synthetic else BANK_DEVELOPMENT_MODE
+
+
+def require_synthetic_plan(plan: RepeatPlan) -> RepeatPlan:
+    """Planned and synthetic: the store, completion and conditional-interval paths stay synthetic-only."""
+    ensure_planned(plan)
+    if plan.binding.exposure_status != SYNTHETIC_EXPOSURE:
+        raise RepeatContractError("SYNTHETIC_ONLY", plan.binding.exposure_status)
+    return plan
+
 
 def plan_repeats(
     spec: RepeatSpec,
@@ -26,9 +88,11 @@ def plan_repeats(
     """Bind spec, source, roles and seeds into one immutable plan. Loads nothing."""
     if type(spec) is not RepeatSpec or type(binding) is not SourceBinding:
         raise RepeatContractError("REPEAT_SCHEMA", "spec/binding")
-    # This slice plans fabricated fixtures only; a real source needs a locked protocol.
-    if binding.exposure_status != SYNTHETIC_EXPOSURE:
-        raise RepeatContractError("SYNTHETIC_ONLY", binding.exposure_status)
+    # Only fabricated fixtures or the verified Bank development binding are planned, each with
+    # its own declared execution mode; a mismatch in either direction is refused.
+    require_authorized_source(binding)
+    if spec.execution_mode != execution_mode_for(binding):
+        raise RepeatContractError("EXECUTION_MODE", f"{spec.execution_mode} for {binding.exposure_status}")
     by_outer: dict[int, OuterRoleManifest] = {}
     for manifest in immutable_tuple(roles, "roles"):
         if type(manifest) is not OuterRoleManifest:

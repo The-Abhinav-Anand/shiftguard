@@ -18,10 +18,18 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
-from development_fixtures import Lab, fabricated_bank_dataset, fabricated_binding
+from development_fixtures import (
+    Lab,
+    development_standin_binding,
+    development_standin_dataset,
+    fabricated_bank_dataset,
+    fabricated_binding,
+    pin_verified_bank,
+)
 from shiftguard.datasets.bank import BANK_FEATURES
 from shiftguard.protocol.splits import make_role_splits
 from shiftguard.repeats import development_adapter as adapter
+from shiftguard.repeats import planning as adapter_planning
 from shiftguard.repeats.aggregation import PrimarySummary, aggregate_primary, prepare_group_sums
 from shiftguard.repeats.models import (
     BUDGETS,
@@ -35,6 +43,8 @@ from shiftguard.repeats.models import (
     PRIMARY_SOURCE_METHOD,
     PRIMARY_TARGET_METHOD,
     SCENARIOS,
+    BANK_DEVELOPMENT_CLAIM_SCOPE,
+    SCI03_UNRESOLVED_REASON,
     SYNTHETIC_CLAIM_SCOPE,
     MissingEvidence,
     PairedGroupLossCell,
@@ -62,6 +72,22 @@ OTHER_STATUSES = tuple(status for status in EXPOSURE_STATUSES if status != "synt
 @pytest.fixture(scope="module")
 def lab() -> Lab:
     return Lab()
+
+
+@pytest.fixture(scope="module")
+def _dev_lab_cache() -> Lab:
+    """Built once under a scoped pin that is undone before any test runs."""
+    dataset = development_standin_dataset()
+    with pytest.MonkeyPatch.context() as patch:
+        pin_verified_bank(patch, development_standin_binding(dataset))
+        return Lab(dataset, development=True)
+
+
+@pytest.fixture
+def dev_lab(_dev_lab_cache, monkeypatch) -> Lab:
+    """The stand-in for the verified Bank release, pinned for this one test only."""
+    pin_verified_bank(monkeypatch, _dev_lab_cache.binding)
+    return _dev_lab_cache
 
 
 def _code(call) -> str:
@@ -838,3 +864,253 @@ def test_pair_metadata_survives_store_reopen_with_the_real_adapter_output(lab, t
     assert cells[0] == mixed_cell and cells[0].source_resolution_counts == mixed_cell.source_resolution_counts
     # The reopened pieces still join: nothing was defaulted on the way through the store.
     adapter.validate_coordinate_result(lab.plan, _swap(mixed_result, pair_cells=cells, conditions=conditions))
+
+
+# ---------------------------------------------------------------- verified Bank development binding
+
+def _dev_code(dev_lab, result, **changes):
+    return _code(lambda: adapter.validate_coordinate_result(dev_lab.plan, _swap(result, **changes)))
+
+
+def test_development_binding_runs_end_to_end_unknown_authority_with_the_sci03_reason(dev_lab):
+    assert dev_lab.plan.binding.exposure_status == "development_exposed"
+    assert adapter.claim_scope_for(dev_lab.binding) == BANK_DEVELOPMENT_CLAIM_SCOPE
+    result = dev_lab.run(OUTER, INNER_A, **FAST)  # execute_coordinate validates before returning
+    assert result.claim_scope == BANK_DEVELOPMENT_CLAIM_SCOPE and result.execution_tier == "development"
+    completed = [c for c in result.conditions if c.status == "completed"]
+    assert completed and all(
+        c.qualification == "unknown_authority" and c.reasons[0] == SCI03_UNRESOLVED_REASON
+        and c.reasons.count(SCI03_UNRESOLVED_REASON) == 1 for c in completed)
+    # Budget-zero unattempted fallbacks keep their own codes after the SCI-03 reason.
+    assert any(len(c.reasons) > 1 and c.reasons[1].startswith("unattempted:") for c in completed)
+    assert [c for c in result.conditions if c.status == "failed"] == []
+    primary = dev_lab.run(OUTER, INNER_A, **PRIMARY_ONLY)
+    assert primary.pair_cells and all(
+        cell.qualification == "unknown_authority" and cell.reasons == (SCI03_UNRESOLVED_REASON,)
+        and cell.paired_loss_sum_by_group is not None for cell in primary.pair_cells)
+    adapter.validate_coordinate_result(dev_lab.plan, result)
+    # The aggregator's MissingEvidence handling of unknown_authority is intended, not bypassed.
+    outcome = aggregate_primary(dev_lab.plan, primary.pair_cells)
+    assert isinstance(outcome, MissingEvidence) and outcome.primary_estimate is None
+    assert outcome.code == "PRIMARY_EVIDENCE_UNAVAILABLE"
+    cell_keys = tuple(cell.key for cell in primary.pair_cells)
+    assert len(cell_keys) == len(PREDICTORS) * len(PRIMARY_SCENARIOS) == 8
+    assert outcome.unavailable == tuple(
+        (key, "unknown_authority", (SCI03_UNRESOLVED_REASON,)) for key in cell_keys)
+    assert len(outcome.missing) == 400 - 8  # the other 49 coordinates were not run here
+    assert SCI03_UNRESOLVED_REASON in outcome.reasons
+
+
+def test_development_binding_is_accepted_by_every_entry_point_when_pinned(dev_lab):
+    manifests = adapter.build_outer_roles(dev_lab.dataset, dev_lab.binding, dev_lab.spec)
+    assert len(manifests) == len(OUTER_SEEDS)
+    assert adapter.plan_development_repeats(dev_lab.dataset, dev_lab.binding, dev_lab.spec) == dev_lab.plan
+    prepared = adapter.prepare_outer(dev_lab.dataset, dev_lab.plan, OUTER)
+    assert adapter.execute_coordinate(prepared, INNER_A, **FAST) == dev_lab.run(OUTER, INNER_A, **FAST)
+
+
+def test_synthetic_path_is_unchanged_by_the_development_reconciliation(lab):
+    result = lab.run(OUTER, INNER_A, **FAST)
+    assert result.claim_scope == SYNTHETIC_CLAIM_SCOPE
+    assert adapter.claim_scope_for(lab.binding) == SYNTHETIC_CLAIM_SCOPE
+    assert all(SCI03_UNRESOLVED_REASON not in c.reasons for c in result.conditions)
+    assert all(c.qualification == "qualified" for c in result.conditions if c.status == "completed")
+    primary = lab.run(OUTER, INNER_A, **PRIMARY_ONLY)
+    assert all(cell.qualification == "qualified" and cell.reasons == () for cell in primary.pair_cells)
+
+
+def _assert_refused_everywhere(lab, binding, code="SYNTHETIC_ONLY"):
+    # Refusal precedes touching the dataset, so a missing dataset still reports the gate's code.
+    assert _code(lambda: adapter.build_outer_roles(None, binding, lab.spec)) == code
+    assert _code(lambda: adapter.plan_development_repeats(None, binding, lab.spec)) == code
+    assert _code(lambda: adapter.plan_development_repeats(None, binding)) == code
+    foreign_plan = dataclasses.replace(lab.plan, binding=binding)
+    assert _code(lambda: adapter.prepare_outer(None, foreign_plan, OUTER)) == code
+    foreign = dataclasses.replace(lab.prepared(OUTER), plan=foreign_plan)
+    assert _code(lambda: adapter.execute_coordinate(foreign, INNER_A, **FAST)) == code
+    assert _code(lambda: adapter.claim_scope_for(binding)) == code
+
+
+@pytest.mark.parametrize("field", ("dataset", "release", "raw_sha256", "clean_sha256"))
+def test_development_binding_with_any_unverified_field_is_refused(lab, dev_lab, field):
+    other = "other-value" if field in ("dataset", "release") else "f" * 64
+    _assert_refused_everywhere(lab, dataclasses.replace(dev_lab.binding, **{field: other}))
+
+
+@pytest.mark.parametrize("status", ("unknown", "custodian_attested"))
+def test_other_statuses_are_refused_even_with_the_verified_values(lab, dev_lab, status):
+    _assert_refused_everywhere(lab, dataclasses.replace(dev_lab.binding, exposure_status=status))
+
+
+def test_development_binding_with_unpinned_digests_is_refused(lab, _dev_lab_cache):
+    # No pin is active here: the planning constants are the dataset owner's real values.
+    from shiftguard.datasets import bank
+
+    assert adapter_planning.VERIFIED_BANK_DATASET == bank.FROZEN_BANK_SOURCE["dataset_id"]
+    assert adapter_planning.VERIFIED_BANK_RELEASE == bank.FROZEN_BANK_SOURCE["source_version"]
+    assert adapter_planning.VERIFIED_BANK_RAW_SHA256 == bank.FROZEN_BANK_SOURCE["raw_member_sha256"]
+    assert adapter_planning.VERIFIED_BANK_CLEAN_SHA256 == bank.FROZEN_CLEAN_DIGEST
+    _assert_refused_everywhere(lab, _dev_lab_cache.binding)
+
+
+@pytest.mark.parametrize("field", ("dataset", "release", "raw_sha256", "clean_sha256"))
+def test_a_synthetic_binding_may_not_carry_any_verified_bank_identity(lab, field):
+    real = {
+        "dataset": adapter_planning.VERIFIED_BANK_DATASET,
+        "release": adapter_planning.VERIFIED_BANK_RELEASE,
+        "raw_sha256": adapter_planning.VERIFIED_BANK_RAW_SHA256,
+        "clean_sha256": adapter_planning.VERIFIED_BANK_CLEAN_SHA256,
+    }
+    binding = dataclasses.replace(lab.binding, **{field: real[field]})
+    assert binding.exposure_status == "synthetic_fabricated"
+    _assert_refused_everywhere(lab, binding, "SYNTHETIC_MISLABEL")
+    roles = tuple(lab.plan.roles(outer) for outer in OUTER_SEEDS)
+    assert _code(lambda: adapter_planning.plan_repeats(lab.spec, binding, roles)) == "SYNTHETIC_MISLABEL"
+
+
+def test_execution_mode_follows_the_binding_and_never_crosses(lab, dev_lab):
+    from shiftguard.repeats.models import BANK_DEVELOPMENT_MODE
+
+    assert lab.plan.spec.execution_mode == "synthetic_only"
+    assert dev_lab.plan.spec.execution_mode == BANK_DEVELOPMENT_MODE
+    # The default spec of plan_development_repeats is chosen from the binding.
+    assert adapter.plan_development_repeats(dev_lab.dataset, dev_lab.binding) == dev_lab.plan
+    roles = tuple(dev_lab.plan.roles(outer) for outer in OUTER_SEEDS)
+    assert _code(lambda: adapter_planning.plan_repeats(RepeatSpec(), dev_lab.binding, roles)) == "EXECUTION_MODE"
+    synthetic_roles = tuple(lab.plan.roles(outer) for outer in OUTER_SEEDS)
+    assert _code(lambda: adapter_planning.plan_repeats(
+        RepeatSpec(execution_mode=BANK_DEVELOPMENT_MODE), lab.binding, synthetic_roles)) == "EXECUTION_MODE"
+    assert dev_lab.plan.plan_digest != lab.plan.plan_digest
+    assert not {r.repeat_id for r in dev_lab.plan.repeats} & {r.repeat_id for r in lab.plan.repeats}
+
+
+def test_a_development_dataset_whose_rows_do_not_hash_to_the_bound_clean_digest_is_refused(dev_lab):
+    rows = [dict(row) for row in dev_lab.dataset.rows]
+    rows[0]["y"] = 1 - rows[0]["y"]
+    tampered = dataclasses.replace(dev_lab.dataset, rows=rows)
+    assert _code(lambda: adapter.build_outer_roles(tampered, dev_lab.binding, dev_lab.spec)) == (
+        "SOURCE_BINDING_MISMATCH")
+    assert _code(lambda: adapter.prepare_outer(tampered, dev_lab.plan, OUTER)) == "SOURCE_BINDING_MISMATCH"
+
+
+def test_development_fallback_slots_are_the_conditions_with_fallback_rows(dev_lab):
+    result = dev_lab.run(OUTER, INNER_A)
+    inventory = validate_condition_inventory(dev_lab.plan, result.conditions)
+    expected = tuple(c.slot for c in result.conditions if c.fallback_rows)
+    assert inventory.fallback_slots == expected and expected  # budget-zero targets fall back
+    assert all(c.qualification == "unknown_authority" for c in result.conditions)
+
+
+def test_unscored_pair_reasons_must_follow_its_failed_conditions(lab, monkeypatch):
+    original = adapter.predict_conditions_with_fallback
+    state = {"n": 0}
+
+    def failing_first(fits, graph, rows, injected_fractions=None):
+        resolutions, attempts = original(fits, graph, rows, injected_fractions=injected_fractions)
+        state["n"] += 1
+        if state["n"] == 1:
+            failure = {"method": "raw", "phase": "prediction", "reason": "RuntimeError: forced"}
+            resolutions = {m: PredictionResolution(None, None, (failure,)) for m in resolutions}
+        return resolutions, attempts
+
+    monkeypatch.setattr(adapter, "predict_conditions_with_fallback", failing_first)
+    result = adapter.execute_coordinate(
+        lab.prepared(OUTER), INNER_A, scenarios=("history_block_0_50",), budgets=(PRIMARY_BUDGET,))
+    monkeypatch.undo()
+    cell = next(c for c in result.pair_cells if c.paired_loss_sum_by_group is None)
+    assert cell.reasons == ("target_prediction_failed", "source_prediction_failed")
+    for reasons in (("target_prediction_failed",), ("source_prediction_failed", "target_prediction_failed"),
+                    ("forced",)):
+        changed = dataclasses.replace(cell, reasons=reasons)
+        pairs = tuple(changed if c is cell else c for c in result.pair_cells)
+        assert _code(lambda: adapter.validate_coordinate_result(
+            lab.plan, _swap(result, pair_cells=pairs))) == "PAIR_BINDING"
+
+
+def test_validator_rejects_development_scored_cell_reason_and_qualification_tampering(dev_lab):
+    result = dev_lab.run(OUTER, INNER_A, **PRIMARY_ONLY)
+    cell = result.pair_cells[0]
+
+    def with_cell(new):
+        return (new,) + result.pair_cells[1:]
+
+    # An unknown_authority cell without a reason cannot even be constructed.
+    assert _code(lambda: dataclasses.replace(cell, reasons=())) == "QUALIFICATION"
+    relabelled = dataclasses.replace(cell, qualification="qualified", reasons=())
+    assert _dev_code(dev_lab, result, pair_cells=with_cell(relabelled)) == "PAIR_BINDING"
+    qualified_with_reason = dataclasses.replace(cell, qualification="qualified")
+    assert _dev_code(dev_lab, result, pair_cells=with_cell(qualified_with_reason)) == "PAIR_BINDING"
+    extra = dataclasses.replace(cell, reasons=(SCI03_UNRESOLVED_REASON, "extra_reason"))
+    assert _dev_code(dev_lab, result, pair_cells=with_cell(extra)) == "PAIR_BINDING"
+    other_reason = dataclasses.replace(cell, reasons=("some_other_reason",))
+    assert _dev_code(dev_lab, result, pair_cells=with_cell(other_reason)) == "PAIR_BINDING"
+
+
+def test_validator_rejects_development_condition_reason_and_qualification_tampering(dev_lab):
+    result = dev_lab.run(OUTER, INNER_A, **PRIMARY_ONLY)
+    condition = result.conditions[0]
+    assert condition.reasons[0] == SCI03_UNRESOLVED_REASON
+
+    def code(**changes):
+        new = dataclasses.replace(condition, **changes)
+        return _dev_code(dev_lab, result, conditions=_with_condition(result, condition, new))
+
+    # Condition IDs do not cover qualification or reasons, so these reach the new check directly.
+    assert code(reasons=("some_other_reason",)) == "COORDINATE_QUALIFICATION"
+    assert code(reasons=("some_other_reason", SCI03_UNRESOLVED_REASON)) == "COORDINATE_QUALIFICATION"
+    assert code(reasons=(SCI03_UNRESOLVED_REASON, SCI03_UNRESOLVED_REASON)) == "COORDINATE_QUALIFICATION"
+    assert code(qualification="qualified", reasons=()) == "COORDINATE_QUALIFICATION"
+    assert code(qualification="qualified", reasons=(SCI03_UNRESOLVED_REASON,)) == "COORDINATE_QUALIFICATION"
+
+
+def test_validator_rejects_unknown_authority_labels_on_a_synthetic_result(lab):
+    result = lab.run(OUTER, INNER_A, **PRIMARY_ONLY)
+    condition, cell = result.conditions[0], result.pair_cells[0]
+
+    def code(**changes):
+        return _code(lambda: adapter.validate_coordinate_result(lab.plan, _swap(result, **changes)))
+
+    relabelled = dataclasses.replace(
+        condition, qualification="unknown_authority", reasons=(SCI03_UNRESOLVED_REASON,))
+    assert code(conditions=_with_condition(result, condition, relabelled)) == "COORDINATE_QUALIFICATION"
+    tagged = dataclasses.replace(condition, reasons=(*condition.reasons, SCI03_UNRESOLVED_REASON))
+    assert code(conditions=_with_condition(result, condition, tagged)) == "COORDINATE_QUALIFICATION"
+    unknown_cell = dataclasses.replace(
+        cell, qualification="unknown_authority", reasons=(SCI03_UNRESOLVED_REASON,))
+    assert code(pair_cells=(unknown_cell,) + result.pair_cells[1:]) == "PAIR_BINDING"
+
+
+def test_validator_binds_the_claim_scope_to_the_source_binding(lab, dev_lab):
+    synthetic = lab.run(OUTER, INNER_A, **FAST)
+    development = dev_lab.run(OUTER, INNER_A, **FAST)
+    assert _code(lambda: adapter.validate_coordinate_result(
+        lab.plan, _swap(synthetic, claim_scope=BANK_DEVELOPMENT_CLAIM_SCOPE))) == "COORDINATE_IDENTITY"
+    assert _dev_code(dev_lab, development, claim_scope=SYNTHETIC_CLAIM_SCOPE) == "COORDINATE_IDENTITY"
+    assert _dev_code(dev_lab, development, claim_scope="confirmatory") == "COORDINATE_IDENTITY"
+
+
+def test_an_explicit_spec_must_match_the_binding_mode_before_the_dataset_is_touched(lab, dev_lab):
+    assert _code(lambda: adapter.plan_development_repeats(None, lab.binding, RepeatSpec(
+        execution_mode="bank_development"))) == "EXECUTION_MODE"
+    assert _code(lambda: adapter.plan_development_repeats(None, dev_lab.binding, RepeatSpec())) == (
+        "EXECUTION_MODE")
+
+
+def test_rows_must_have_exactly_the_clean_fields_before_they_are_hashed(dev_lab):
+    for change in ("extra", "missing"):
+        rows = [dict(row) for row in dev_lab.dataset.rows]
+        if change == "extra":
+            rows[3]["note"] = "x"
+        else:
+            del rows[3]["job"]
+        odd = dataclasses.replace(dev_lab.dataset, rows=rows)
+        assert _code(lambda: adapter.build_outer_roles(odd, dev_lab.binding, dev_lab.spec)) == "DATASET_SCHEMA"
+        assert _code(lambda: adapter.prepare_outer(odd, dev_lab.plan, OUTER)) == "DATASET_SCHEMA"
+
+
+def test_synthetic_rows_that_hash_to_the_verified_clean_digest_are_refused(lab, monkeypatch):
+    from shiftguard.datasets.bank import hash_clean_rows
+
+    monkeypatch.setattr(adapter_planning, "VERIFIED_BANK_CLEAN_SHA256", hash_clean_rows(lab.dataset.rows))
+    assert _code(lambda: adapter.build_outer_roles(lab.dataset, lab.binding, lab.spec)) == "SYNTHETIC_MISLABEL"
+    assert _code(lambda: adapter.prepare_outer(lab.dataset, lab.plan, OUTER)) == "SYNTHETIC_MISLABEL"

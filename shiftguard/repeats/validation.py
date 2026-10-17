@@ -9,6 +9,7 @@ from functools import lru_cache
 import math
 
 from shiftguard.repeats.models import (
+    SYNTHETIC_EXPOSURE,
     PRIMARY_BUDGET,
     PRIMARY_SCENARIOS,
     PRIMARY_SOURCE_METHOD,
@@ -143,6 +144,9 @@ def validate_condition_inventory(
         if condition.repeat_id != plan.repeat(slot.outer_seed, slot.inner_id).repeat_id:
             raise RepeatContractError("REPEAT_ID_MISMATCH", repr(tuple(slot)))
         validate_condition_accounting(plan, condition)
+        if plan.binding.exposure_status != SYNTHETIC_EXPOSURE and condition.qualification == "qualified":
+            # SCI-03 is unresolved: a non-synthetic condition can never be upgraded to qualified.
+            raise RepeatContractError("QUALIFICATION_UPGRADE", repr(tuple(slot)))
         present[slot] = condition
         condition_ids.add(condition.condition_id)
 
@@ -160,8 +164,9 @@ def validate_condition_inventory(
             unavailable.append(entry)
             if is_primary_slot(slot):
                 unavailable_primary.append(entry)
-        elif condition.fallback_rows:
-            # Any row resolving away from the request counts, including a mixed binned condition.
+        # Any row resolving away from the request counts, including a mixed binned condition,
+        # whatever the condition's qualification.
+        if condition.fallback_rows:
             fallbacks.append(slot)
     missing_primary = tuple(slot for slot in missing if is_primary_slot(slot))
     complete = not missing and not unavailable

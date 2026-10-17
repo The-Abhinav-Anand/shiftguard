@@ -6,14 +6,17 @@ import sys
 
 import pytest
 
-from repeat_fixtures import synthetic_binding, synthetic_plan, synthetic_roles
+from repeat_fixtures import fake_digest, synthetic_binding, synthetic_plan, synthetic_roles
 from shiftguard.repeats.models import (
+    BANK_DEVELOPMENT_MODE,
     INNER_IDS,
     OUTER_SEEDS,
     RepeatContractError,
     RepeatKey,
     RepeatSpec,
 )
+from shiftguard.datasets import bank as bank_constants
+from shiftguard.repeats import planning
 from shiftguard.repeats.planning import plan_repeats
 from shiftguard.repeats.seeds import derive_repeat_seed_map, seed_plan_digest
 
@@ -60,6 +63,7 @@ def _all_maps():
 def test_fifty_seed_maps_match_the_reviewed_golden_digest_and_packet_vector():
     spec = RepeatSpec()
     assert seed_plan_digest(spec) == GOLDEN_SEED_PLAN_DIGEST
+    assert seed_plan_digest(RepeatSpec(execution_mode=BANK_DEVELOPMENT_MODE)) == GOLDEN_SEED_PLAN_DIGEST
     seed_map = derive_repeat_seed_map(RepeatKey(41001, 51001), spec)
     assert dict(seed_map.seeds) == PACKET_VECTOR
     assert seed_map.seeds == tuple(sorted(PACKET_VECTOR.items()))
@@ -192,13 +196,106 @@ def test_plan_rejects_missing_extra_duplicate_and_unsupported_roles():
     assert _code(lambda: plan_repeats(spec, binding, roles[:4] + (small_pool,))) == "UNSUPPORTED_ROLE"
 
 
-def test_plan_refuses_any_source_that_is_not_declared_fabricated():
+def test_plan_refuses_every_source_except_fabricated_or_the_verified_bank_release():
     roles = tuple(synthetic_roles(outer) for outer in OUTER_SEEDS)
     for status in ("development_exposed", "unknown", "custodian_attested"):
         binding = synthetic_binding(exposure_status=status)
         assert _code(lambda: plan_repeats(RepeatSpec(), binding, roles)) == "SYNTHETIC_ONLY"
     assert _code(lambda: synthetic_binding(exposure_status="sealed")) == "EXPOSURE_STATUS"
     assert _code(lambda: synthetic_binding(raw_sha256="not-a-digest")) == "DIGEST"
+
+
+def test_verified_bank_constants_equal_the_dataset_owner_and_the_manifest():
+    from pathlib import Path
+    import json
+
+    assert planning.VERIFIED_BANK_DATASET == bank_constants.FROZEN_BANK_SOURCE["dataset_id"]
+    assert planning.VERIFIED_BANK_RELEASE == bank_constants.FROZEN_BANK_SOURCE["source_version"]
+    assert planning.VERIFIED_BANK_RAW_SHA256 == bank_constants.FROZEN_BANK_SOURCE["raw_member_sha256"]
+    assert planning.VERIFIED_BANK_CLEAN_SHA256 == bank_constants.FROZEN_CLEAN_DIGEST
+    manifest_path = Path(__file__).resolve().parents[2] / "var" / "datasets" / "bank.manifest.json"
+    if not manifest_path.exists():
+        pytest.skip("bank manifest absent")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8-sig"))  # hash metadata only
+    assert planning.VERIFIED_BANK_DATASET == manifest["dataset_id"]
+    assert planning.VERIFIED_BANK_RELEASE == manifest["source_version"]
+    assert planning.VERIFIED_BANK_RAW_SHA256 == manifest["raw_member_sha256"]
+    assert planning.VERIFIED_BANK_CLEAN_SHA256 == manifest["clean_sha256"]
+
+
+def _dev_binding(**overrides):
+    values = {
+        "exposure_status": "development_exposed", "dataset": "dev-standin", "release": "dev-v1",
+        "raw_sha256": fake_digest("dev-raw"), "clean_sha256": fake_digest("dev-clean"),
+    }
+    values.update(overrides)
+    return synthetic_binding(**values)
+
+
+def _patch_verified(monkeypatch, binding):
+    monkeypatch.setattr(planning, "VERIFIED_BANK_DATASET", binding.dataset)
+    monkeypatch.setattr(planning, "VERIFIED_BANK_RELEASE", binding.release)
+    monkeypatch.setattr(planning, "VERIFIED_BANK_RAW_SHA256", binding.raw_sha256)
+    monkeypatch.setattr(planning, "VERIFIED_BANK_CLEAN_SHA256", binding.clean_sha256)
+
+
+def test_plan_admits_a_development_binding_only_when_every_verified_value_matches(monkeypatch):
+    roles = tuple(synthetic_roles(outer) for outer in OUTER_SEEDS)
+    binding = _dev_binding()
+    dev_spec = RepeatSpec(execution_mode=BANK_DEVELOPMENT_MODE)
+    # Unpinned, the stand-in digests are not the verified release.
+    assert not planning.is_verified_bank_development(binding)
+    assert _code(lambda: plan_repeats(dev_spec, binding, roles)) == "SYNTHETIC_ONLY"
+    _patch_verified(monkeypatch, binding)
+    assert planning.is_verified_bank_development(binding)
+    assert planning.require_authorized_source(binding) is binding
+    plan = plan_repeats(dev_spec, binding, roles)
+    assert plan.binding is binding and len(plan.repeats) == 50
+    # Each verified field is required on its own.
+    for change in ({"dataset": "other"}, {"release": "other"},
+                   {"raw_sha256": "e" * 64}, {"clean_sha256": "e" * 64}):
+        assert _code(lambda: plan_repeats(dev_spec, _dev_binding(**change), roles)) == "SYNTHETIC_ONLY"
+    for status in ("unknown", "custodian_attested"):
+        refused = dataclasses.replace(binding, exposure_status=status)
+        assert _code(lambda: plan_repeats(dev_spec, refused, roles)) == "SYNTHETIC_ONLY"
+    assert _code(lambda: planning.require_authorized_source("binding")) == "REPEAT_SCHEMA"
+    # The declared execution mode must match the binding in both directions.
+    assert _code(lambda: plan_repeats(RepeatSpec(), binding, roles)) == "EXECUTION_MODE"
+    assert _code(lambda: plan_repeats(dev_spec, synthetic_binding(), roles)) == "EXECUTION_MODE"
+    assert planning.execution_mode_for(binding) == BANK_DEVELOPMENT_MODE
+    assert planning.execution_mode_for(synthetic_binding()) == "synthetic_only"
+    assert _code(lambda: RepeatSpec(execution_mode="confirmatory")) == "EXECUTION_MODE"
+
+
+@pytest.mark.parametrize("field", ("dataset", "release", "raw_sha256", "clean_sha256"))
+def test_a_fabricated_binding_may_not_carry_any_verified_bank_identity(field):
+    roles = tuple(synthetic_roles(outer) for outer in OUTER_SEEDS)
+    real = {
+        "dataset": planning.VERIFIED_BANK_DATASET, "release": planning.VERIFIED_BANK_RELEASE,
+        "raw_sha256": planning.VERIFIED_BANK_RAW_SHA256,
+        "clean_sha256": planning.VERIFIED_BANK_CLEAN_SHA256,
+    }
+    binding = synthetic_binding(**{field: real[field]})
+    assert binding.exposure_status == "synthetic_fabricated"
+    assert _code(lambda: plan_repeats(RepeatSpec(), binding, roles)) == "SYNTHETIC_MISLABEL"
+    assert _code(lambda: planning.require_authorized_source(binding)) == "SYNTHETIC_MISLABEL"
+    assert not planning.is_verified_bank_development(binding)
+
+
+# Pinned from the synthetic plan before the Bank gate existed; synthetic identities must not move.
+SYNTHETIC_PLAN_DIGEST = "5972e7750fb0ca3f19212468a67ba9aa154fe4dacf21e7f1a9f822e377488b13"
+SYNTHETIC_SPEC_DIGEST = "78ca295ca89d3739ec73b085039319e5e4ab69aa102127c0aa814cbd1fd351b5"
+SYNTHETIC_FIRST_REPEAT_ID = "053a661c27893fbd87d2d542911540e1cb396c955d37b39803ed13b82b6c4af3"
+SYNTHETIC_LAST_REPEAT_ID = "27d366c8c44d957940cf6be41c3cebc72e499ea1bc636adfc6639f5c3375362f"
+
+
+def test_synthetic_plan_identities_are_byte_stable():
+    plan = synthetic_plan()
+    assert plan.spec.execution_mode == "synthetic_only"
+    assert plan.spec.digest == SYNTHETIC_SPEC_DIGEST
+    assert plan.plan_digest == SYNTHETIC_PLAN_DIGEST
+    assert (plan.repeats[0].repeat_id, plan.repeats[-1].repeat_id) == (
+        SYNTHETIC_FIRST_REPEAT_ID, SYNTHETIC_LAST_REPEAT_ID)
 
 
 @pytest.mark.parametrize("change, code", [
@@ -236,7 +333,11 @@ def test_repeat_package_imports_no_loader_runner_evaluator_or_provider():
         "            'shiftguard.api', 'shiftguard.jobs', 'shiftguard.storage',\n"
         "            'shiftguard.predictors', 'shiftguard.calibration', 'shiftguard.protocol',\n"
         "            'shiftguard.preprocessing', 'shiftguard.missingness', 'sklearn')\n"
-        "loaded = sorted(name for name in sys.modules if name.startswith(prefixes))\n"
+        # planning pins the verified Bank digests from the dataset owner's constants; importing
+        # that module (constants and class definitions, no loader call) is the only exemption.
+        "pinned = ('shiftguard.datasets', 'shiftguard.datasets.bank')\n"
+        "loaded = sorted(name for name in sys.modules\n"
+        "                if name.startswith(prefixes) and name not in pinned)\n"
         "print(loaded)\n"
         "raise SystemExit(1 if loaded else 0)\n"
     )
