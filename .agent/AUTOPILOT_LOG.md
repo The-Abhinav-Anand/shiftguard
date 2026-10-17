@@ -234,3 +234,43 @@ Next: once published, set repo topics/homepage; once a VM IP is recorded, repoin
 - Secret scan of the batch (4 secret values plus DB-URL and key patterns, in memory): 0 hits. Paid calls: 0.
 - Authorization record (outside git): precondition 2 ticked (`f71c42d`), precondition 4 status and the backup check added.
 - Next: precondition 3, the frozen run manifest (source commit, dataset hashes, configuration, roles, schedule), committed before any real coordinate. Then a restartable driver that uses `inventory()`. No real coordinate before 20 Oct (precondition 5 veto check). The deploy waits for an interactive session.
+
+## 2026-10-18 00:10–02:00 IST (autopilot run 9, scheduled)
+- Orientation: the tree was clean, so the concurrency guard did not apply. Live readiness `ready`, still on the 15 Oct bundle (`index-oNasIWcL.js`). Certificate valid to 2027-01-13 09:07 GMT. No owner-action status changed: item 8 (redeploy) still needs an interactive session; item 9 has no veto. The keep-awake tool is not available.
+- Done: **Gate 8 precondition 3 tooling**, the frozen run manifest plus the restartable driver. Sonnet worker; Opus xhigh reviewer.
+  - New files:
+    - `shiftguard/repeats/run_manifest.py`: schema `gate8-run-manifest-v1`, the development `SourceBinding` builder, git-blob source tree, and verification.
+    - `scripts/gate8_freeze_run_manifest.py`
+    - `scripts/gate8_run_development.py`: the driver.
+    - Tests: `tests/repeats_adapter/test_run_manifest.py` and `test_run_driver.py`.
+    - `.gitattributes` gains `docs/research/*.json text eol=lf`.
+    - No existing module or engine owner changed.
+  - The manifest binds:
+    - the source commit and the git blob ids of the run's import closure (`shiftguard/__init__.py`, calibration, datasets, experiments, metrics, missingness, predictors, preprocessing, protocol, repeats, the two gate8 scripts, `pyproject.toml`, `uv.lock`), with an ast closure test;
+    - the dataset and lock hashes, spec, seed-plan digest;
+    - role digests and counts (no row ids);
+    - the ordered 50-coordinate schedule, the plan digest and the store record versions;
+    - the declared primary contrast and analysis, and the environment (Python, platform, numpy/scipy/scikit-learn).
+  - `protocol_review_sha256` pins `SCIENTIFIC_DECISIONS.md` only. The authorization record's hash is captured as `authorization_sha256_at_freeze` and is digest-bound but not re-verified, because its checkboxes change.
+  - Driver safeguards:
+    - It requires a clean source scope and a manifest that is tracked and unmodified at HEAD.
+    - It runs only on or after 20 Oct (IST). It re-checks the date gate and the owner veto before every coordinate. Item 9 is parsed by its heading; a missing item or Status line, or any non-affirmative Status, means no run.
+    - The store root comes only from the manifest. It refuses if any other store exists under `var/gate8-private`, and holds an O_EXCL run lock.
+    - It skips byte-verified completions and recorded failures; a failure is never re-run. A prepare failure fails all remaining coordinates of that outer seed. A corrupt completion stops the run. A partial grid is a typed failure.
+    - The run log holds no numeric outcome.
+  - Refusals: both scripts refuse today with `DATE_GATE`. Neither was run on real data, and no real Bank row was loaded.
+- Review (Opus xhigh, model reviews, not human acceptance):
+  - First: CORRECTIONS_REQUIRED, 1 high and 4 medium. The high: a `--store-root` override let a recorded failure be re-run. The mediums: the manifest's committed state was not checked; `source_commit` was not tied to the tree and CRLF bytes were hashed; the veto parsing was narrow; the binding pinned volatile inputs. There were also 5 minor items and nits. All applied.
+  - Delta: ACCEPT. Five optional nits were deferred:
+    - print the fixed reason text with `OWNER_VETO`;
+    - refuse the test seams when the real loader is injected;
+    - isolate the veto-regex spelling test;
+    - guard the real-loader test;
+    - operator note: a Windows build change re-freezes, and a preflight store under `var/gate8-private` blocks the run.
+- Verified: `tests/repeats` + `tests/repeats_adapter` **580 passed**, 0 failed, 0 skipped. This is my run, 830 s; log `../verification/autopilot-20261018-run9/pytest-repeats-final.txt`. The reviewer ran the two new files: 163 passed.
+- Secret scan of the batch (4 secret values plus DB-URL and key patterns, in memory): 0 hits. Paid calls: 0.
+- BLOCKED: updating the authorization record outside git was denied by Claude Code's auto-mode classifier ("Instruction Poisoning"). The intended change: tick precondition 4 (`3986fcf`) and add the precondition 3 status. It was not retried. A later wait-loop command was denied the same way. The record still shows precondition 4 unticked; this log is the current status.
+- Next:
+  - On or after 20 Oct: confirm that no host-level backup covers `var/gate8-private/`, then run the freeze script (it loads real Bank rows for roles only, executes no coordinate), and commit and push the manifest.
+  - Only after that commit: run the driver in `--limit` chunks.
+  - The deploy (item 8) still waits for an interactive session.
