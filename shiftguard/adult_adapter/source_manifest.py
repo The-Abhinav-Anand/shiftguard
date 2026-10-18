@@ -27,7 +27,11 @@ byte except tab (no bytes below 0x20 other than ``\\t``, no 0x7F).
 
 Line endings: file hashes cover the raw bytes as-is. Lines split on ``\\n``; a trailing
 ``\\r`` on a ``\\n``-terminated line is removed before parsing (CRLF == LF for parsing);
-any other ``\\r`` in the feature region is rejected (``BARE_CR``). ``crlf_lines``,
+any other ``\\r`` in the feature region is rejected (``BARE_CR``). A ``\\r`` ending an unterminated
+last line (no ``\\n`` after it) is not a terminator and is never counted in ``crlf_lines``. On a
+15-field row it lies in the unread label slot and the feature parse is unchanged. A whitespace-only
+line is skipped as ``blank``, so a lone ``\\r`` after a final ``\\n`` adds one blank, unterminated
+physical line. ``crlf_lines``,
 ``lf_only_lines`` and ``unterminated_lines`` (0 or 1: a last line with no newline) are
 recorded so a conversion is visible.
 
@@ -77,7 +81,7 @@ CUSTODIAN_STATUS = "author-built, not custodian-attested"
 TEST_SOURCE_FILE = "adult.test"
 STATUS_TRAIN_ONLY = "train_only"
 STATUS_TRAIN_AND_TEST = "train_and_test"
-FROZEN_RELEASE = "uci-adult-2"
+FROZEN_RELEASE = FROZEN_ADULT_SOURCE["dataset_id"]
 
 _COMMAS = len(RAW_ADULT_COLUMNS) - 1  # 14 commas separate 15 fields
 _FEATURE_SLOTS = tuple(
@@ -412,7 +416,12 @@ def _bytes_of(source: Any, name: str) -> bytes:
     if type(source) is bytes:
         return source
     if isinstance(source, (str, os.PathLike)):
-        return Path(source).read_bytes()
+        try:
+            return Path(source).read_bytes()
+        except FileNotFoundError:
+            raise AdultAdapterError("SOURCE_MISSING", name) from None
+        except OSError:
+            raise AdultAdapterError("SOURCE_UNREADABLE", name) from None
     raise AdultAdapterError("FILE_BYTES", name)
 
 
@@ -436,14 +445,23 @@ def verify_against_bytes(doc: Any, train: Any, test: Any = None) -> dict[str, An
     return doc
 
 
-def connected_group_key_set(doc: dict[str, Any], train: Any, test: Any) -> frozenset[str]:
+def connected_group_key_set(doc: dict[str, Any], train: Any, test: Any, *, expected_release: str) -> frozenset[str]:
     """Test-connected keys as a frozenset for ``grouping.quarantine_test_connected``.
 
     Requires the source bytes/paths and the exact rebuild check (``verify_against_bytes``).
+    ``expected_release`` must be the frozen release (``uci-adult-2``) and must equal the
+    manifest's release, so the frozen-source pin in ``verify_against_bytes`` always applies;
+    any other release name is refused (``RELEASE_NOT_FROZEN``) and a different manifest
+    release is a ``RELEASE_MISMATCH``.
     """
     if test is None:
         raise AdultAdapterError("NO_TEST_FILE", "test")
-    verify_against_bytes(doc, train, test)
+    if type(expected_release) is not str or expected_release != FROZEN_RELEASE:
+        raise AdultAdapterError("RELEASE_NOT_FROZEN", "expected_release")
+    verify_source_manifest(doc)
+    if doc["release"] != expected_release:
+        raise AdultAdapterError("RELEASE_MISMATCH", "release")
+    verify_against_bytes(doc, train, test)  # release == FROZEN_RELEASE here, so the pin is applied
     return frozenset(doc["test_connected_group_keys"])
 
 

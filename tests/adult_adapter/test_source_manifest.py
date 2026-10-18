@@ -16,6 +16,7 @@ from shiftguard.adult_adapter.features import (
     AdultAdapterError, AdultRecord, canonical_digest, make_row_id, record_from_raw_fields)
 from shiftguard.adult_adapter.grouping import group_key, quarantine_test_connected
 from shiftguard.adult_adapter.source_manifest import (
+    FROZEN_RELEASE,
     LABEL_POLICY,
     build_source_manifest,
     connected_group_key_set,
@@ -28,6 +29,7 @@ from shiftguard.datasets.adult import ADULT_PREDICTORS, FROZEN_ADULT_SOURCE, cle
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "scripts" / "adult_build_source_manifest.py"
 REL = "uci-adult-test"
+FROZEN = "uci-adult-2"
 
 
 def row(age: int, work: str = "Private", label: bytes = b"<=50K") -> bytes:
@@ -119,7 +121,7 @@ def test_train_only_status():
     assert doc["status"] == "train_only"
     assert doc["test_file"] is None and doc["overlap"] is None and doc["test_connected_group_keys"] is None
     verify_source_manifest(doc)
-    assert err(connected_group_key_set, doc, join([row(30)]), None) == "NO_TEST_FILE"
+    assert err(lambda: connected_group_key_set(doc, join([row(30)]), None, expected_release=FROZEN)) == "NO_TEST_FILE"
 
 
 LABEL_VARIANTS = [b">50K", b"<=50K.", b">50K.", b"", b"zzz", b"\xff\xfe\x00\x80 not text", b"  <=50K \t", b"a\rb"]
@@ -189,7 +191,7 @@ def test_no_feature_region_length_in_manifest():
 def test_cross_check_against_clean_adult_rows():
     data = join([row(30), b"", row(31, "State-gov"), row(30), row(45), b"   ", row(31, "State-gov"), row(50)])
     doc = build_source_manifest(data, None, REL)
-    cleaned = clean_adult_rows(data.decode("ascii").split("\n"))
+    cleaned = clean_adult_rows(data.decode("ascii").splitlines())
     skipped = {s["line"] for s in doc["train_file"]["skipped_lines"]}
     record_lines = [n for n in range(1, doc["train_file"]["physical_line_count"] + 1) if n not in skipped]
     assert len(cleaned) == doc["train_file"]["record_line_count"] == len(record_lines)
@@ -208,6 +210,39 @@ def test_cross_check_against_clean_adult_rows():
     assert len({features(i) for i in range(len(cleaned))}) == dup["group_count_total"]
 
 
+def test_trailing_cr_on_unterminated_last_line_is_label_slot_and_not_crlf():
+    base = join([row(30), row(31, "State-gov")], tail=b"")  # last line unterminated
+    cr = base + b"\r"  # bytes end in CR with no LF
+    a, b = build_source_manifest(base, None, REL), build_source_manifest(cr, None, REL)
+    assert b == build_source_manifest(cr, None, REL)  # deterministic
+    # The CR is not a terminator: it sits in the unread label slot, is not a CRLF line and changes
+    # nothing but whole-file identity.
+    assert b["train_file"]["line_endings"] == {
+        "crlf_lines": 0, "lf_only_lines": 1, "unterminated_lines": 1, "final_newline": False}
+    assert b["train_file"]["sha256"] == hashlib.sha256(cr).hexdigest() != a["train_file"]["sha256"]
+    identity = ("byte_size", "sha256")
+    assert (
+        {k: v for k, v in a["train_file"].items() if k not in identity}
+        == {k: v for k, v in b["train_file"].items() if k not in identity}
+    )
+    assert a["duplicates"] == b["duplicates"]
+    assert a["train_file"]["record_group_digest"] == b["train_file"]["record_group_digest"]
+    verify_source_manifest(b)
+    # a lone CR as the whole unterminated last line is whitespace-only, hence blank
+    lone = build_source_manifest(join([row(30)]) + b"\r", None, REL)
+    assert lone["train_file"]["skipped_lines"] == [{"line": 2, "reason": "blank"}]
+    assert lone["train_file"]["line_endings"]["crlf_lines"] == 0
+    # ...and, against the same file without it, adds one blank unterminated physical line
+    plain = build_source_manifest(join([row(30)]), None, REL)
+    assert plain["train_file"]["physical_line_count"] == 1 and plain["train_file"]["skipped_lines"] == []
+    assert lone["train_file"]["physical_line_count"] == 2
+    assert plain["train_file"]["line_endings"]["unterminated_lines"] == 0
+    assert lone["train_file"]["line_endings"]["unterminated_lines"] == 1
+    assert plain["train_file"]["line_endings"]["final_newline"] and not lone["train_file"]["line_endings"]["final_newline"]
+    # a CR that lands in the feature region of an unterminated last line is still BARE_CR
+    assert err(build_source_manifest, row(30).replace(b"Private", b"Priv\rate"), None, REL) == "BARE_CR"
+
+
 def test_crlf_equals_lf_for_parsing_but_bytes_hash_as_is():
     lines = [row(30), b"", row(31)]
     lf, crlf = join(lines), join(lines, eol=b"\r\n", tail=b"\r\n")
@@ -223,19 +258,59 @@ def test_crlf_equals_lf_for_parsing_but_bytes_hash_as_is():
     assert a["train_file"]["skipped_lines"] == b["train_file"]["skipped_lines"]
 
 
-def test_quarantine_interoperability():
+def _pin_fabricated_frozen(monkeypatch, train, records):
+    """Point the frozen-source pin at fabricated bytes so the frozen path is exercisable."""
+    monkeypatch.setitem(FROZEN_ADULT_SOURCE, "raw_sha256", hashlib.sha256(train).hexdigest())
+    monkeypatch.setitem(FROZEN_ADULT_SOURCE, "raw_records", records)
+
+
+def test_frozen_release_matches_dataset_id():
+    assert FROZEN == FROZEN_RELEASE == FROZEN_ADULT_SOURCE["dataset_id"]
+
+
+def test_unreadable_source_path_is_typed(tmp_path):
+    doc = build_source_manifest(join([row(30)]), None, REL)
+    assert err(verify_against_bytes, doc, tmp_path, None) == "SOURCE_UNREADABLE"
+
+
+def test_connected_group_key_set_enforces_frozen_release(monkeypatch):
+    train = join([row(30), row(31)])
+    test = join([b"|1x3 Cross validator", row(30)])
+
+    def call(doc, **kw):
+        return err(lambda: connected_group_key_set(doc, train, test, **kw))
+
+    with pytest.raises(TypeError):  # the keyword is required
+        connected_group_key_set(build_source_manifest(train, test, FROZEN), train, test)
+    other = build_source_manifest(train, test, REL)
+    # a non-frozen release can neither be expected nor bypass the pin by matching its own name
+    assert call(other, expected_release=REL) == "RELEASE_NOT_FROZEN"
+    assert call(other, expected_release=FROZEN) == "RELEASE_MISMATCH"
+    assert call(other, expected_release="") == "RELEASE_NOT_FROZEN"
+    assert call(other, expected_release=None) == "RELEASE_NOT_FROZEN"
+    frozen = build_source_manifest(train, test, FROZEN)
+    assert call(frozen, expected_release=REL) == "RELEASE_NOT_FROZEN"
+    assert call({}, expected_release=FROZEN) == "MANIFEST_KEYS"
+    # frozen release with bytes that are not the pinned archive: the pin refuses
+    assert call(frozen, expected_release=FROZEN) == "FROZEN_MISMATCH"
+    _pin_fabricated_frozen(monkeypatch, train, 2)
+    assert connected_group_key_set(frozen, train, test, expected_release=FROZEN) == frozenset(frozen["test_connected_group_keys"])
+
+
+def test_quarantine_interoperability(monkeypatch):
     train = join([row(30), row(31), row(30), row(50)])
     test = join([b"|1x3 Cross validator", row(30), row(70)])
-    doc = build_source_manifest(train, test, REL)
-    keys = connected_group_key_set(doc, train, test)
-    assert err(connected_group_key_set, doc, train, join([row(99)])) == "MANIFEST_MISMATCH"
+    _pin_fabricated_frozen(monkeypatch, train, 4)
+    doc = build_source_manifest(train, test, FROZEN)
+    keys = connected_group_key_set(doc, train, test, expected_release=FROZEN)
+    assert err(lambda: connected_group_key_set(doc, train, join([row(99)]), expected_release=FROZEN)) == "MANIFEST_MISMATCH"
     assert isinstance(keys, frozenset)
     recs = []
     for n, age in enumerate((30, 31, 30, 50), start=1):
         vals = [str(age), "Private", f"100{age}", "13", "Never-married", "Sales", "Husband", "White", "Male", "0", "0", "40", "?"]
-        recs.append(record_from_raw_fields(make_row_id(REL, "adult.data", n), dict(zip(ADULT_PREDICTORS, vals))))
+        recs.append(record_from_raw_fields(make_row_id(FROZEN, "adult.data", n), dict(zip(ADULT_PREDICTORS, vals))))
     result = quarantine_test_connected(tuple(recs), keys)
-    assert result.quarantined_row_ids == (f"{REL}:adult.data:1", f"{REL}:adult.data:3")
+    assert result.quarantined_row_ids == (f"{FROZEN}:adult.data:1", f"{FROZEN}:adult.data:3")
     assert result.declared_groups_absent_count == 0 and result.retained_row_count == 2
     assert isinstance(recs[0], AdultRecord)
 
@@ -404,6 +479,8 @@ def test_verify_against_bytes(tmp_path):
     assert err(verify_against_bytes, doc, train, None) == "MANIFEST_MISMATCH"
     assert err(verify_against_bytes, doc, train + b"\n", test) == "MANIFEST_MISMATCH"
     assert err(verify_against_bytes, doc, 12, test) == "FILE_BYTES"
+    assert err(verify_against_bytes, doc, tmp_path / "absent.data", test) == "SOURCE_MISSING"
+    assert err(verify_against_bytes, doc, train, str(tmp_path / "absent.test")) == "SOURCE_MISSING"
     assert err(verify_against_bytes, doc, train.replace(b"Private", b"Privat3"), test) == "MANIFEST_MISMATCH"
     # a coherent forgery passes self-verification but not the rebuild
     forged = copy.deepcopy(doc)
@@ -453,6 +530,7 @@ def test_script_writes_and_refuses_overwrite(tmp_path):
 
 
 def test_script_refuses_docs_output_in_process(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(sys, "path", list(sys.path))  # the script inserts ROOT into sys.path; restore on exit
     script = _load_script()
     data = tmp_path / "adult.data"
     data.write_bytes(join([row(30)]))
