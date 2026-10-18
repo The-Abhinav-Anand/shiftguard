@@ -274,3 +274,35 @@ Next: once published, set repo topics/homepage; once a VM IP is recorded, repoin
   - On or after 20 Oct: confirm that no host-level backup covers `var/gate8-private/`, then run the freeze script (it loads real Bank rows for roles only, executes no coordinate), and commit and push the manifest.
   - Only after that commit: run the driver in `--limit` chunks.
   - The deploy (item 8) still waits for an interactive session.
+
+## 2026-10-18 13:38–20:30 IST (autopilot run 10, scheduled)
+- Orientation: tree clean; concurrency guard not applied. Live readiness `ready`. No owner-action status changed (item 8 redeploy still needs an interactive session; item 9 no veto). Keep-awake tool not available.
+- Gate 8 precondition note checked (read-only): no host-level backup covers `var/gate8-private/`. Downloads is not redirected into OneDrive, there is no File History configuration (fhsvc stopped), and no other backup agent is running. `var/gate8-private` does not exist yet.
+- Done: **Gate 9 prerequisite 1 tooling**, a label-blind Adult source manifest builder. Sonnet worker; Opus xhigh reviewer.
+  - New files only, no existing file changed:
+    - `shiftguard/adult_adapter/source_manifest.py`
+    - `scripts/adult_build_source_manifest.py`
+    - `tests/adult_adapter/test_source_manifest.py`
+  - Schema `adult-source-manifest-v1`. It records:
+    - per-file byte size, sha256, physical and record line counts, line endings, and skipped lines (by line number and reason);
+    - per-record row id and exact-feature `group_key`;
+    - feature-only duplicate groups, train/test overlap groups and test-connected keys.
+  - The label field is never decoded, compared or counted. Label bytes enter only the whole-file byte_size/sha256, the field-count check and line-terminator detection. The byte_size label-prevalence side channel is documented, and no feature-region length is computed.
+  - `custodian_status: author-built, not custodian-attested`. A `--test` run is an exposure event to record, not custodian evidence.
+  - `verify_source_manifest` checks a closed schema with strict types. `verify_against_bytes` requires an exact rebuild and pins `uci-adult-2` to `FROZEN_ADULT_SOURCE` (sha256 and 32,561 records). `connected_group_key_set` requires the rebuild.
+- Real run, train only (`data/raw/adult.data`):
+  - 32,562 physical lines, 32,561 records, 24 duplicate groups (49 rows).
+  - sha256 equals the frozen value.
+  - `manifest_sha256=6336aa16…7317`, at `../verification/autopilot-20261018-run10/adult-source-manifest-trainonly-r2.json` (r1 `bf27b82c…` superseded, kept).
+- Review (Opus xhigh, model reviews, not human acceptance):
+  - First: CORRECTIONS_REQUIRED, 2 medium (verify was not a closed schema; self-digest only, with no byte re-derivation), 6 minor, 3 nits. All applied.
+  - Delta: ACCEPT. Deferred to the Gate 9 wiring:
+    - 1 minor: enforce an `expected_release` in `connected_group_key_set`, so a non-frozen release name cannot bypass the pin;
+    - 4 nits: a typed error for a missing path; `splitlines()` in the cross-check test; a test for a trailing CR on an unterminated last line; restoring `sys.path` in the script-loading test.
+- Verified: `tests/adult_adapter` + `tests/unit/test_adult_development_owner.py`: **150 passed**, 0 failed. This is my run; log `../verification/autopilot-20261018-run10/pytest-adult-final.txt`. The reviewer's run of `tests/adult_adapter`: 140 passed.
+- Secret scan of the batch (7 secret values plus DB-URL and key patterns, in memory): 0 hits. Paid calls: 0.
+- New owner action: item 11, permission to download the official `adult.test`. Downloading a file needs explicit approval, so it was not downloaded. It is optional before 30 Oct.
+- Blocked: item 8 (redeploy), and with it the live checks, the hosted smoke test, checklist rows 6/10 and the video re-record. Gate 8 real runs wait for 20 Oct.
+- Next:
+  - On or after 20 Oct: the Gate 8 freeze script, then commit the manifest, then the driver in `--limit` chunks.
+  - Once item 11 is done: a real train+test manifest, then the Gate 9 protocol amendment and its public lock commit.

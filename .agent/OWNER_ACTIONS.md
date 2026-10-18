@@ -103,3 +103,14 @@ The autopilot checks this file every run.
     `git commit` and `git push` in this repository, and write "commit: allowed" here.
     Until then, autopilot runs leave these files alone and do not retry the commit.
     Status: DONE (17 Oct, interactive session): committed as `f71c42d` and pushed.
+
+11. **Adult test file for Gate 9 (1 min), NEW 18 Oct.** The label-blind source-manifest builder
+    needs the official UCI `adult.test` file. The autopilot needs your permission to download a file.
+    Source: https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.test (about 2 MB).
+    The autopilot then computes only file hashes, line ids and feature-only groups; it never reads the
+    label column. Reading the file's bytes before the protocol lock is recorded as an exposure event,
+    not as custodian evidence. Do one of these:
+    - write "adult test download: yes" here; or
+    - save the file yourself as `shiftguard\data\raw\adult.test` (git-ignored) and write "placed" here.
+    Gate 9 is off the submission critical path, so this is optional before 30 Oct.
+    Status:
