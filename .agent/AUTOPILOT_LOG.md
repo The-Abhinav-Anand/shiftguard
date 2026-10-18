@@ -306,3 +306,14 @@ Next: once published, set repo topics/homepage; once a VM IP is recorded, repoin
 - Next:
   - On or after 20 Oct: the Gate 8 freeze script, then commit the manifest, then the driver in `--limit` chunks.
   - Once item 11 is done: a real train+test manifest, then the Gate 9 protocol amendment and its public lock commit.
+
+## 2026-10-19 03:27– IST (autopilot run 11, scheduled)
+- Orientation: uncommitted changes to `shiftguard/adult_adapter/source_manifest.py`, its test, and an untracked `docs/research/gate9-adult-protocol-amendment.md` (DRAFT), last modified 18 Oct 20:15–20:18 IST, about 7 hours old. Under the concurrency guard the interactive session was gone, so this run took the work over as an in-progress batch (left by run 10, not logged). Live readiness `ready`, still on the 15 Oct bundle (`index-oNasIWcL.js`). Certificate valid to 2027-01-13 09:07 GMT. No owner-action status changed (item 8 redeploy, item 9 no veto, item 11 no answer). Keep-awake tool not available.
+- Done: **Gate 9 deferred items from the 7e878e9 review**, commit `645aace`.
+  - `connected_group_key_set` requires the keyword `expected_release`. It accepts only the frozen release (now derived from `FROZEN_ADULT_SOURCE["dataset_id"]`) and requires the manifest release to match, so the frozen pin always runs.
+  - Typed `SOURCE_MISSING` and `SOURCE_UNREADABLE`.
+  - Docstring and tests for a CR ending an unterminated last line; `splitlines()`; `sys.path` restored; explicit record counts in the fabricated pin.
+- Review (Opus xhigh, model reviews, not human acceptance): first CORRECTIONS_REQUIRED (1 minor: the docstring overclaimed for a lone CR after a final LF; 4 nits). All applied. Delta: ACCEPT (1 nit, applied). The reviewer noted that `FROZEN_ADULT_SOURCE` is a mutable module-level dict (owned by `datasets/`, so it was recorded, not changed).
+- Verified: `tests/adult_adapter` + `tests/unit/test_adult_development_owner.py` **154 passed**, 0 failed (my run; log `../verification/autopilot-20261019-run11/pytest-adult-final.txt`); after the final nit, `test_source_manifest.py` 79 passed. The reviewer's reruns: 152, then 154.
+- Secret scan of the batch (8 values from `.env` and the DuckDNS file, plus DB-URL and key patterns, in memory): 0 secret hits. The only value match was the public subdomain name "shiftguard". Paid calls: 0.
+- In progress: an Opus xhigh consistency check of the Gate 9 amendment draft (stays untracked until it is reviewed).
