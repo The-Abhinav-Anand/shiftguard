@@ -326,3 +326,19 @@ Next: once published, set repo topics/homepage; once a VM IP is recorded, repoin
   - These are model checks, not human review. adult.test was not downloaded or read. Paid calls: 0.
 - Blocked: the Gate 9 lock needs owner item 11 (adult.test download permission) and author dispositions of the blocking open decisions. Item 8 (redeploy) still needs an interactive session.
 - Next: from 20 Oct, the Gate 8 freeze script, then commit the manifest, then the driver in `--limit` chunks. Then the Gate 9 open-decision dispositions (OD-08/09/10/11/12/16 can be drafted from the Gate 8 bindings) for a later model check.
+
+## 2026-10-19 13:46–14:40 IST (autopilot run 12, scheduled)
+- Orientation: tree clean, so the concurrency guard did not apply. HEAD `5ca598e` equals `origin/main`. Live readiness `ready`, still the 15 Oct bundle. No owner-action status changed (item 8 redeploy, item 9 no veto, item 11 no answer). Keep-awake tool not available.
+- Done: **release secret scan (RELEASE_CHECKLIST row 10, partial → still PARTIAL, narrower remainder).** Executor scan scripts and evidence are in `../verification/autopilot-20261019-run12/` (`TRIAGE.md`, `SHA256SUMS.txt`).
+  - v2 covers the whole local object store:
+    - the contents of 870 blobs (5 unreferenced) and 56 commit messages (2 commits reflog-only), plus 5 zip members; 30,080,184 bytes;
+    - file names from all trees.
+  - It also covers the live bundle: 14 files, lazy chunks included, byte-identical to the build committed at `44210bb`.
+  - Result: 0 exact-byte hits for `NEBIUS_API_KEY` or the DuckDNS token. All 53 pattern hits (40 DB-URL, 1 key-like, 12 credential-name assignments) are fixtures, placeholders or non-credential constants. `NEBIUS_MODEL` and `NEBIUS_BASE_URL` hits are public values.
+  - Not covered: the VM and local test-database passwords (the WSL Docker daemon was down), encoded forms, and the image's history, configuration and in-image files (they are scanned at the redeploy).
+- Review (Opus xhigh, model reviews, not human acceptance):
+  - v1: CORRECTIONS_REQUIRED, 1 high (the crawl missed 6 lazy chunks), 3 medium (incomplete remainder list, a DB-URL count of 41 instead of 40, zip members not scanned), 4 minor and 3 nits. All addressed by scanner v2 and a rewritten TRIAGE; v1 is kept and marked superseded.
+  - Delta: CORRECTIONS_REQUIRED, text only, no rescan. 2 minor and 3 nits. The wording fixes are applied. Two scanner hardening items are deferred to the redeploy scan: identifier-only skipped-key output, and quoted-value parsing with length controls.
+- Verified: counts above from `release-secret-scan-v2.json` (sha256 `83c76a74…40bc`); the reviewer independently re-derived the counts and confirmed the bundle's byte identity. No product code changed, so no test suite was run. Paid calls: 0.
+- Blocked: item 8 (redeploy), and with it the live Results checks, the hosted smoke test, the in-image scan and the video re-record. Gate 8 real runs wait for 20 Oct. The Gate 9 lock waits for item 11 and the author's open decisions.
+- Next: from 20 Oct, the Gate 8 freeze script, then commit the manifest, then the driver in `--limit` chunks.
