@@ -342,3 +342,30 @@ Next: once published, set repo topics/homepage; once a VM IP is recorded, repoin
 - Verified: counts above from `release-secret-scan-v2.json` (sha256 `83c76a74…40bc`); the reviewer independently re-derived the counts and confirmed the bundle's byte identity. No product code changed, so no test suite was run. Paid calls: 0.
 - Blocked: item 8 (redeploy), and with it the live Results checks, the hosted smoke test, the in-image scan and the video re-record. Gate 8 real runs wait for 20 Oct. The Gate 9 lock waits for item 11 and the author's open decisions.
 - Next: from 20 Oct, the Gate 8 freeze script, then commit the manifest, then the driver in `--limit` chunks.
+
+## 2026-10-19 15:03–16:45 IST (autopilot run 13, scheduled)
+- Orientation: tree clean, so the concurrency guard did not apply. HEAD `3421378` equals `origin/main`. Live readiness `ready`, still the 15 Oct bundle (`index-oNasIWcL.js`, image e249b72). No owner-action status changed (item 8 redeploy, item 9 no veto, item 11 no answer). Keep-awake tool not available.
+- Done: **release-candidate image from HEAD, prepared for a one-command deploy** (evidence `../verification/autopilot-20261019-run13/`, `TRIAGE.md`, `SHA256SUMS.txt`). Sonnet workers wrote the scanners; Opus xhigh reviewed.
+  - Image `shiftguard:judge-3421378` built from `git archive 3421378`: config `sha256:0c666412…`, which shows as manifest `sha256:c5cd193c…` on the VM's containerd store. It carries the whole `55e75c4` Results assistant plus the `f98c1ce` follow-ups. Served bundle `index-Bk6b9ZMP.js`.
+  - Local stack on PostgreSQL 16 (migrations to head): offline release probe **PASS 11/11**, 0 model requests. API 151 MiB, worker 136 MiB.
+  - Uploaded to the VM as `/tmp/sg-3421378.tar.gz` in 20 resumable chunks: 0 mismatches, final SHA-256 MATCH (`938f8ad2…4712`). Nothing was loaded or restarted on the VM.
+  - `sg-redeploy-3421378.sh` (revision 3, sha256 `f595e424…2731`) copied to the VM `/tmp` and not run. OWNER_ACTIONS item 8 now runs it: `sudo bash /tmp/sg-redeploy-3421378.sh`.
+    - It loads and checks the image, keeps a checked rollback tag, fast-forwards to exactly `3421378` and takes a verified pre-deploy backup.
+    - It then restarts and prints `REDEPLOY OK` only when api and worker run the new image, readiness is `ready` and the new bundle is served.
+  - Read-only VM checks: `deploy/.env` names `shiftguard:judge` and both assistant flags are true; the only untracked file is `deploy/backup.sh`; Docker 29.9.1 with the containerd store.
+- Secret scans (RELEASE_CHECKLIST row 10 rewritten, still PARTIAL):
+  - **Image**, whole archive: config, 25 history entries and 15 layers (11,788 files, link names and targets, 997 zip members). 0 hits for the API key or the DuckDNS token in raw, case, percent, JSON, UTF-16LE or base64 forms.
+  - **Repository and live bundle (v3)**, exact bytes: 0 hits for either.
+  - The review found that run 12's v2, and r1 here, compared the DuckDNS token as the whole token file, not the bare token. v3 and r2 extract the single UUID and fail closed otherwise. Run 12's token result is superseded.
+  - r1's JSON also held the throwaway local test-DB password in third-party file paths. It is renamed SUPERSEDED and stays outside the repo. Every path in r2 is now redacted.
+  - The local test-DB comparison is not informative (8-character common word). Rotation is pending.
+- Review (Opus xhigh, model reviews, not human acceptance): five rounds, all CORRECTIONS_REQUIRED, all applied.
+  1. 2 high (the token form; the secret in paths), 4 medium (wrong baseline e249b72; compose/flags pre-checks; unsafe `mv`; test-DB wording), and minors.
+  2. 2 medium (v3 coverage overstated; item 8 checks were comments, not gates).
+  3. 1 high: in a heredoc paste, `backup.sh`'s `docker compose exec` swallowed the rest of the script, which exited 0 without deploying. Replaced by a script file.
+  4. 1 high (containerd image ID), 2 medium (re-run blocked after a failed `up -d`; readiness did not prove the new image), lows.
+  5. 1 low required (`set -E`), plus nits.
+  - Deferred, recorded in TRIAGE: two image-scanner nits (summary `image:` line not redacted; a failed start-up self-test does not stop the scan; it passed). The script's last revision (`set -E` and two nits, exactly as proposed) was not re-reviewed.
+- Verified: scanner self-tests pass. All 22 current SHA256SUMS entries verify. Boolean check: the r2 outputs and TRIAGE do not contain the test-DB password. No product code changed, so no pytest run. Paid calls: 0.
+- Blocked: item 8 still needs the owner or an interactive session ("deploy now"), and with it the live Results checks, the hosted smoke test, the new containers' log scan and the video re-record. Gate 8 real runs wait for 20 Oct. The Gate 9 lock waits for item 11 and the author's open decisions.
+- Next: from 20 Oct, the Gate 8 freeze script, then commit the manifest, then the driver in `--limit` chunks. After "redeployed": verify the image, bundle, flags and logs, then the live checks (≤17 calls). Rotate the local test-DB password before the next scan.

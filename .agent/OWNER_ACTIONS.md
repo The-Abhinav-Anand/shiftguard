@@ -43,40 +43,54 @@ The autopilot checks this file every run.
    The VM bootstrap clones from this repository, so it is needed before deployment.
    Status: DONE (15 Oct, interactive session): published as https://github.com/The-Abhinav-Anand/shiftguard.
 
-8. **Redeploy the fixed Results assistant to the VM (5 min) — NEW, 16 Oct:** the autopilot built
-   and uploaded the image, but Claude Code's auto-mode safety check blocked the production deploy
-   step ("Production Deploy"), so it was not retried. Commit `55e75c4` is pushed. The image
-   `sha256:e10541032e38…` (amd64) is uploaded to the VM as `/tmp/sg-55e75c4.tar.gz`, and its
-   SHA-256 matched after the upload: `69999977309f6b22ce778605d35574bdb48199c831fc4262cfe62607f3e2e4c4`.
-   Do one of these:
-   - **Run it yourself:** in a terminal on this PC, run
+8. **Redeploy the Results assistant to the VM (5 min) — UPDATED 19 Oct:** unattended runs must not
+   deploy (Claude Code's auto-mode check blocks "Production Deploy"), so this needs you or an
+   interactive session. Autopilot run 13 built a fresh image from HEAD `3421378`. It includes the
+   `55e75c4` Results assistant and the `f98c1ce` follow-ups. Image ID `sha256:0c666412404a…`; the
+   offline release probe passed locally (0 model calls); the in-image secret scan found 0 hits for the API key.
+   It is uploaded to the VM as `/tmp/sg-3421378.tar.gz`; SHA-256 matched after upload:
+   `938f8ad21ebc909b3b5ccad6b29fe962bf4cedcd1fbaec83917010fb4e0a4712`.
+   A read-only check (19 Oct) found: the VM is on `e249b72`; `deploy/.env` sets `SHIFTGUARD_IMAGE=shiftguard:judge`
+   and both assistant flags `true`, so they survive the restart; the only untracked file is `deploy/backup.sh`.
+   - **Easiest:** open an interactive Claude session and say "deploy now".
+   - **Or run it yourself:** in a terminal on this PC, run
      `ssh -i "C:\Users\Abhinav Anand\.ssh\id_ed25519" ubuntu@130.210.3.156`, then on the VM:
      ```
-     cd /opt/shiftguard
-     sudo mkdir -p /root/pre-review && sudo mv deploy/backup.sh /root/pre-review/backup.sh.untracked-e249b72
-     sudo git -c safe.directory=/opt/shiftguard pull --ff-only
-     sudo bash deploy/backup.sh --install
-     sudo docker tag shiftguard:judge shiftguard:judge-prev-e249b72
-     gunzip -c /tmp/sg-55e75c4.tar.gz | sudo docker load
-     sudo docker compose -f deploy/compose.judge.yaml up -d --remove-orphans
+     tmux new -A -s sg
+     sha256sum /tmp/sg-redeploy-3421378.sh
+     sudo bash /tmp/sg-redeploy-3421378.sh
      ```
-     Then write "redeployed" here. The second line moves aside an untracked pre-review copy that
-     would otherwise block the pull. The backup line takes a pre-deploy backup with the reviewed
-     script and reinstalls the nightly cron. The next run verifies the result and does the live
-     checks, at most 17 paid calls within the daily cap.
-     Rollback: `sudo docker tag shiftguard:judge-prev-e249b72 shiftguard:judge`, then the same `up -d` command.
+     The `sha256sum` line must print `f595e424784830942ce76d5c3b2a0f1bfc1bc0b0cfd72a8d3756b0e59d542731`; if not, stop.
+     Write "redeployed" here only if the last line printed starts with `REDEPLOY OK`.
+     If SSH drops, reconnect and run `tmux attach -t sg`, or run the script again. If it stops with STOPPED after
+     step 6 began and the site is down, run Rollback below.
+     The script is also kept at `..\verification\autopilot-20261019-run13\sg-redeploy-3421378.sh`. What it does:
+     - Stops at the first failed check, and is safe to run again.
+     - Loads the image if it is not loaded yet, checking the tarball's SHA-256 first. Loading does not
+       touch the running site.
+     - Checks the image ID. This VM uses Docker's containerd store, so the ID shows as the manifest
+       digest `sha256:c5cd193c…`. That is the same image as config `sha256:0c666412…`.
+     - Tags the running e249b72 image (`sha256:bc1a73c4…`, full ID checked) as `shiftguard:judge-prev-e249b72`, once.
+     - Moves the untracked pre-review `deploy/backup.sh` to `/root/pre-review/backup.sh.untracked-e249b72`.
+     - Fast-forwards `/opt/shiftguard` to exactly `3421378`.
+     - Takes a pre-deploy backup with the reviewed script, checks that a new backup set was written,
+       and reinstalls the nightly cron. Its `source-commit.txt` will say 3421378 for data written by e249b72.
+     - Switches the tag and restarts the stack. No separate migration step is needed: the schema is
+       unchanged since e249b72.
+     - Waits up to 5 minutes for all three: the api and worker containers run the new image, readiness
+       is `ready`, and the page serves `index-Bk6b9ZMP.js`.
+     Do not run plain `docker compose config` or an unfiltered `docker inspect`: they print secrets.
+     The next run verifies the image, the served bundle, the flags and the container logs. Then it
+     does the live checks (at most 17 paid calls within the daily cap) and removes the old `/tmp` tarballs.
+     Rollback:
+     `cd /opt/shiftguard && sudo docker tag shiftguard:judge-prev-e249b72 shiftguard:judge && sudo docker compose -f deploy/compose.judge.yaml up -d --remove-orphans && curl -fsS --resolve shiftguard.duckdns.org:443:127.0.0.1 https://shiftguard.duckdns.org/health/ready`
+     After a rollback the source stays at `3421378`. That is harmless: `deploy/` differs only by the
+     reviewed `backup.sh`, and there are no migrations.
    - **Or allow the autopilot to deploy:** add a Claude Code permission rule for this project that
      allows SSH deploy commands to `ubuntu@130.210.3.156`, and write "deploy: allowed" here.
-   Status: BLOCKED BY NETWORK (17 Oct, interactive session): this PC's current internet connection
-   (public IP 117.240.x) blocks outgoing SSH on port 22, even to github.com. The VM is healthy over HTTPS.
-   SSH worked on 15–16 Oct from the earlier connection (152.59.x, likely the phone hotspot). When the PC is
-   on a network that allows port 22, the interactive session deploys at once (the owner authorized deploys
-   in chat; the auto-mode block applies only to unattended runs).
-   Update (17 Oct, 20:15 IST, autopilot run 8): port 22 to the VM is reachable again from this PC.
-   A read-only check found `/tmp/sg-55e75c4.tar.gz` intact (SHA-256 matches). The VM still runs the
-   15 Oct image. **Open an interactive Claude session and say "deploy now"**, or run the commands
-   above yourself. Note: that image lacks the `f98c1ce` follow-ups; the interactive session may
-   rebuild from HEAD first.
+   History: this upload supersedes the 16 Oct one (`/tmp/sg-55e75c4.tar.gz`, image `e10541…`).
+   On 17 Oct, SSH on port 22 was blocked from one network, then reachable again the same day.
+   Status: OPEN (19 Oct, run 13): image uploaded and verified, awaiting deploy.
 
 9. **Gate 8 real-Bank repeats: no action needed unless you object (17 Oct):** under your general
    delegation, the autopilot decided to run the declared 5×10 Gate 8 repeat schedule on real Bank.
