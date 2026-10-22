@@ -30,7 +30,7 @@ documents above are current.
 | 5 | Browser workbench, saved results, scientific views | [gate5-implementation.md](gate5-implementation.md), [gate5-batch.md](gate5-batch.md), [gate5-review.md](gate5-review.md), [gate5-corrections.md](gate5-corrections.md), [gate5-correction-review.md](gate5-correction-review.md), [gate5-acceptance.md](gate5-acceptance.md) |
 | 6 | Results assistant on Nemotron with approved tools | [gate6-execution-plan.md](gate6-execution-plan.md), [gate6-implementation.md](gate6-implementation.md), [gate6-batch.md](gate6-batch.md), reviews (`gate6-*review*.md`), corrections (`gate6-corrections*.md`), [gate6-live-verification.md](gate6-live-verification.md), [gate6-acceptance.md](gate6-acceptance.md) |
 | 7 | Live policy and refusal evidence | [gate7-candidate-contract.md](gate7-candidate-contract.md), [gate7-execution-20261005.md](gate7-execution-20261005.md), [gate7-live-closure-20261008.md](gate7-live-closure-20261008.md), [gate7-acceptance.md](gate7-acceptance.md) |
-| 8–9 | Multi-seed repeats and Adult replication (fabricated-data engineering only; pending) | [gate8-next-execution.md](gate8-next-execution.md) |
+| 8–9 | Multi-seed repeats (Gate 8: declared 5×10 schedule run on real Bank as development work, 50/50 completed, primary reported as missing evidence while SCI-03 is unresolved) and Adult replication (Gate 9: fabricated-data engineering only; pending) | [gate8-next-execution.md](gate8-next-execution.md), [research/gate8-run-manifest-bank-development-v1.json](research/gate8-run-manifest-bank-development-v1.json) |
 | 10–11 | Hosted release and submission | [../deploy/README.md](../deploy/README.md), [submission/](submission/) |
 
 Other working records:

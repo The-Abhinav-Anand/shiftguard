@@ -1,3 +1,7 @@
+# Milestone — Gate 8 development run on real Bank, 22 October 2026
+
+The frozen manifest `docs/research/gate8-run-manifest-bank-development-v1.json` (`ab46015`, digest `3bb107f7…a30b`) ran on real Bank as development work (Bank outcomes previously inspected; not confirmatory), 21 Oct 17:14 – 22 Oct ~00:30 IST: 50 scheduled, 50 completed, 0 failed, 0 corrupt. The read-only report (report digest `0eec31a0…1bc0`, outside the repo at `../verification/autopilot-20261022-run15/gate8-dev-report.json` and the run-14 copy) gives the primary as `missing_evidence` / `PRIMARY_EVIDENCE_UNAVAILABLE` / `sci03_authority_unresolved`, estimate and interval null. Gate 8 stays unaccepted and DRAFT_NOT_LOCKED; the 12 Oct "synthetic only" line below is history. Public docs carry this as claim C8. Model reviews only, not human acceptance.
+
 # Current execution — correction batch checkpoint, 15 October 2026
 
 Executor: Claude Code (claude-opus-5-5), with two Sonnet implementation subagents on disjoint files (chat A1/A2; repeat/Adult B1–B3). Executor verification only; this is not an independent review, and nothing has been committed.

@@ -128,3 +128,19 @@ The autopilot checks this file every run.
     - save the file yourself as `shiftguard\data\raw\adult.test` (git-ignored) and write "placed" here.
     Gate 9 is off the submission critical path, so this is optional before 30 Oct.
     Status:
+
+12. **Commit and push the reviewed Gate 8 text update (2 min), NEW 22 Oct.** Claude Code's auto-mode
+    safety check blocked `git commit`/`git push` in scheduled run 15 ("Git Destructive"), so the
+    run did not retry it. The change is doc-only: claim C8 plus matching wording in `README.md`,
+    `docs/README.md`, `SUBMISSION.md` and `DEVPOST_FORM.md`, which still said the repeat engine had
+    run on fabricated data only. It also includes `.agent/session-state.md`, `.agent/AUTOPILOT_LOG.md`
+    and this file. Opus review: ACCEPT after corrections. In a terminal on this PC:
+    ```
+    cd "C:\Users\Abhinav Anand\Downloads\nvidia\shiftguard"
+    git add README.md docs/README.md docs/submission .agent
+    git commit -F ..\verification\autopilot-20261022-run15\COMMIT_MESSAGE.txt
+    git push origin implementation/gate-0:main
+    ```
+    Then write "committed" here. Alternatively, open an interactive session and say "commit run 15".
+    Until then, scheduled runs leave these files alone.
+    Status:

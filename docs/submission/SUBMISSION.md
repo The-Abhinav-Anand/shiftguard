@@ -56,8 +56,10 @@ reports the adverse results too.
 
 ## What's next
 
-- A pre-registered multi-seed repeat study on Bank. The repeat engine is built and tested
-  on fabricated data only.
+- Resolve the pool-qualification decision (SCI-03) that the Bank repeat study's primary estimate
+  needs. The engine has run its declared 5×10 schedule on the real Bank data as development work
+  (all 50 runs completed; Bank outcomes previously inspected; not confirmatory); without SCI-03
+  the primary contrast is reported as missing evidence.
 - An external replication on Adult Income. The adapter is built; outcome access waits for
   custodian evidence.
 

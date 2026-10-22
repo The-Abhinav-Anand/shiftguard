@@ -139,8 +139,12 @@ PostgreSQL 16 (hosted) or SQLite (local) ◄── experiment worker (separate p
 - **Single-seed development results**, one evaluation partition, no confidence intervals or
   significance tests. Nothing here is a confirmatory or peer-reviewed finding.
 - **Not a new calibration algorithm.** It compares established maps under controlled shift.
-- The multi-seed repeat engine and the Adult Income adapter are built and tested on
-  fabricated data only. They are not run on real outcomes and not exposed in the app.
+- The multi-seed repeat engine ran its declared 5×10 schedule (5 outer seeds × 10 repeats) on the
+  real Bank data as development work: all 50 runs completed (Bank outcomes previously inspected;
+  not confirmatory). Its primary contrast is reported as missing evidence, with no estimate or
+  interval, because the pool-qualification decision (SCI-03) is unresolved. The Adult Income
+  adapter is tested on fabricated data only and not run on real outcomes. Neither is exposed in
+  the app.
 - The shared model allowance can run out on a busy day. The assistants then say so; runs,
   saved results and charts keep working.
 

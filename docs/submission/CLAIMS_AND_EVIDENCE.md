@@ -12,12 +12,13 @@ capability must map to a row here. If a row's evidence changes, change the sente
 | C5 | The model is NVIDIA Nemotron (`nvidia/Nemotron-3_5-Lightning`) served by Nebius Token Factory through its OpenAI-compatible API. | `shiftguard/agent/provider.py`; live acceptance record (Gate 10, pending) | Live proof for the hosted build is pending a specific authorized allowance |
 | C6 | Model use is capped at 50 calls and 100,000 tokens per UTC day across both assistants, reserved before each call, with zero retries; an unknown outcome halts the day instead of risking a resend. | `shiftguard/agent/ordinary_budget.py`; `tests/agent/test_ordinary_budget.py`; `tests/agent/test_ordinary_owner.py` | A judge may reach the cap; the app then says so and the manual workbench keeps working |
 | C7 | General chat is tool-free and labelled unverified; it cannot read jobs, labels, files or results. | `shiftguard/api/routes/chat.py` system prompt and no tool registry; `tests/agent/test_general_chat.py` | It is ordinary model text |
+| C8 | The multi-seed repeat engine (Gate 8) ran its declared 5×10 schedule (5 outer seeds × 10 inner repeats) on the real Bank data on 21–22 Oct 2026 IST as development work: all 50 runs completed, none failed. The primary contrast is reported as missing evidence with no estimate or interval, because the pool-qualification decision (SCI-03) is unresolved. | Frozen run manifest `docs/research/gate8-run-manifest-bank-development-v1.json` (committed `ab46015` before the run; manifest digest `3bb107f7…a30b`); `scripts/gate8_run_development.py`; read-only report from `scripts/gate8_report_development.py` (report digest `0eec31a0…1bc0`; counts and digests only) | Development tier: Bank outcomes were previously inspected, so not confirmatory. No estimate, interval, hypothesis decision or coverage claim. Not exposed in the app |
 
 ## Claims we do not make
 
-- No confirmatory or replicated finding. The repeat engine (Gate 8) and the Adult adapter
-  (Gate 9) are tested on fabricated data only. They are not run on real outcomes and are not
-  exposed in the app.
+- No confirmatory or replicated finding. The Gate 8 Bank repeats (C8) are development work on
+  outcomes already inspected and give no primary estimate. The Adult adapter (Gate 9) is tested
+  on fabricated data only and not run on real outcomes. Neither is exposed in the app.
 - No business, ROI or causal benefit. No customer data or uploads are supported.
 - No statistical significance or confidence intervals for the Bank results.
 - No new calibration algorithm. The comparison uses established maps.

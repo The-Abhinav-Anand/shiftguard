@@ -109,8 +109,10 @@ is easier than recovering from an overspend.
 
 ## What's next for SHIFTGUARD
 
-- A pre-registered multi-seed repeat study on Bank (the repeat engine is built and tested on
-  fabricated data only).
+- Resolve the pool-qualification decision (SCI-03) that the Bank repeat study's primary estimate
+  needs. The engine has run its declared 5×10 schedule on the real Bank data as development work
+  (all 50 runs completed; Bank outcomes previously inspected; not confirmatory); without SCI-03
+  the primary contrast is reported as missing evidence.
 - An external replication on UCI Adult (adapter built; not yet run on real outcomes).
 - A local command-line path to evaluate your own CSV with no upload.
 
