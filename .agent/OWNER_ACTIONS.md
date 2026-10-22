@@ -90,7 +90,7 @@ The autopilot checks this file every run.
      allows SSH deploy commands to `ubuntu@130.210.3.156`, and write "deploy: allowed" here.
    History: this upload supersedes the 16 Oct one (`/tmp/sg-55e75c4.tar.gz`, image `e10541…`).
    On 17 Oct, SSH on port 22 was blocked from one network, then reachable again the same day.
-   Status: OPEN (19 Oct, run 13): image uploaded and verified, awaiting deploy.
+   Status: DONE (22 Oct, interactive session, SSH reachable again): `sudo bash /tmp/sg-redeploy-3421378.sh` → REDEPLOY OK (image `c5cd193c…`, commit `3421378`). Evidence `verification/gate10-redeploy-20261022T061002Z/`.
 
 9. **Gate 8 real-Bank repeats: no action needed unless you object (17 Oct):** under your general
    delegation, the autopilot decided to run the declared 5×10 Gate 8 repeat schedule on real Bank.

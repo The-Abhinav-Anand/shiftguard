@@ -416,3 +416,18 @@ Next: once published, set repo topics/homepage; once a VM IP is recorded, repoin
 - Notification: one push about items 8 and 12 (item 12 had never been notified); not delivered (Remote Control inactive). Not retried. Paid calls: 0.
 - Blocked: item 12 (commit), item 8 (redeploy, critical path for the 27–28 Oct freeze: live Results checks, hosted smoke test, video re-record), item 11 (Gate 9).
 - Next: once item 12 is committed, Gate 11 freeze prep that needs no deploy (release checklist review, final full Python suite on the final source). After "redeployed": verify image/bundle/flags/logs, then the live checks (≤17 calls).
+
+## 2026-10-22 11:38–12:15 IST (interactive session with the owner present)
+- SSH port 22 reachable again. Item 12: run 15's reviewed doc batch committed as `9e76c2d` and pushed.
+- **Item 8 DONE.** `sudo bash /tmp/sg-redeploy-3421378.sh` (hashes matched the run-13 records) printed REDEPLOY OK.
+  - Image `sha256:c5cd193c…`, commit `3421378`; the bundle `index-Bk6b9ZMP.js` is served.
+  - Pre-deploy backup with the reviewed script: checksums OK; cron installed 03:15 Etc/UTC.
+  - Evidence: `verification/gate10-redeploy-20261022T061002Z/`.
+- Secret scan of the released containers' logs: 0 hits for the key, DB password or URL. Checklist rows 6 and 10 DONE.
+- **Live Results check (Summarize, exact command, `--skip-chat`) FAILED: `PROVIDER_TIMEOUT` on the first provider call** (25 s budget).
+  - The halt-on-unknown policy halted the 2026-10-22 ledger: 1 call, 17,233 tokens reserved and charged. No fabricated output.
+  - VM to Nebius TLS takes about 0.4 s, so the latency is in model generation.
+  - Set `NEBIUS_TIMEOUT=55` in the VM `deploy/judge.env` (the settings maximum); the api was recreated and now reports 55.0. The API restart caused a few seconds of 502; the site is back to 200 and ready.
+- Next (unattended runs may do these; they use HTTPS only):
+  1. After the 05:30 IST reset, run the live checks (Summarize, then Compare, `--skip-chat`, at most 17 calls), and set the questions-per-day figure from the measured cost.
+  2. Queue item 1b in the runbook: a timeout must not halt the whole day. Charge the full reservation, which is a strict upper bound (input bytes plus 1,024 output), and keep the day open. Add a compose default for `NEBIUS_TIMEOUT=55` so the bootstrap reproduces it. Both need tests and the Opus review, and ship in the freeze image.

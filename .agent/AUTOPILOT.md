@@ -55,6 +55,13 @@ Done: hosting scaffold, public README and docs, captioned demo video, submission
    - The Opus review of 16 Oct returned CORRECTIONS_REQUIRED (M1–M8); corrections are in progress.
    - Then: a delta Opus review, commit and push, rebuild the image, resumable upload, `docker load`, `docker compose up -d`.
    - Then live checks within the cap with `scripts/check_hosted_live.py`: `Summarize experiment <id>` and the compare command. A pass must have no guidance, bound evidence and non-empty claims. Record calls and tokens per question, then set the questions-per-day figure in JUDGE_GUIDE, SUBMISSION and DEVPOST_FORM from the measurement.
+1b. **Judge resilience: provider timeouts (before the freeze).**
+   - On 22 Oct the first live call timed out at 25 s, and the halt-on-unknown policy stopped both assistants for the rest of the UTC day.
+   - Change: a TIMEOUT closes the reservation as charged in full and does NOT halt the day. The reservation is a strict upper bound (byte-bounded input plus the 1,024-token output cap), so the hard cap still holds.
+   - Other unknown outcomes keep the halt.
+   - Add `NEBIUS_TIMEOUT: ${NEBIUS_TIMEOUT:-55}` to the compose app environment (the VM already sets 55 in judge.env).
+   - Tests on both backends, the Opus xhigh review, then the freeze image.
+   - Live checks after the daily reset use `scripts/check_hosted_live.py --skip-chat` (Summarize, then Compare).
 2. **Batch H: Gate 10 remainder.**
    - Keep RELEASE_CHECKLIST claims strictly evidence-backed (paths under `../verification/`).
    - Run the clean-browser hosted smoke test: Playwright with `SG_E2E_BASE_URL=https://shiftguard.duckdns.org`, product specs only, with no paid calls.
