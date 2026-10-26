@@ -46,6 +46,7 @@ _POLICY_DIGEST = hashlib.sha256(
             "max_output_tokens": ORDINARY_MAX_OUTPUT_TOKENS,
             "max_retries": ORDINARY_MAX_RETRIES,
             "unknown_usage": "halt-day",
+            "timeout": "charge-reservation-no-halt",
             "dispatch": "reserve-before-dispatch",
         },
         sort_keys=True,
@@ -384,6 +385,29 @@ class OrdinaryBudget:
                     )
                     .values(halted=1, halt_reason=failure_kind)
                 )
+
+    def close_timeout(self, reservation: OrdinaryReservation) -> int:
+        """Close an open reservation after a provider timeout without halting the day.
+
+        The reservation (byte-bounded input plus the output cap) stays fully charged
+        in calls_used and tokens_committed, so the daily hard cap still holds. Only a
+        row that is still "reserved" changes; a second call or a settled row is a no-op.
+        Returns the number of rows changed (0 when nothing was open).
+        """
+        with self.engine.begin() as connection:
+            result = connection.execute(
+                update(_calls)
+                .where(
+                    and_(
+                        _calls.c.namespace == ORDINARY_NAMESPACE,
+                        _calls.c.utc_day == reservation.utc_day,
+                        _calls.c.reservation_id == reservation.reservation_id,
+                        _calls.c.status == "reserved",
+                    )
+                )
+                .values(status="closed_timeout", failure_kind="timeout")
+            )
+            return int(result.rowcount)
 
     def release_unstarted(self, reservation: OrdinaryReservation) -> None:
         """Release a reservation only when a second local ledger blocks dispatch."""

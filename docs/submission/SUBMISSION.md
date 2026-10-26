@@ -50,8 +50,9 @@ reports the adverse results too.
 
 - Keeping the model from inventing numbers: the Results assistant can only call a closed set
   of read and run tools, and the app renders every figure from stored records.
-- Spending safely: an unknown provider outcome halts the day instead of risking a duplicate
-  paid call. Only one server process may own model dispatch for a database.
+- Spending safely: a timeout is charged in full and the day continues; any other unknown
+  provider outcome halts the day instead of risking a duplicate paid call. Only one server
+  process may own model dispatch for a database.
 - Honest science: every condition is accounted for, including failures and fallbacks.
 
 ## What's next

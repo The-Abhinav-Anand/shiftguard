@@ -208,6 +208,30 @@ class AgentProvider:
                     logger.error("Ordinary provider budget close failed (%s)", type(close_error).__name__)
                 ordinary_reservation = None
 
+        def close_timeout() -> None:
+            """Timeout: the sealed attempt ledger halts; the ordinary day is charged but stays open."""
+            nonlocal reservation, ordinary_reservation
+            if reservation is not None and self.attempt_budget is not None:
+                try:
+                    self.attempt_budget.close_unknown(reservation, "timeout")
+                except Exception as close_error:
+                    logger.error("Provider budget attempt close failed (%s)", type(close_error).__name__)
+                reservation = None
+            if ordinary_reservation is not None and self.ordinary_budget is not None:
+                try:
+                    if self.ordinary_budget.close_timeout(ordinary_reservation) == 0:
+                        logger.warning("Ordinary provider budget timeout close changed no row")
+                except Exception as close_error:
+                    logger.error("Ordinary provider budget timeout close failed (%s)", type(close_error).__name__)
+                    # Failing to record must stay fail-closed: fall back to halting the day.
+                    try:
+                        self.ordinary_budget.close_unknown(ordinary_reservation, "timeout")
+                    except Exception as fallback_error:
+                        logger.error(
+                            "Ordinary provider budget close failed (%s)", type(fallback_error).__name__
+                        )
+                ordinary_reservation = None
+
         try:
             normalized_messages = _validate_messages(messages)
             normalized_tools = _validate_tools(tools)
@@ -273,8 +297,24 @@ class AgentProvider:
                 kwargs["tools"] = normalized_tools
                 kwargs["tool_choice"] = "auto"
             dispatched = True
-            async with asyncio.timeout(self.timeout):
-                resp = await self._client.chat.completions.create(**kwargs)
+            try:
+                async with asyncio.timeout(self.timeout):
+                    resp = await self._client.chat.completions.create(**kwargs)
+            except (openai.APITimeoutError, TimeoutError) as err:
+                # Only the dispatch itself is exempt from halting; a timeout raised anywhere
+                # else in this block falls through to the fail-closed handlers below.
+                close_timeout()
+                is_sdk_timeout = isinstance(err, openai.APITimeoutError)
+                logger.warning(
+                    "Provider request failed: %s",
+                    "timeout" if is_sdk_timeout else "total deadline exceeded",
+                )
+                raise ProviderError(
+                    code="PROVIDER_TIMEOUT",
+                    message="Provider request timed out. Please try again.",
+                    status_code=504,
+                    raw_error=str(err) if is_sdk_timeout else "total deadline exceeded",
+                ) from None
             parsed = _parse_provider_response(resp, expected_model=self.model)
             if ordinary_reservation is not None and self.ordinary_budget is not None:
                 try:

@@ -32,8 +32,9 @@ worse decisions without noticing.
   can be compared on equal terms.
 - **People building LLM features.** Tested patterns you can reuse: an assistant restricted to
   approved tools whose numbers are rendered by Python; a hard daily spend ledger (reserve
-  before each call, no retries, halt when an outcome is unknown); at-most-once chat replies
-  that survive reloads; a single-owner lock so two servers cannot both spend.
+  before each call, no retries, halt the day on an unknown outcome, except a timeout, which is
+  charged in full); at-most-once chat replies that survive reloads; a single-owner lock so
+  two servers cannot both spend.
 - **Students and teachers.** A hands-on way to see why Brier score and log loss can disagree,
   and why a missingness *pattern* matters, not just its *rate*.
 

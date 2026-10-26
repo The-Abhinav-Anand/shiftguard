@@ -75,8 +75,9 @@ python scripts/check_hosted_release.py --base-url https://<host> --output <evide
 ```
 
 The API listens on `127.0.0.1:8000` only; the `caddy` service is the HTTPS front. On a
-platform with its own HTTPS ingress, drop `caddy` and point the ingress at the API instead. Keep proxy timeouts short: experiments run as
-durable jobs, so no request needs to wait for one to finish.
+platform with its own HTTPS ingress, drop `caddy` and point the ingress at the API instead. Experiments run as durable jobs, so no
+request waits for one to finish, but a model call may take up to `NEBIUS_TIMEOUT` (55 s): set the
+ingress timeout to at least 60 s for chat and longer for Results-assistant requests (up to 8 calls).
 
 ## Enabling the model
 
@@ -85,6 +86,12 @@ Only after a specific live allowance has been authorized:
 1. Set `NEBIUS_API_KEY` in `judge.env`.
 2. Start with `SHIFTGUARD_GENERAL_CHAT_ENABLED=true` and/or `SHIFTGUARD_AGENT_ENABLED=true`
    in the shell environment of `docker compose up`.
+   `compose.judge.yaml` sets `NEBIUS_TIMEOUT` to 55 seconds (the settings maximum) unless
+   `NEBIUS_TIMEOUT` is set in the shell or `deploy/.env`; a value in `judge.env` is overridden.
+   A restart while a model call is in flight can still halt that UTC day (startup recovery
+   treats the open reservation as unknown). A release that changes the ledger policy halts a
+   UTC day already opened under the old policy (`policy_binding_mismatch`), so deploy such a
+   release before the first model call of the UTC day (00:00 UTC, 05:30 IST).
 3. Check `/api/v1/agent/status` for the remaining shared daily allowance before and after
    each live check.
 

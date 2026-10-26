@@ -82,15 +82,17 @@ shows the adverse results too.
 - React, TypeScript and Plotly for the workbench; Playwright browser tests.
 - Nemotron (`nvidia/Nemotron-3_5-Lightning`) through Token Factory's OpenAI-compatible API,
   with a hard daily ledger of 50 calls and 100,000 tokens: reserve before each call, zero
-  retries, halt the day if an outcome is unknown, at-most-once chat replies.
+  retries, halt the day on an unknown outcome (a timeout is charged in full instead),
+  at-most-once chat replies.
 - Docker, with Caddy for HTTPS, on one small VM.
 
 ## Challenges we ran into
 
 - Keeping the model from inventing numbers: the assistant chooses tools; Python renders
   every figure from the stored record.
-- Spending safely: an unknown provider outcome halts the day instead of risking a duplicate
-  paid call, and only one server process may own model dispatch for a database.
+- Spending safely: a timeout is charged in full and the day continues; any other unknown
+  provider outcome halts the day instead of risking a duplicate paid call, and only one
+  server process may own model dispatch for a database.
 - Honest accounting: every condition is reported, including failures and fallbacks.
 
 ## Accomplishments that we're proud of

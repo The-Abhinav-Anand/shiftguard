@@ -15,6 +15,7 @@ x-app: &app
     SHIFTGUARD_EMBEDDED_WORKER: "false"
     SHIFTGUARD_AGENT_ENABLED: ${SHIFTGUARD_AGENT_ENABLED:-false}
     SHIFTGUARD_GENERAL_CHAT_ENABLED: ${SHIFTGUARD_GENERAL_CHAT_ENABLED:-false}
+    NEBIUS_TIMEOUT: ${NEBIUS_TIMEOUT:-55}
     OPENBLAS_NUM_THREADS: "1"
     OMP_NUM_THREADS: "1"
 
@@ -58,7 +59,7 @@ services:
       timeout: 8s
       retries: 6
       start_period: 30s
-    stop_grace_period: 30s
+    stop_grace_period: 75s
     restart: unless-stopped
     deploy:
       resources:

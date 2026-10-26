@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
+import hashlib
+import json
 
 import pytest
 
@@ -140,3 +142,119 @@ def test_a_day_opened_under_a_different_policy_halts_instead_of_resetting(ordina
         _reserve(budget)
     assert budget.public_snapshot()["halted"] is True
     assert budget.public_snapshot()["calls_used"] == 1
+
+
+def _call_row(engine, reservation):
+    with engine.connect() as connection:
+        return connection.execute(
+            ordinary_module._calls.select().where(
+                ordinary_module._calls.c.reservation_id == reservation.reservation_id
+            )
+        ).mappings().one()
+
+
+def _daily_row(engine):
+    with engine.connect() as connection:
+        return connection.execute(ordinary_module._daily.select()).mappings().one()
+
+
+def test_close_timeout_charges_in_full_and_keeps_the_day_open(ordinary_engine):
+    budget = OrdinaryBudget(ordinary_engine)
+    reservation = _reserve(budget)
+    budget.close_timeout(reservation)
+    row = _call_row(ordinary_engine, reservation)
+    assert (row["status"], row["failure_kind"]) == ("closed_timeout", "timeout")
+    daily = _daily_row(ordinary_engine)
+    assert daily["calls_used"] == 1
+    assert daily["tokens_committed"] == reservation.reserved_tokens
+    assert daily["halted"] == 0 and daily["halt_reason"] is None
+    assert budget.public_snapshot()["halted"] is False
+    again = _reserve(budget)
+    assert again.reservation_id != reservation.reservation_id
+    assert _daily_row(ordinary_engine)["calls_used"] == 2
+
+
+def test_close_timeout_is_idempotent_and_never_changes_a_settled_row(ordinary_engine):
+    budget = OrdinaryBudget(ordinary_engine)
+    timed_out = _reserve(budget)
+    budget.close_timeout(timed_out)
+    budget.close_timeout(timed_out)
+    assert _daily_row(ordinary_engine)["tokens_committed"] == timed_out.reserved_tokens
+    assert _call_row(ordinary_engine, timed_out)["status"] == "closed_timeout"
+
+    settled = _reserve(budget)
+    budget.settle(settled, {"prompt_tokens": 3, "completion_tokens": 2, "total_tokens": 5}, None)
+    before = _daily_row(ordinary_engine)
+    budget.close_timeout(settled)
+    row = _call_row(ordinary_engine, settled)
+    assert (row["status"], row["failure_kind"], row["total_tokens"]) == ("settled", None, 5)
+    assert _daily_row(ordinary_engine) == before
+
+    # A timeout never resurrects or relabels a row closed as unknown.
+    unknown = _reserve(budget)
+    budget.close_unknown(unknown, "provider_error")
+    budget.close_timeout(unknown)
+    assert _call_row(ordinary_engine, unknown)["status"] == "closed_unknown"
+    assert _daily_row(ordinary_engine)["halt_reason"] == "provider_error"
+
+
+def test_repeated_timeouts_exhaust_the_cap_through_normal_limit_errors(ordinary_engine):
+    budget = OrdinaryBudget(ordinary_engine)
+    charged = 0
+    for _ in range(ORDINARY_MAX_CALLS + 5):
+        try:
+            reservation = _reserve(budget)
+        except OrdinaryBudgetLimitExceeded as err:
+            assert err.limit in {"calls", "tokens"}
+            break
+        budget.close_timeout(reservation)
+        charged += 1
+        daily = _daily_row(ordinary_engine)
+        assert daily["calls_used"] == charged <= ORDINARY_MAX_CALLS
+        assert daily["tokens_committed"] <= ORDINARY_MAX_TOKENS
+        assert daily["halted"] == 0
+    else:
+        pytest.fail("repeated timeouts never reached the daily cap")
+    assert charged == ORDINARY_MAX_CALLS
+    assert _daily_row(ordinary_engine)["halted"] == 0
+
+
+@pytest.mark.parametrize(
+    "kind",
+    ["timeout", "provider_error", "invalid_usage", "unknown", "usage_bound_exceeded"],
+)
+def test_close_unknown_still_halts_the_day_for_every_kind(ordinary_engine, kind):
+    budget = OrdinaryBudget(ordinary_engine)
+    reservation = _reserve(budget)
+    budget.close_unknown(reservation, kind)
+    daily = _daily_row(ordinary_engine)
+    assert (daily["halted"], daily["halt_reason"]) == (1, kind)
+    assert _call_row(ordinary_engine, reservation)["status"] == "closed_unknown"
+    with pytest.raises(OrdinaryBudgetHalted, match=kind):
+        _reserve(budget)
+
+
+def test_policy_digest_binds_the_timeout_policy(ordinary_engine):
+    old_policy = hashlib.sha256(
+        json.dumps(
+            {
+                "namespace": ordinary_module.ORDINARY_NAMESPACE,
+                "max_calls": ORDINARY_MAX_CALLS,
+                "max_tokens": ORDINARY_MAX_TOKENS,
+                "max_output_tokens": ORDINARY_MAX_OUTPUT_TOKENS,
+                "max_retries": ordinary_module.ORDINARY_MAX_RETRIES,
+                "unknown_usage": "halt-day",
+                "dispatch": "reserve-before-dispatch",
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    assert old_policy != ordinary_module._POLICY_DIGEST
+    budget = OrdinaryBudget(ordinary_engine)
+    _reserve(budget)
+    with ordinary_engine.begin() as connection:
+        connection.execute(ordinary_module._daily.update().values(policy_digest=old_policy))
+    with pytest.raises(OrdinaryBudgetHalted, match="policy_binding_mismatch"):
+        _reserve(budget)
+    assert budget.public_snapshot()["halted"] is True

@@ -208,9 +208,16 @@ async def post_message(
         # its pending receipt so a retry can never issue a second paid request.
         if not err.dispatched:
             store.discard_undispatched(receipt)
+        message = err.message
+        if err.code == "PROVIDER_TIMEOUT":
+            # The receipt stays pending, so the generic "try again" would be wrong.
+            message = (
+                "The model did not answer in time. This message stays unresolved and "
+                "will not be sent again; start a new conversation to continue."
+            )
         raise HTTPException(
             status_code=err.status_code or 502,
-            detail={"error": {"code": err.code, "message": err.message}},
+            detail={"error": {"code": err.code, "message": message}},
         ) from None
     # The provider returned. From here every rejection is a known outcome of a settled
     # request, so it becomes a durable terminal failure instead of a permanent PENDING.
