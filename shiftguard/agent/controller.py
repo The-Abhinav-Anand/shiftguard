@@ -116,6 +116,22 @@ def _selected_experiment_id(prompt: str) -> str | None:
     return None
 
 
+def _selection_command(prompt: str) -> tuple[str, str] | None:
+    """The (experiment id, canonical tool) of a standard selection command, else None.
+
+    Recognises the closed standard selection forms (summarize, read, show, inspect, compare,
+    analyze) and maps each to its canonical tool, ``generate_result_summary``. Only the plain
+    form finishes early (see ``_selection_satisfied``); bounded Read and Compare commands with
+    extra detail do not match, and a free-form prompt never gains this authority.
+    """
+    if not isinstance(prompt, str):
+        return None
+    # The bounded Read and Compare commands deliberately keep the accepted two-turn shape
+    # (tool call, then final plan) pinned by the live acceptance harness.
+    match = _EXPLICIT_EXPERIMENT_SELECTION.fullmatch(prompt)
+    return (match.group(1).lower(), "generate_result_summary") if match is not None else None
+
+
 def _utf8_len(text: str) -> int:
     return len(text.encode("utf-8", "replace"))
 
@@ -749,6 +765,24 @@ class AgentController:
             == AgentErrorCode.UNAUTHORIZED_EXPERIMENT_REFERENCE
         ]
 
+    def _selection_satisfied(self, req) -> bool:
+        """True once the exact command's canonical tool succeeded for the selected experiment.
+
+        The answer is then fully determined by stored, Python-rendered tool results; another
+        provider turn can only add cost or loop (live run of 26 October 2026), so none is made.
+        Failed or cancelled operations are still reported by the final answer.
+        """
+        command = _selection_command(req.prompt)
+        if command is None or req.evidence_refs != [command[0]]:
+            return False
+        selected, tool_name = command
+        return any(
+            execution.tool_name == tool_name and execution.status == "success"
+            and isinstance((execution.result or {}).get("data"), dict)
+            and execution.result["data"].get("experiment_id") == selected
+            for execution in self.store.list_tool_executions(req.id)
+        )
+
     def _finish_experiment_not_selected(self, req, generation, worker_id, nonce):
         selected = _selected_experiment_id(req.prompt)
         if selected is not None:
@@ -848,6 +882,17 @@ class AgentController:
                         return self._finish_experiment_not_selected(
                             req, generation, worker_id, continuation_nonce,
                         )
+                    if self._selection_satisfied(req):
+                        final = self._final_answer(req)
+                        terminal, error = _terminal_request_outcome(final)
+                        try:
+                            _, _, updated = self.store.finish_request(
+                                request_id, generation, worker_id, terminal, final, error,
+                                continuation_nonce, self._response_factory,
+                            )
+                            return updated
+                        except LeaseLostError:
+                            return self._get_required_request(request_id)
                     if req.turn_count >= MAX_TURNS or req.call_count >= MAX_TOOL_CALLS:
                         return self._finish_budget(req, generation, worker_id, continuation_nonce)
                     messages = list(req.messages)
