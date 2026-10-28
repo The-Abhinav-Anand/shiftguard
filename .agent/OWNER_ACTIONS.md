@@ -21,10 +21,15 @@ The autopilot checks this file every run.
      to the VM IP itself (`https://www.duckdns.org/update?domains=shiftguard&token=<token>&ip=<VM IP>`).
      Never commit or print the token.
 4. **API key on the server (1 min, after the VM is up):** either write "copy key: yes" here, so the autopilot copies `NEBIUS_API_KEY` from this PC's `.env` to the VM over SSH without displaying it, or put it in `deploy/judge.env` on the VM yourself. Status: DONE (15 Oct): owner wrote "copy key: yes". Copy NEBIUS_API_KEY from this PC's `.env` over SSH once the VM exists; never display it.
-5. **Video upload (5 min) — READY NOW:** upload `docs/submission/media/shiftguard-demo.webm` (2:07, captions, no audio)
-   to YouTube: youtube.com → Create → Upload video → select the file → title "SHIFTGUARD: calibration under missing inputs"
+5. **Video upload (5 min) — READY NOW (updated 27 Oct):** upload
+   `docs/submission/media/shiftguard-demo-live.webm` (2:35, captions, no audio, recorded on the live app
+   with real Nemotron replies; it replaces the older scripted `shiftguard-demo.webm`) to YouTube:
+   youtube.com → Create → Upload video → select the file → title "SHIFTGUARD: calibration under missing inputs"
    → "No, it's not made for kids" → Next ×3 → Visibility **Public** → Publish. Paste the link here:
-6. **Submit (5 min, on 29–30 Oct):** paste `docs/submission/DEVPOST_FORM.md` into the Devpost form and press Submit.
+6. **Submit (5 min, by 30 Oct 20:00 IST; official close 22:30 IST):** open the hackathon's Devpost page →
+   Enter a submission (or edit your draft) → paste each field of `docs/submission/DEVPOST_FORM.md`, with
+   the YouTube link from item 5 in "Video demo link" → upload the five gallery images it lists → open the
+   live app, repository and judge guide links once from a private window → press **Submit**.
 
 7. **Publish the repository (2 min) — NEW, needed first:** the autopilot's session is not
    permitted to create a public repository (Claude Code's auto-mode safety check blocked it on
@@ -143,4 +148,4 @@ The autopilot checks this file every run.
     ```
     Then write "committed" here. Alternatively, open an interactive session and say "commit run 15".
     Until then, scheduled runs leave these files alone.
-    Status:
+    Status: DONE (22 Oct, interactive session): committed as `9e76c2d` and pushed.

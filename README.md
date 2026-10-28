@@ -66,11 +66,14 @@ the adverse results too.
 | Workbench | Budget curve |
 |---|---|
 | ![Bank calibration workbench](docs/submission/media/02-workbench.png) | ![Probability quality by label budget](docs/submission/media/04-budget-curve.png) |
-| **Results assistant** (scripted test harness) | **Pattern versus rate** |
-| ![Results assistant answer with grounded numbers](docs/submission/media/07-results-assistant.png) | ![History block versus matched-rate loss](docs/submission/media/06-pattern-rate.png) |
+| **Results assistant** (live Nemotron request; numbers rendered from the stored record) | **Pattern versus rate** |
+| ![Results assistant comparing eight calibration conditions, numbers rendered from the stored record](docs/submission/media/09-results-assistant-live.png) | ![History block versus matched-rate loss](docs/submission/media/06-pattern-rate.png) |
 
-A 2-minute captioned walkthrough, recorded against the scripted local harness, is in
-[docs/submission/media/shiftguard-demo.webm](docs/submission/media/shiftguard-demo.webm).
+A 2½-minute captioned walkthrough recorded on the live app on 27 October 2026, with real
+Nemotron replies, is in
+[docs/submission/media/shiftguard-demo-live.webm](docs/submission/media/shiftguard-demo-live.webm).
+An earlier recording against the scripted local harness is
+[shiftguard-demo.webm](docs/submission/media/shiftguard-demo.webm).
 
 ## Quickstart
 

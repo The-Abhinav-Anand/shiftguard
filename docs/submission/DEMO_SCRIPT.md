@@ -34,5 +34,37 @@ and every assistant shot carries the on-screen badge "Recorded with test data ·
 assistant, not a live Nemotron reply". No paid model call is made. General chat is shown but no
 message is sent. The same run writes the PNG screenshots in `docs/submission/media/`.
 
-A live-model version, if wanted, is recorded on the hosted app after the live check, within the
-daily allowance; the owner may add a voice-over.
+The live version below replaces it for the submission.
+
+## Live version (27 October 2026): the one to upload
+
+`docs/submission/media/shiftguard-demo-live.webm`: 2:35, 1280×800, captions instead of a voice-over,
+sha256 `fed030f2…92af`. It follows the table above on the live app
+(https://shiftguard.duckdns.org, freeze build `112012e`):
+
+- a real Bank baseline run on the judge server, then the saved 400-condition stress result
+  `09b7b8c05c08cde62645dea8`;
+- the **Compare experiment …** suggestion sent to the Results assistant: a real Nemotron reply on
+  Nebius Token Factory (3 turns; approved tool calls `compare_calibrators` and
+  `generate_result_summary`), with the eight rendered comparisons and the tool trace on screen;
+- one real general-chat message, shown with its "not verified" label.
+
+Assistant shots carry the badge "Live: NVIDIA Nemotron on Nebius Token Factory". This take
+(take 3) used 4 calls and 24,278 tokens of the shared daily allowance. Two earlier takes are kept
+outside the repository with the release evidence:
+- take 1 (Summarize plus one chat message; 2 calls, 4,617 tokens; sha256 `3174ba9c…0e02`) was
+  discarded because its scroll position hid the answer;
+- take 2 (Compare plus one chat message; 3 calls, 13,840 tokens; sha256 `74550678…b747`) was
+  replaced because a model review found two captions imprecise.
+
+Regenerate with (spends live calls):
+
+```bash
+cd frontend
+SG_DEMO_LIVE=1 SG_E2E_BASE_URL=https://shiftguard.duckdns.org SG_GATE5_ATTEMPT_DIR=<fresh dir under ../verification> npx playwright test --config playwright.demo.config.ts -g "live submission"
+```
+
+`SG_DEMO_DRY=1` instead of `SG_DEMO_LIVE=1` walks the same screens without any model call.
+
+The gallery image `docs/submission/media/09-results-assistant-live.png` is a crop of a take-2 frame
+(the same Compare question, answered in 2 turns with 1 tool call); the video is take 3.

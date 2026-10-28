@@ -43,6 +43,9 @@ async function overlay(page: Page, caption: string, badge?: string) {
 const TEST_DATA = "Recorded with test data · scripted assistant, not a live Nemotron reply";
 
 test("record the submission demo", async ({ page }) => {
+  // The scripted harness only: against a hosted server this would send a real paid request
+  // and still label it scripted.
+  test.skip(Boolean(process.env.SG_E2E_BASE_URL), "scripted local harness only");
   test.setTimeout(15 * 60 * 1000);
   mkdirSync(MEDIA, { recursive: true });
   const started = Date.now();

@@ -75,15 +75,20 @@ result, a fake publication, arbitrary Python and final-test labels), Nemotron
 ended with an explicit no-tool refusal; it did not invent numbers.
 
 What we would like: Nemotron often takes several tool-only turns before answering. One early
-live run spent its whole three-call allowance on tool calls and never reached a final turn, so
-we now size each Results question at up to 8 calls. A documented way to cap or hint the number
-of tool turns, and a published per-request maximum token figure for budgeting before a call,
-would help teams that run with hard spending limits. In total, live acceptance used 13 calls and
+live run spent its whole three-call allowance on tool calls and never reached a final turn. On
+the hosted app, after a summary tool call had already succeeded, the model kept calling tools
+(a read, a metadata lookup and the same summary tool three more times) until the 6-turn bound.
+The app now ends an exact summary command as soon as its tool succeeds, because Python renders
+the answer anyway: on 27 October that question took 1 call and 4,415 tokens instead of 6 calls
+and 41,346. A documented way to cap or hint the number of tool
+turns, and a published per-request maximum token figure for budgeting before a call, would help
+teams that run with hard spending limits. In total, the gate live acceptance used 13 calls and
 61,026 tokens with zero retries.
 
 ## Links
 
 - Live app: https://shiftguard.duckdns.org
-- Source: https://github.com/The-Abhinav-Anand/shiftguard (release tag: [tag])
-- Demo video (under 3 minutes): [YouTube URL]
+- Source: https://github.com/The-Abhinav-Anand/shiftguard (release tag: `hackathon-2026-submission`)
+- Demo video (2:35, recorded on the live app with real Nemotron replies): [YouTube URL]; the same
+  file is in the repository as `docs/submission/media/shiftguard-demo-live.webm`
 - Judge guide: [JUDGE_GUIDE.md](JUDGE_GUIDE.md)

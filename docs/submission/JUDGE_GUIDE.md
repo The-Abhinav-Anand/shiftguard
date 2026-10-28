@@ -1,8 +1,10 @@
 # Judge guide
 
 **Live app:** https://shiftguard.duckdns.org. No account is needed; the app issues a private session in your browser.
-**Recorded demo (fallback only):** [YouTube URL]. It is a recording, not the live app.
-**Source:** https://github.com/The-Abhinav-Anand/shiftguard at release [tag / commit].
+**Recorded demo (fallback only):** the YouTube link on the Devpost page, or
+[`shiftguard-demo-live.webm`](media/shiftguard-demo-live.webm) in this repository (2:35). It is a
+recording of the live app on 27 October 2026, with real Nemotron replies.
+**Source:** https://github.com/The-Abhinav-Anand/shiftguard at tag `hackathon-2026-submission`. The live app runs the image built from commit `112012e`; later commits up to the tag change only documentation and test tooling.
 
 ## Five-minute path
 
@@ -44,11 +46,22 @@ visitors, with no retries. A Results question can use several calls. When the da
 is used up, both assistants say so plainly, and everything else keeps working: runs, saved
 results and charts. The budget resets at 00:00 UTC (05:30 IST).
 
-There is no separate judge reservation: the shared daily allowance is the arrangement. How
-many Results questions fit in a day depends on the measured cost per question, which is
-recorded here after the live check on the fixed build [to be measured]. If the assistants
-report that the day's allowance is used up, the recorded demo shows the assistant flow
-(driven by a scripted stand-in, labelled as such), and every other part of the app stays
+There is no separate judge reservation: the shared daily allowance is the arrangement.
+Measured on the judge server:
+
+| Question | Model calls | Tokens |
+|---|---|---|
+| **Summarize experiment …** (27 Oct, one run) | 1 | 4,415 |
+| **Compare experiment …**, 8 calibration conditions (27 Oct, two runs) | 2 to 3 | 13,676 to about 24,100 |
+| One general-chat message (15 Oct, one run) | 1 | 199 |
+
+Each call first reserves an upper bound (its input plus the 1,024-token output cap, about
+17,000 tokens for a first Results call) and is then charged what it used, so the last question
+of a day needs that headroom. A quiet day therefore fits about 19 Summarize or 3 to 6 Compare
+questions, or many short chat messages (calls cap at 50). The same question can take a
+different number of calls on another run, and a free-form question can take more calls before
+it gets its notice. If the assistants report that the day's allowance is used up, the recorded
+demo shows live Nemotron answers from the same server, and every other part of the app stays
 usable.
 
 ## Scope

@@ -444,3 +444,44 @@ Next: once published, set repo topics/homepage; once a VM IP is recorded, repoin
   - Review (Opus xhigh, model review, not human acceptance) r1: CORRECTIONS_REQUIRED for tests only (C1 medium: guards untested; C2/C3 low; C6 nit), no functional defect; it replayed the real hosted `09b7` payload (fetched read-only over HTTPS) with the live 6-call script: without the fix FAILED 6/6, with it COMPLETED with 1 claim and 1 call. All corrections applied by a Sonnet worker; no delta review round was run.
 - Coordination: an interactive session with the owner present asked this run (cross-session message) to stop after committing this fix and not to build, upload or deploy; it will build the freeze image from the resulting HEAD, deploy before 05:30 IST and run the live checks after the reset. This run followed that and made no further paid calls (total today: 6 calls, 41,346 tokens).
 - Next: freeze image + deploy + live Summarize/Compare (interactive session); then questions-per-day figure, hosted smoke test, full Python suite, tag, video re-record.
+
+## 2026-10-27 00:38–14:30 IST (interactive session with the owner present: "complete and wrap up everything for submission", then "deploy")
+- Coordination: run 18 was mid-batch, so this session asked it (cross-session message) to commit its reviewed fix and stop before building or deploying, and paused the 5-hour schedule during the freeze (re-enabled at the end of this session).
+- **Freeze image and deploy (done).** Evidence `../verification/release-112012e-20261027/` (`RELEASE.md`):
+  - Built `shiftguard:judge-112012e` from `git -c core.autocrlf=false archive 112012e`: config `48d6cf06…`, manifest `207127ed…`.
+  - Local PostgreSQL stack: offline probe PASS, 11/11 checks, 0 model requests; same baseline experiment as the VM.
+  - Image secret scan: same profile as the accepted 3421378 scan; API key and DuckDNS token 0.
+  - Resumable upload; SHA-256 matched.
+  - Deployed 26 Oct 19:46 UTC, before the UTC rollover, because the ledger policy digest changed. REDEPLOY OK; pre-deploy backup `20261026T194627Z`; rollback tag `shiftguard:judge-prev-3421378`.
+  - Live container logs and served JS: 0 hits.
+  - The 2026-10-26 day then read halted (policy binding), as expected. The 2026-10-27 day opened clean.
+- **Hosted smoke (clean Playwright profile, no model calls): 63/64 passed.** The one failure (`test_reload` "persisted cache survives reload…") pins the Windows-seeded condition ID `a15856cf…`. The hosted Linux record has `4f394eb8…` with every pinned diagnostic count identical. The accepted Gate 5 test was not edited; the title was removed from the hosted allowlist (now 63).
+- **Live checks on the fresh day (done, PASS):**
+  - Summarize: 1 call, 4,415 tokens, COMPLETED, grounded, 1 claim.
+  - Compare: 2 calls, 13,676 tokens, 8 claims.
+  - Reports `live-summarize.json`, `live-compare.json`.
+  - JUDGE_GUIDE now gives about 19 Summarize or 3 to 6 Compare questions a day.
+    - Review M1: each call first reserves its upper bound, about 17k tokens for a first Results call, so the last question of a day needs headroom.
+    - Review r2 D1: in demo take 3, Compare took 3 calls and about 24k tokens.
+- **Live demo video (done).** `tests/demo/record_live_demo.demo.ts` (SG_DEMO_LIVE=1; SG_DEMO_DRY=1 walks the screens with no model call).
+  - Take 1 (Summarize plus one chat message, 2 calls, 4,617 tokens) was discarded: its scroll position hid the answer. It is kept outside the repo.
+  - Take 2 (Compare + one chat message, 3 calls, 13,840 tokens): `docs/submission/media/shiftguard-demo-live.webm`, 2:34, sha256 `74550678…b747`; frames checked.
+  - New gallery image `09-results-assistant-live.png` (crop of a take-2 frame).
+  - **Opus wrap-up review r1** (model review, not human acceptance; `../verification/release-112012e-20261027/review-wrapup-r1.md`): CORRECTIONS_REQUIRED, no high findings, 3 medium, 7 minor, nits. All of them applied:
+    - M1: the questions-per-day figure is now 19 Summarize or 5 to 6 Compare.
+    - M2: the scripted recorder skips against any hosted URL; the live recorder runs only against the judge origin.
+    - M3: the FROZEN block is conditional on the tag and the suite result.
+    - m1/m2: the captions now say "approved tools: inspect the dataset, run an approved preset, read saved results", and the comparator is named.
+    - m5: base-image digests recorded.
+    - Also: `tests/demo` is now typechecked.
+  - **Take 3** (27 Oct 14:32 IST; corrected captions; Compare took 3 turns with 2 approved tool calls; 4 calls, 24,278 tokens) replaces take 2 (kept outside the repo).
+    - `shiftguard-demo-live.webm`: 2:35, sha256 `fed030f2…92af`.
+    - Frames checked, including the tool trace from about 2:04.
+  - Ledger after take 2: 8 calls, 36,548 tokens for 2026-10-27. After take 3: 12 calls, 60,826 tokens.
+- **Full Python suite:**
+  - Attempt 1 was stopped by the executor at once (tool timeout risk).
+  - Attempt 2 stalled at about 68% after the PC slept. It was busy-looping inside `tests/repeats/test_seed_plan.py`/`test_uncertainty.py`, which pass in 34 s on their own. Log kept as `pytest-full-attempt2-stalled-after-pc-sleep.txt`.
+  - Attempt 3 (keep-awake, `faulthandler_timeout=900`) was aborted. The faulthandler fired on the real-Bank stress-engine test (slow under concurrent load, not hung), and its stderr line stopped the PowerShell runner, because the PostgreSQL helper sets `$ErrorActionPreference='Stop'`.
+  - Attempt 4 (28 Oct) uses a 1-hour faulthandler and `Continue` for native stderr. Its result is in RELEASE_CHECKLIST row 19.
+- Docs: RELEASE_CHECKLIST rows 2, 3, 6, 10, 11, 12, 15, 16, 17 and the release identity; JUDGE_GUIDE; SUBMISSION; DEVPOST_FORM; README; DEMO_SCRIPT; claim C5; OWNER_ACTIONS 5, 6 and 12.
+- A launch with `-ExecutionPolicy Bypass` was denied by the auto-mode classifier. It was not retried; the same script runs under the normal policy.

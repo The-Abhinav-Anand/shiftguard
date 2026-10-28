@@ -3,8 +3,8 @@
 Owner action on 29–30 October: open the hackathon's Devpost page → **Enter a submission** (or
 edit the draft) → paste each field below → check the three links open from a signed-out
 browser → press **Submit** before **30 October 2026, 20:00 IST** (official close 22:30 IST).
-Fields in `[brackets]` are filled by the autopilot once the item exists; do not submit while any
-bracket remains, except the hosted URL as described under "Try it out".
+The only field left in `[brackets]` is the YouTube link: paste the URL of your upload of
+`docs/submission/media/shiftguard-demo-live.webm` (OWNER_ACTIONS item 5). Everything else is final.
 
 ---
 
@@ -27,7 +27,7 @@ python, fastapi, sqlalchemy, alembic, postgresql, sqlite, scikit-learn, numpy, s
 ## Try it out (links)
 
 - Live app: https://shiftguard.duckdns.org
-- Source code: https://github.com/The-Abhinav-Anand/shiftguard
+- Source code: https://github.com/The-Abhinav-Anand/shiftguard (release tag `hackathon-2026-submission`)
 - Judge guide: https://github.com/The-Abhinav-Anand/shiftguard/blob/main/docs/submission/JUDGE_GUIDE.md
 
 If the hosted app is not live by submission time, replace the live-app line with:
@@ -36,12 +36,12 @@ video."
 
 ## Video demo link
 
-[YouTube URL from OWNER_ACTIONS item 5]
+[YouTube URL from OWNER_ACTIONS item 5: the upload of `docs/submission/media/shiftguard-demo-live.webm`]
 
 ## Image gallery
 
 Upload, in this order, from `docs/submission/media/`: `02-workbench.png`, `04-budget-curve.png`,
-`06-pattern-rate.png`, `07-results-assistant.png`, `01-about.png`.
+`06-pattern-rate.png`, `09-results-assistant-live.png`, `01-about.png`.
 
 ## About the project (Markdown)
 

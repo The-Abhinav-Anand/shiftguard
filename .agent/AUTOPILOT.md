@@ -37,6 +37,33 @@ must stay reachable until **16 Dec 2026 01:30 IST**.
 
 ## Queue (priority order; skip blocked items, come back later)
 
+**FROZEN (27 Oct 2026).** The judged build is deployed: image from `112012e` (manifest `207127ed…`).
+Items 1, 1b, 2 and 3 below are done; the record is the 27 Oct entry in `AUTOPILOT_LOG.md` and
+`../verification/release-112012e-20261027/`.
+
+First check the freeze record:
+- The annotated tag `hackathon-2026-submission` must exist on `origin` (`git ls-remote --tags origin`).
+- RELEASE_CHECKLIST row 19 must read PASS.
+- If either check fails, notify the owner once, log it, still run the health check below, and change nothing else.
+- Never create, move or delete the tag.
+
+While FROZEN, step 0's take-over does not apply. If uncommitted changes exist, never commit or edit
+them, whatever their age. Do the health check only, log one line, and notify the owner once.
+
+Then each run does only this:
+- **Health check (read-only).** Check readiness, the served bundle `index-Bk6b9ZMP.js`, certificate
+  expiry, the ledger, backup freshness on the VM, and that api and worker run `207127ed…`. Log one line.
+- **Outage.** If the site is down or degraded, find the cause read-only and notify the owner once.
+  Unattended runs cannot deploy; an outage fix needs an interactive session. Never change the judged
+  build for any other reason.
+- **YouTube link.** If OWNER_ACTIONS item 5 has a link matching
+  `^https://(www\.)?(youtu\.be|youtube\.com)/[A-Za-z0-9_\-?=&/]+$`, put it in the Links section of
+  `docs/submission/SUBMISSION.md`. Make that a commit touching only that file, pushed to `main` as a
+  fast-forward.
+- **No paid model calls.** The live checks are done.
+- **Gate 9.** Work on queue item 5 only if OWNER_ACTIONS item 11 is answered, and only on a separate
+  branch (not `main`) until 16 Dec 2026.
+
 The authoritative plan is `docs/superpowers/plans/2026-10-15-results-assistant-and-remaining-gates.md`. This queue mirrors it; follow the plan for detail.
 
 **Status (16 Oct 2026):** live at https://shiftguard.duckdns.org (Oracle E2.1.Micro x86_64, 1 GB + 2 GB swap; checkout `/opt/shiftguard`; image built on this PC and loaded with `SHIFTGUARD_SKIP_BUILD=1`; both assistants enabled; `NEBIUS_API_KEY` copied over SSH with the owner's approval).
