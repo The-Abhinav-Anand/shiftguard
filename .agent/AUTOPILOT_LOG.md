@@ -483,5 +483,14 @@ Next: once published, set repo topics/homepage; once a VM IP is recorded, repoin
   - Attempt 2 stalled at about 68% after the PC slept. It was busy-looping inside `tests/repeats/test_seed_plan.py`/`test_uncertainty.py`, which pass in 34 s on their own. Log kept as `pytest-full-attempt2-stalled-after-pc-sleep.txt`.
   - Attempt 3 (keep-awake, `faulthandler_timeout=900`) was aborted. The faulthandler fired on the real-Bank stress-engine test (slow under concurrent load, not hung), and its stderr line stopped the PowerShell runner, because the PostgreSQL helper sets `$ErrorActionPreference='Stop'`.
   - Attempt 4 (28 Oct) uses a 1-hour faulthandler and `Continue` for native stderr. Its result is in RELEASE_CHECKLIST row 19.
+
+## 2026-10-28 IST (interactive session, executor: Claude Code Opus 5.5)
+- **Full suite, attempt 4:** 10:48–15:41 IST, 1,733 passed, 48 failed (`../verification/release-112012e-20261027/pytest-full.txt`).
+  - 47 failures in the Gate 8 run-driver (29) and report (18) tests: `refused: PRIVATE_ROOT_FORBIDDEN`. The executor put the basetemp inside `verification/`, which the driver refuses by design (same cause as run 14).
+  - 1 failure: `PermissionError: [WinError 5]` on a file rename in that temp folder (live-harness contract test, PostgreSQL variant).
+  - Rerun of the three files with the basetemp under `%TEMP%`, both backends: **81 passed, 0 failed** (`pytest-rerun-failed.txt`). No Python file differs between `112012e` and `1aaff89`.
+- RELEASE_CHECKLIST row 19 is PASS with both runs. Row 10 now cites the repository-history scan at `1aaff89` (0 hits for the API key and DuckDNS token).
+- The tag `hackathon-2026-submission` goes on this commit. The autopilot is re-enabled in FROZEN mode.
+- Paid calls by this session on 28 Oct: 0.
 - Docs: RELEASE_CHECKLIST rows 2, 3, 6, 10, 11, 12, 15, 16, 17 and the release identity; JUDGE_GUIDE; SUBMISSION; DEVPOST_FORM; README; DEMO_SCRIPT; claim C5; OWNER_ACTIONS 5, 6 and 12.
 - A launch with `-ExecutionPolicy Bypass` was denied by the auto-mode classifier. It was not retried; the same script runs under the normal policy.

@@ -1,3 +1,14 @@
+# Milestone — submission freeze, 27–28 October 2026
+
+- **Judged build.** The image built from `112012e` (config `48d6cf06…`, VM manifest `207127ed…`) has served https://shiftguard.duckdns.org since 26 Oct 19:46 UTC.
+- **Checks passed.** Offline probe, image and live secret scans, hosted smoke 63/64 (one platform-pinned test removed from the hosted list), and live Summarize and Compare on 27 Oct.
+- **Full suite (row 19).** 28 Oct: 1,733 passed, 48 failed. 47 failures came from a basetemp inside `verification/` (`PRIVATE_ROOT_FORBIDDEN`, by design) and 1 from a Windows rename `PermissionError`. Rerunning the three files outside `verification/` passed 81/81.
+- **Live demo video.** `docs/submission/media/shiftguard-demo-live.webm` (2:35).
+- **Tag.** `hackathon-2026-submission` goes on the commit that records the full-suite result (RELEASE_CHECKLIST row 19).
+- **Autopilot.** It runs in FROZEN mode (`.agent/AUTOPILOT.md`).
+- **Still with the owner.** OWNER_ACTIONS items 5 (YouTube upload) and 6 (Devpost Submit, by 30 Oct 20:00 IST).
+- **Evidence.** `../verification/release-112012e-20261027/RELEASE.md`. The Opus reviews are model reviews, not human acceptance.
+
 # Milestone — Gate 8 development run on real Bank, 22 October 2026
 
 The frozen manifest `docs/research/gate8-run-manifest-bank-development-v1.json` (`ab46015`, digest `3bb107f7…a30b`) ran on real Bank as development work (Bank outcomes previously inspected; not confirmatory), 21 Oct 17:14 – 22 Oct ~00:30 IST: 50 scheduled, 50 completed, 0 failed, 0 corrupt. The read-only report (report digest `0eec31a0…1bc0`, outside the repo at `../verification/autopilot-20261022-run15/gate8-dev-report.json` and the run-14 copy) gives the primary as `missing_evidence` / `PRIMARY_EVIDENCE_UNAVAILABLE` / `sci03_authority_unresolved`, estimate and interval null. Gate 8 stays unaccepted and DRAFT_NOT_LOCKED; the 12 Oct "synthetic only" line below is history. Public docs carry this as claim C8. Model reviews only, not human acceptance.
