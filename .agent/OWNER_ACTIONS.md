@@ -30,6 +30,7 @@ The autopilot checks this file every run.
    Enter a submission (or edit your draft) → paste each field of `docs/submission/DEVPOST_FORM.md`, with
    the YouTube link from item 5 in "Video demo link" → upload the five gallery images it lists → open the
    live app, repository and judge guide links once from a private window → press **Submit**.
+   Status: DONE (30 Oct): owner reported "submitted". The YouTube link has not been recorded in item 5.
 
 7. **Publish the repository (2 min) — NEW, needed first:** the autopilot's session is not
    permitted to create a public repository (Claude Code's auto-mode safety check blocked it on

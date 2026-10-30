@@ -512,3 +512,4 @@ Next: once published, set repo topics/homepage; once a VM IP is recorded, repoin
 
 ## 2026-10-30 IST (interactive session, executor: Claude Code Opus 5.5)
 - README only: added the section "NVIDIA Nemotron on Nebius Token Factory", because the Devpost repository field requires it. No app code, build or deploy change; the tag `hackathon-2026-submission` was not moved. No model review was run on this edit.
+- Owner reported "submitted" (30 Oct). OWNER_ACTIONS item 6 and RELEASE_CHECKLIST row 16 are updated. The executor did not see the Devpost page. Row 15 stays open until the YouTube link is recorded in item 5. Rows 17 and 18 are unchanged.
