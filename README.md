@@ -136,6 +136,29 @@ PostgreSQL 16 (hosted) or SQLite (local) ◄── experiment worker (separate p
 | Frontend | `frontend/` (build output in `shiftguard/static/`) |
 | Deployment | `Dockerfile`, `deploy/` |
 
+## NVIDIA Nemotron on Nebius Token Factory
+
+**How Nemotron is used.** Both assistants run `nvidia/Nemotron-3_5-Lightning`, called at
+runtime through Token Factory (`https://api.tokenfactory.nebius.com/v1`).
+
+- The *Results assistant* chooses from a closed set of approved tools (inspect the dataset, run
+  an approved preset, read saved results) in at most 6 turns, then returns a short JSON plan
+  naming what to explain. Python writes the answer from the stored record, so the model picks
+  the evidence and never generates a figure.
+- *General chat* is tool-free and labelled unverified.
+- The code is in `shiftguard/agent/` (provider, prompts, controller and spending ledger).
+
+**Where Token Factory accelerated the work.**
+
+- There was no GPU or model server to set up or run: the app needs only an API key.
+- The OpenAI-compatible endpoint works with the standard `openai` Python client, including tool
+  calling. The provider layer stayed small and is tested against a scripted stand-in.
+- Every response reports token usage, which made an exact daily ledger possible: 50 calls and
+  100,000 tokens, reserved before each call, with zero retries.
+
+**Other Nebius tools.** None; Token Factory is the only Nebius service used. The app itself runs
+on a free Oracle VM.
+
 ## Honest limits
 
 - **Bank Marketing data only.** Uploading your own data is not supported; see
