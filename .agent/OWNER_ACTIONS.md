@@ -25,7 +25,7 @@ The autopilot checks this file every run.
    `docs/submission/media/shiftguard-demo-live.webm` (2:35, captions, no audio, recorded on the live app
    with real Nemotron replies; it replaces the older scripted `shiftguard-demo.webm`) to YouTube:
    youtube.com → Create → Upload video → select the file → title "SHIFTGUARD: calibration under missing inputs"
-   → "No, it's not made for kids" → Next ×3 → Visibility **Public** → Publish. Paste the link here:
+   → "No, it's not made for kids" → Next ×3 → Visibility **Public** → Publish. Paste the link here: https://youtu.be/YSuzYIMLUpc (DONE, 30 Oct)
 6. **Submit (5 min, by 30 Oct 20:00 IST; official close 22:30 IST):** open the hackathon's Devpost page →
    Enter a submission (or edit your draft) → paste each field of `docs/submission/DEVPOST_FORM.md`, with
    the YouTube link from item 5 in "Video demo link" → upload the five gallery images it lists → open the

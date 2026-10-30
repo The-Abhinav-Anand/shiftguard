@@ -3,8 +3,7 @@
 Owner action on 29–30 October: open the hackathon's Devpost page → **Enter a submission** (or
 edit the draft) → paste each field below → check the three links open from a signed-out
 browser → press **Submit** before **30 October 2026, 20:00 IST** (official close 22:30 IST).
-The only field left in `[brackets]` is the YouTube link: paste the URL of your upload of
-`docs/submission/media/shiftguard-demo-live.webm` (OWNER_ACTIONS item 5). Everything else is final.
+Submitted on 30 October 2026; this file records what was prepared for the form.
 
 ---
 
@@ -36,7 +35,7 @@ video."
 
 ## Video demo link
 
-[YouTube URL from OWNER_ACTIONS item 5: the upload of `docs/submission/media/shiftguard-demo-live.webm`]
+https://youtu.be/YSuzYIMLUpc
 
 ## Image gallery
 

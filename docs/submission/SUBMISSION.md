@@ -89,6 +89,6 @@ teams that run with hard spending limits. In total, the gate live acceptance use
 
 - Live app: https://shiftguard.duckdns.org
 - Source: https://github.com/The-Abhinav-Anand/shiftguard (release tag: `hackathon-2026-submission`)
-- Demo video (2:35, recorded on the live app with real Nemotron replies): [YouTube URL]; the same
+- Demo video (2:35, recorded on the live app with real Nemotron replies): https://youtu.be/YSuzYIMLUpc; the same
   file is in the repository as `docs/submission/media/shiftguard-demo-live.webm`
 - Judge guide: [JUDGE_GUIDE.md](JUDGE_GUIDE.md)
